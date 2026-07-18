@@ -1,0 +1,27 @@
+{
+  "name": "nianza-admin-portal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "latest",
+    "@tanstack/react-table": "latest",
+    "@vitejs/plugin-react": "latest",
+    "aws-amplify": "latest",
+    "axios": "latest",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "latest",
+    "recharts": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "vite": "latest"
+  }
+}

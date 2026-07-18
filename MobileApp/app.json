@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "Nianza",
+    "slug": "nianza",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "nianza",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#F7F9FA"
+    },
+    "ios": {
+      "bundleIdentifier": "com.nianza.app",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Nianza uses the microphone so you can speak to Patricia hands-free.",
+        "NSPhotoLibraryUsageDescription": "Nianza uses your photo library when you choose to add a child photo or share a photo with Patricia.",
+        "NSCameraUsageDescription": "Nianza uses your camera when you choose to take a photo to add or share."
+      }
+    },
+    "android": {
+      "package": "com.nianza.app",
+      "permissions": [
+        "RECORD_AUDIO",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      ["expo-image-picker", {
+        "photosPermission": "Nianza uses your photo library when you choose to add a child photo or share a photo with Patricia.",
+        "cameraPermission": "Nianza uses your camera when you choose to take a photo to add or share."
+      }]
+    ],
+    "extra": {
+      "apiUrl": "https://api-dev.nianza.com/v1"
+    }
+  }
+}

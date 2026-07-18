@@ -1,0 +1,11 @@
+version = 0.1
+
+[default.global.parameters]
+region = "us-east-1"
+
+[default.deploy.parameters]
+stack_name = "nianza-backend-dev"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
+confirm_changeset = true
+parameter_overrides = "Environment=\"dev\""

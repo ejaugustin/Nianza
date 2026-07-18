@@ -1,0 +1,10 @@
+{
+  "name": "nianza-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "validate:template": "sam validate --template-file infra/template.yaml",
+    "build": "sam build --template-file infra/template.yaml"
+  },
+  "devDependencies": {}
+}

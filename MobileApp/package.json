@@ -1,0 +1,52 @@
+{
+  "name": "nianza-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-amplify/react-native": "latest",
+    "@react-native-async-storage/async-storage": "latest",
+    "@react-navigation/bottom-tabs": "latest",
+    "@react-navigation/native": "latest",
+    "@react-navigation/stack": "latest",
+    "@tanstack/react-query": "latest",
+    "amazon-cognito-identity-js": "latest",
+    "aws-amplify": "latest",
+    "axios": "latest",
+    "dayjs": "latest",
+    "expo": "~54.0.33",
+    "expo-audio": "latest",
+    "expo-constants": "latest",
+    "expo-device": "latest",
+    "expo-file-system": "latest",
+    "expo-image": "latest",
+    "expo-image-manipulator": "latest",
+    "expo-image-picker": "latest",
+    "expo-localization": "latest",
+    "expo-notifications": "latest",
+    "expo-router": "latest",
+    "expo-secure-store": "latest",
+    "expo-sharing": "latest",
+    "expo-splash-screen": "latest",
+    "expo-status-bar": "latest",
+    "i18n-js": "latest",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-gesture-handler": "latest",
+    "react-native-purchases": "latest",
+    "react-native-safe-area-context": "latest",
+    "react-native-screens": "latest",
+    "react-native-uuid": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "typescript": "latest"
+  }
+}

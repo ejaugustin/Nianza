@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Nianza foundation backend infrastructure
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, prod]
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 30
+    MemorySize: 256
+    Architectures: [arm64]
+    Environment:
+      Variables:
+        ENVIRONMENT: !Ref Environment
+
+Resources:
+  AdminAuditLogTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-admin-audit-log-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: adminUserId
+          AttributeType: S
+        - AttributeName: timestampActionId
+          AttributeType: S
+        - AttributeName: action
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: adminUserId
+          KeyType: HASH
+        - AttributeName: timestampActionId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: action-timestamp-index
+          KeySchema:
+            - AttributeName: action
+              KeyType: HASH
+            - AttributeName: timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  AdminSessionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub nianza-admin-sessions-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: adminUserId
+          AttributeType: S
+        - AttributeName: sessionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: adminUserId
+          KeyType: HASH
+        - AttributeName: sessionId
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
+  ContentLibraryTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-content-library-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: contentId
+          AttributeType: S
+        - AttributeName: version
+          AttributeType: S
+        - AttributeName: language
+          AttributeType: S
+        - AttributeName: contentType
+          AttributeType: S
+      KeySchema:
+        - AttributeName: contentId
+          KeyType: HASH
+        - AttributeName: version
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: language-contentType-index
+          KeySchema:
+            - AttributeName: language
+              KeyType: HASH
+            - AttributeName: contentType
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+Outputs:
+  AdminAuditLogTableName:
+    Value: !Ref AdminAuditLogTable
+  AdminSessionsTableName:
+    Value: !Ref AdminSessionsTable
+  ContentLibraryTableName:
+    Value: !Ref ContentLibraryTable

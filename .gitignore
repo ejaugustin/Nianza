@@ -1,0 +1,40 @@
+# dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# builds
+build/
+dist/
+.expo/
+.web-build/
+.aws-sam/
+coverage/
+*.zip
+
+# environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+*key*.json
+*Key*.txt
+*APIKeys*.txt
+*accessKeys*.csv
+RevenueCatKeys.txt
+SubscriptionKey_*.p8
+
+# local/system
+.DS_Store
+Thumbs.db
+*.log
+
+# generated/reference binaries kept outside git for now
+*.docx
+*.pdf
+Nianza Screens v3/
+Brand_Assets/
+MobileApp/Nianza_*.md
+MobileApp/grandmother-chat-en.txt
+MobileApp/* - Copy.docx

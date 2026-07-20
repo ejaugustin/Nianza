@@ -11,4 +11,21 @@ function json(statusCode, body, headers = {}) {
   };
 }
 
-module.exports = { json };
+function noContent(headers = {}) {
+  return {
+    statusCode: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Authorization, Content-Type",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+      ...headers
+    },
+    body: ""
+  };
+}
+
+function error(statusCode, code, message) {
+  return json(statusCode, { error: message, code });
+}
+
+module.exports = { json, noContent, error };

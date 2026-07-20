@@ -12,4 +12,4 @@ Primary local source materials used for implementation planning:
 - `C:\Users\eja\Nianza\MobileApp\grandmother-chat-en.txt`
 - `C:\Users\eja\Nianza\MobileApp\Nianza Screens v3\svg`
 
-Binary briefs, design assets, generated builds, and local secrets are intentionally excluded from git in the foundation commit. Promote selected documents into version control later only after a source-of-truth and sensitivity review.
+Binary briefs, design assets, generated builds, and local environment files are intentionally excluded from git in the foundation commit. Promote selected documents into version control later only after a source-of-truth and sensitivity review.

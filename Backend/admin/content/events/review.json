@@ -1,0 +1,17 @@
+{
+  "httpMethod": "POST",
+  "path": "/admin/v1/content/daily-note%23en%234mo%23movement%23sample/review",
+  "pathParameters": {
+    "contentId": "daily-note#en#4mo#movement#sample"
+  },
+  "requestContext": {
+    "authorizer": {
+      "claims": {
+        "sub": "local-content-editor",
+        "email": "reviewer@nianza.test",
+        "custom:role": "content_editor"
+      }
+    }
+  },
+  "body": "{\"version\":\"1.0.0\",\"reviewerNote\":\"Reviewed against source.\"}"
+}

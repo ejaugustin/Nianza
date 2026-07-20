@@ -14,6 +14,9 @@ a { color: inherit; text-decoration: none; }
 nav { display: grid; gap: 6px; }
 nav a { color: #c6d5d9; padding: 10px 12px; border-radius: 8px; }
 nav a.active { background: rgba(52, 171, 196, 0.18); color: white; }
+.admin-profile { color: #c6d5d9; display: grid; gap: 8px; font-size: 12px; margin-top: 36px; word-break: break-word; }
+.admin-profile span { color: #ccf0f6; font-weight: 700; }
+.sidebar-button { min-height: 34px; padding: 0 10px; width: 100%; }
 .main-panel { padding: 28px; }
 .page-title { font-size: 28px; margin: 0 0 8px; }
 .page-subtitle { color: #74808a; margin: 0 0 24px; }
@@ -49,3 +52,7 @@ input, select, textarea { width: 100%; border: 1px solid #e3e8ea; border-radius:
 textarea { min-height: 108px; resize: vertical; }
 .checkbox-row { display: flex; align-items: center; gap: 8px; color: #2c2c2c; }
 .checkbox-row input { width: auto; }
+.login-page { align-items: center; background: #f7f9fa; display: flex; justify-content: center; min-height: 100vh; padding: 24px; }
+.login-panel { background: white; border: 1px solid #e3e8ea; border-radius: 10px; box-shadow: 0 14px 42px rgba(20, 40, 50, 0.14); display: grid; gap: 16px; max-width: 420px; padding: 28px; width: 100%; }
+.login-brand { background: #142832; border-radius: 8px; display: inline-flex; margin-bottom: 18px; padding: 8px 10px; }
+.form-error { background: #f9ede7; border: 1px solid #e4a27c; border-radius: 8px; color: #9b4c24; font-size: 13px; padding: 10px 12px; }

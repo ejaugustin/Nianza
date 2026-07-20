@@ -15,3 +15,7 @@ The intended implementation follows the Nianza engineering briefs:
 1. Admin infrastructure and content approval APIs
 2. App infrastructure and authenticated child/home vertical slice
 3. Reports, reminders, subscriptions, and chat services
+
+## Admin Deployment
+
+The admin backend is deployed with SAM and uses a dedicated Cognito user pool for admin portal login. See `docs/admin-auth-deployment-wiring.md` from the repository root for the current deploy and verification steps.

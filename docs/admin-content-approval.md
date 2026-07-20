@@ -38,4 +38,4 @@ When `VITE_ADMIN_API_URL` is not configured in local development, the portal use
 
 ## Deployment Note
 
-The Lambda rejects missing or invalid admin identity claims, but the API Gateway authorizer still needs to be wired to the final admin identity provider before production use. This should be completed once the admin authentication stack is finalized.
+The follow-up admin auth slice wires the API Gateway authorizer to the dedicated Nianza admin Cognito user pool. See `docs/admin-auth-deployment-wiring.md`.

@@ -1,4 +1,5 @@
 import { FormEvent, useMemo, useState } from "react";
+import { isAxiosError } from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   approveContent,
@@ -23,10 +24,19 @@ function statusClassName(status: string) {
   return `badge badge-${status}`;
 }
 
+function actionErrorMessage(err: unknown) {
+  if (isAxiosError(err)) {
+    const data = err.response?.data as { message?: string; error?: string } | undefined;
+    return data?.message || data?.error || err.message;
+  }
+  return err instanceof Error ? err.message : "Something went wrong. Please try again.";
+}
+
 export function ContentPage() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<CreateContentInput>(emptyForm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   const contentQuery = useQuery({
     queryKey: ["content"],
@@ -41,28 +51,43 @@ export function ContentPage() {
 
   const createMutation = useMutation({
     mutationFn: createContent,
+    onMutate: () => setNotice(null),
     onSuccess: (item) => {
       queryClient.setQueryData<ContentItem[]>(["content"], (current = []) => [item, ...current]);
       setSelectedId(item.contentId);
       setForm(emptyForm);
+      setNotice({ kind: "success", text: "Draft created." });
+    },
+    onError: (err) => {
+      setNotice({ kind: "error", text: actionErrorMessage(err) });
     }
   });
 
   const reviewMutation = useMutation({
     mutationFn: reviewContent,
+    onMutate: () => setNotice(null),
     onSuccess: (item) => {
       queryClient.setQueryData<ContentItem[]>(["content"], (current = []) =>
         current.map((row) => (row.contentId === item.contentId ? item : row))
       );
+      setNotice({ kind: "success", text: "Clinical review submitted." });
+    },
+    onError: (err) => {
+      setNotice({ kind: "error", text: actionErrorMessage(err) });
     }
   });
 
   const approveMutation = useMutation({
     mutationFn: approveContent,
+    onMutate: () => setNotice(null),
     onSuccess: (item) => {
       queryClient.setQueryData<ContentItem[]>(["content"], (current = []) =>
         current.map((row) => (row.contentId === item.contentId ? item : row))
       );
+      setNotice({ kind: "success", text: "Content approved for users." });
+    },
+    onError: (err) => {
+      setNotice({ kind: "error", text: actionErrorMessage(err) });
     }
   });
 
@@ -79,6 +104,7 @@ export function ContentPage() {
     <section>
       <h1 className="page-title">Content Library</h1>
       <p className="page-subtitle">Patricia content moves from draft to clinical review to Ej approval before app delivery.</p>
+      {notice ? <div className={`notice notice-${notice.kind}`}>{notice.text}</div> : null}
       <div className="content-grid">
         <div className="panel">
           <div className="panel-header">
@@ -117,10 +143,10 @@ export function ContentPage() {
                 <div className="content-body">{selected.bodyText}</div>
               </div>
               <button className="button-secondary" disabled={selected.clinicallyReviewed || reviewMutation.isPending} onClick={() => reviewMutation.mutate(selected)}>
-                Submit clinical review
+                {reviewMutation.isPending ? "Submitting..." : "Submit clinical review"}
               </button>
               <button className="button-primary" disabled={!selected.clinicallyReviewed || selected.ejApproved || approveMutation.isPending} onClick={() => approveMutation.mutate(selected)}>
-                Approve for users
+                {approveMutation.isPending ? "Approving..." : "Approve for users"}
               </button>
               {!selected.clinicallyReviewed ? <p className="muted">Ej approval stays locked until clinical review is complete.</p> : null}
             </div>
@@ -142,7 +168,7 @@ export function ContentPage() {
         </div>
         <label>Body text<textarea required value={form.bodyText} onChange={(event) => updateForm("bodyText", event.target.value)} /></label>
         <label className="checkbox-row"><input type="checkbox" checked={form.ttsEnabled} onChange={(event) => updateForm("ttsEnabled", event.target.checked)} /> TTS enabled after voice approval</label>
-        <button className="button-primary" disabled={createMutation.isPending} type="submit">Create draft</button>
+        <button className="button-primary" disabled={createMutation.isPending} type="submit">{createMutation.isPending ? "Creating..." : "Create draft"}</button>
       </form>
     </section>
   );

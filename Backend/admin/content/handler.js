@@ -92,6 +92,19 @@ function decodeCursor(cursor) {
   return JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"));
 }
 
+function decodePathPart(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function contentIdFromEvent(event, path) {
+  const rawContentId = event.pathParameters?.contentId || (path.match(/\/content\/([^/]+)/) || [])[1] || "";
+  return rawContentId ? decodePathPart(rawContentId) : "";
+}
+
 async function getContentVersion(contentId, version) {
   if (version) {
     const result = await documentClient.send(new GetCommand({
@@ -258,7 +271,7 @@ exports.handler = async (event) => {
   if (!actor.isAuthenticated) return error(401, "UNAUTHORIZED", "Admin authentication is required.");
 
   const path = event.path || event.rawPath || "";
-  const contentId = event.pathParameters?.contentId || decodeURIComponent((path.match(/\/content\/([^/]+)/) || [])[1] || "");
+  const contentId = contentIdFromEvent(event, path);
 
   try {
     if (event.httpMethod === "GET" && path.endsWith("/content")) return handleList(event);

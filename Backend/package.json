@@ -6,5 +6,9 @@
     "validate:template": "sam validate --template-file infra/template.yaml",
     "build": "sam build --template-file infra/template.yaml"
   },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.864.0",
+    "@aws-sdk/lib-dynamodb": "^3.864.0"
+  },
   "devDependencies": {}
 }

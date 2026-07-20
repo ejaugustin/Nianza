@@ -25,3 +25,27 @@ nav a.active { background: rgba(52, 171, 196, 0.18); color: white; }
 .table th, .table td { border-bottom: 1px solid #e3e8ea; padding: 12px 14px; text-align: left; font-size: 14px; }
 .table th { color: #74808a; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
 .badge { display: inline-flex; border-radius: 999px; padding: 4px 9px; background: #e6f7fa; color: #1d7a91; font-size: 12px; font-weight: 700; }
+.badge-draft { background: #eef2f3; color: #74808a; }
+.badge-reviewed { background: #e6f7fa; color: #1d7a91; }
+.badge-approved { background: #e6f7fa; color: #17805f; }
+.badge-deleted { background: #f9ede7; color: #c4714a; }
+.content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+.panel { background: white; border: 1px solid #e3e8ea; border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(20, 40, 50, 0.06); }
+.panel-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.panel-header h2 { font-size: 17px; margin: 0; }
+.muted { color: #74808a; font-size: 13px; }
+.selected-row { background: #f7f9fa; }
+.table tbody tr { cursor: pointer; }
+.detail-stack { display: grid; gap: 14px; }
+.content-body { background: #eef2f3; border-left: 3px solid #34abc4; border-radius: 10px; padding: 14px; line-height: 1.45; }
+.button-primary, .button-secondary { border: 0; border-radius: 10px; min-height: 42px; padding: 0 16px; font-weight: 700; cursor: pointer; }
+.button-primary { background: #34abc4; color: white; }
+.button-secondary { background: white; color: #34abc4; border: 1.5px solid #34abc4; }
+.button-primary:disabled, .button-secondary:disabled { cursor: not-allowed; opacity: 0.52; }
+.content-form { margin-top: 18px; display: grid; gap: 14px; }
+.form-grid { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 12px; }
+label { display: grid; gap: 6px; color: #74808a; font-size: 12px; font-weight: 700; }
+input, select, textarea { width: 100%; border: 1px solid #e3e8ea; border-radius: 8px; padding: 10px 12px; font: inherit; color: #2c2c2c; background: white; }
+textarea { min-height: 108px; resize: vertical; }
+.checkbox-row { display: flex; align-items: center; gap: 8px; color: #2c2c2c; }
+.checkbox-row input { width: auto; }

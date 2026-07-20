@@ -16,3 +16,15 @@ jobs:
           test -f MobileApp/package.json
           test -f AdminPortal/package.json
           test -f Backend/infra/template.yaml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: aws-actions/setup-sam@v2
+      - name: Validate backend sources
+        run: |
+          node --check Backend/admin/content/handler.js
+          node --check Backend/shared/auth.js
+          node --check Backend/shared/audit.js
+          node --check Backend/shared/response.js
+          node -e "const fs=require('fs'); for (const f of ['Backend/package.json','AdminPortal/package.json','Backend/admin/content/package.json','Backend/admin/content/events/create.json','Backend/admin/content/events/review.json','Backend/admin/content/events/approve.json']) JSON.parse(fs.readFileSync(f,'utf8'))"
+          sam validate --template-file Backend/infra/template.yaml --region us-east-2

@@ -1,0 +1,17 @@
+{
+  "httpMethod": "POST",
+  "path": "/admin/v1/content/daily-note%23en%234mo%23movement%23sample/approve",
+  "pathParameters": {
+    "contentId": "daily-note#en#4mo#movement#sample"
+  },
+  "requestContext": {
+    "authorizer": {
+      "claims": {
+        "sub": "local-super-admin",
+        "email": "eja+nianza@banxito.com",
+        "custom:role": "super_admin"
+      }
+    }
+  },
+  "body": "{\"version\":\"1.0.0\"}"
+}

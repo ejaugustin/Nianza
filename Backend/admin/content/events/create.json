@@ -1,0 +1,15 @@
+{
+  "httpMethod": "POST",
+  "path": "/admin/v1/content",
+  "headers": {},
+  "requestContext": {
+    "authorizer": {
+      "claims": {
+        "sub": "local-super-admin",
+        "email": "eja+nianza@banxito.com",
+        "custom:role": "super_admin"
+      }
+    }
+  },
+  "body": "{\"contentType\":\"daily-note\",\"language\":\"en\",\"ageWindowMonths\":4,\"domain\":\"movement\",\"bodyText\":\"Around now, Sofia is starting to connect voices to faces.\",\"sourceRef\":\"CDC-LTSAE-2022\",\"ttsEnabled\":true}"
+}

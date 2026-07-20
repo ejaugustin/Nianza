@@ -17,8 +17,19 @@ Globals:
     Environment:
       Variables:
         ENVIRONMENT: !Ref Environment
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'Authorization,Content-Type'"
+      AllowOrigin: "'*'"
 
 Resources:
+  AdminApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub nianza-admin-api-${Environment}
+      StageName: !Ref Environment
+
   AdminAuditLogTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
@@ -100,7 +111,50 @@ Resources:
           Projection:
             ProjectionType: ALL
 
+  AdminContentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-content-${Environment}
+      CodeUri: ../
+      Handler: admin/content/handler.handler
+      Environment:
+        Variables:
+          CONTENT_TABLE: !Ref ContentLibraryTable
+          AUDIT_TABLE: !Ref AdminAuditLogTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ContentLibraryTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref AdminAuditLogTable
+      Events:
+        ContentList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/content
+            Method: GET
+        ContentCreate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/content
+            Method: POST
+        ContentReview:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/content/{contentId}/review
+            Method: POST
+        ContentApprove:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/content/{contentId}/approve
+            Method: POST
+
 Outputs:
+  AdminApiUrl:
+    Value: !Sub https://${AdminApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/admin/v1
   AdminAuditLogTableName:
     Value: !Ref AdminAuditLogTable
   AdminSessionsTableName:

@@ -7,6 +7,15 @@ Parameters:
     Type: String
     Default: dev
     AllowedValues: [dev, prod]
+  AdminEmail:
+    Type: String
+    Default: eja+nianza@banxito.com
+    Description: Initial admin user email. Cognito sends this user a temporary password on stack creation.
+  InitialAdminRole:
+    Type: String
+    Default: super_admin
+    AllowedValues: [super_admin, content_editor, operations]
+    Description: Application role assigned to the initial admin user.
 
 Globals:
   Function:
@@ -24,11 +33,99 @@ Globals:
       AllowOrigin: "'*'"
 
 Resources:
+  AdminUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub nianza-admin-${Environment}
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+        InviteMessageTemplate:
+          EmailSubject: !Sub "Your Nianza ${Environment} admin account"
+          EmailMessage: "Your Nianza admin username is {username} and your temporary password is {####}"
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 7
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: role
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+
+  AdminUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub nianza-admin-portal-${Environment}
+      UserPoolId: !Ref AdminUserPool
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      ExplicitAuthFlows:
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      ReadAttributes:
+        - email
+        - custom:role
+      WriteAttributes:
+        - email
+
+  InitialAdminUser:
+    Type: AWS::Cognito::UserPoolUser
+    Properties:
+      UserPoolId: !Ref AdminUserPool
+      Username: !Ref AdminEmail
+      DesiredDeliveryMediums: [EMAIL]
+      UserAttributes:
+        - Name: email
+          Value: !Ref AdminEmail
+        - Name: email_verified
+          Value: "true"
+        - Name: custom:role
+          Value: !Ref InitialAdminRole
+
   AdminApi:
     Type: AWS::Serverless::Api
     Properties:
       Name: !Sub nianza-admin-api-${Environment}
       StageName: !Ref Environment
+      Auth:
+        DefaultAuthorizer: AdminCognitoAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          AdminCognitoAuthorizer:
+            UserPoolArn: !GetAtt AdminUserPool.Arn
+            Identity:
+              Header: Authorization
+      GatewayResponses:
+        UNAUTHORIZED:
+          StatusCode: 401
+          ResponseTemplates:
+            application/json: '{"error":"Unauthorized"}'
+        ACCESS_DENIED:
+          StatusCode: 403
+          ResponseTemplates:
+            application/json: '{"error":"Forbidden"}'
 
   AdminAuditLogTable:
     Type: AWS::DynamoDB::Table
@@ -155,6 +252,14 @@ Resources:
 Outputs:
   AdminApiUrl:
     Value: !Sub https://${AdminApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/admin/v1
+  AdminUserPoolId:
+    Value: !Ref AdminUserPool
+  AdminUserPoolClientId:
+    Value: !Ref AdminUserPoolClient
+  AdminUserPoolArn:
+    Value: !GetAtt AdminUserPool.Arn
+  InitialAdminEmail:
+    Value: !Ref AdminEmail
   AdminAuditLogTableName:
     Value: !Ref AdminAuditLogTable
   AdminSessionsTableName:

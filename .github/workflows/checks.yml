@@ -15,6 +15,9 @@ jobs:
           test -f README.md
           test -f MobileApp/package.json
           test -f AdminPortal/package.json
+          test -f AdminPortal/src/api/auth.ts
+          test -f AdminPortal/src/auth/auth-context.tsx
+          test -f AdminPortal/src/pages/login.tsx
           test -f Backend/infra/template.yaml
       - uses: actions/setup-node@v4
         with:

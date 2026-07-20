@@ -37,6 +37,10 @@ Resources:
     Type: AWS::Cognito::UserPool
     Properties:
       UserPoolName: !Sub nianza-admin-${Environment}
+      UserPoolTags:
+        App: Nianza
+        Env: !Ref Environment
+        Owner: eja
       UsernameAttributes: [email]
       AutoVerifiedAttributes: [email]
       AdminCreateUserConfig:
@@ -134,6 +138,13 @@ Resources:
     Properties:
       TableName: !Sub nianza-admin-audit-log-${Environment}
       BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
       AttributeDefinitions:
         - AttributeName: adminUserId
           AttributeType: S
@@ -163,6 +174,13 @@ Resources:
     Properties:
       TableName: !Sub nianza-admin-sessions-${Environment}
       BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
       AttributeDefinitions:
         - AttributeName: adminUserId
           AttributeType: S
@@ -184,6 +202,13 @@ Resources:
     Properties:
       TableName: !Sub nianza-content-library-${Environment}
       BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
       AttributeDefinitions:
         - AttributeName: contentId
           AttributeType: S

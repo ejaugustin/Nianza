@@ -21,6 +21,8 @@
     "recharts": "latest"
   },
   "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
     "typescript": "latest",
     "vite": "latest"
   }

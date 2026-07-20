@@ -41,6 +41,9 @@ nav a.active { background: rgba(52, 171, 196, 0.18); color: white; }
 .table tbody tr { cursor: pointer; }
 .detail-stack { display: grid; gap: 14px; }
 .content-body { background: #eef2f3; border-left: 3px solid #34abc4; border-radius: 10px; padding: 14px; line-height: 1.45; }
+.notice { border-radius: 8px; font-size: 13px; font-weight: 700; margin: 0 0 18px; padding: 11px 13px; }
+.notice-success { background: #e8f7ef; border: 1px solid #8fcfab; color: #12633d; }
+.notice-error { background: #f9ede7; border: 1px solid #e4a27c; color: #9b4c24; }
 .button-primary, .button-secondary { border: 0; border-radius: 10px; min-height: 42px; padding: 0 16px; font-weight: 700; cursor: pointer; }
 .button-primary { background: #34abc4; color: white; }
 .button-secondary { background: white; color: #34abc4; border: 1.5px solid #34abc4; }

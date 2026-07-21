@@ -164,6 +164,36 @@ export function SfIcon({ name, color = theme.colors.bluePrimary, size = 22 }: { 
     );
   }
 
+  if (name === "pause.fill") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.26, top: size * 0.18, width: size * 0.16, height: size * 0.64, borderRadius: size * 0.04, backgroundColor: color }} />
+        <View style={{ position: "absolute", right: size * 0.26, top: size * 0.18, width: size * 0.16, height: size * 0.64, borderRadius: size * 0.04, backgroundColor: color }} />
+      </View>
+    );
+  }
+
+  if (name === "paperplane.fill") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.1, top: size * 0.18, width: size * 0.76, height: size * 0.44, backgroundColor: color, transform: [{ rotate: "18deg" }], borderTopLeftRadius: size * 0.08, borderBottomLeftRadius: size * 0.08 }} />
+        <View style={{ position: "absolute", left: size * 0.46, top: size * 0.44, width: size * 0.28, height: size * 0.28, backgroundColor: color, transform: [{ rotate: "45deg" }], borderRadius: size * 0.03 }} />
+      </View>
+    );
+  }
+
+  if (name === "trash") {
+    return (
+      <View style={box}>
+        <IconLine color={color} style={{ width: size * 0.52, left: size * 0.24, top: size * 0.24 }} />
+        <IconLine color={color} style={{ width: size * 0.3, left: size * 0.35, top: size * 0.12 }} />
+        <View style={{ position: "absolute", left: size * 0.26, top: size * 0.32, width: size * 0.48, height: size * 0.56, borderWidth: 2, borderColor: color, borderTopWidth: 0, borderBottomLeftRadius: size * 0.08, borderBottomRightRadius: size * 0.08 }} />
+        <IconLine color={color} style={{ width: 2, height: size * 0.36, left: size * 0.4, top: size * 0.42 }} />
+        <IconLine color={color} style={{ width: 2, height: size * 0.36, left: size * 0.58, top: size * 0.42 }} />
+      </View>
+    );
+  }
+
   if (name === "chevron.left" || name === "chevron.down") {
     const down = name === "chevron.down";
     return (

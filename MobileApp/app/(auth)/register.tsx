@@ -46,7 +46,7 @@ export default function RegisterScreen() {
       <AuthField label="Password" value={password} onChangeText={setPassword} secureTextEntry placeholder="10+ characters" />
       <AuthField label="Confirm password" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholder="Type it again" />
       <AuthButton loading={loading} disabled={!parentName || !email || password.length < 10 || confirmPassword.length < 10} onPress={submit}>Create account</AuthButton>
-      <AuthButton variant="text" onPress={() => router.back()}>Back</AuthButton>
+      <AuthButton variant="text" onPress={() => router.replace("/(auth)/welcome")}>Back</AuthButton>
     </ScrollView>
   );
 }

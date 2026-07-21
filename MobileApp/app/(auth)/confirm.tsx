@@ -37,7 +37,7 @@ export default function ConfirmScreen() {
       <AuthField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
       <AuthField label="Code" value={code} onChangeText={setCode} keyboardType="number-pad" />
       <AuthButton loading={loading} disabled={!email || !code} onPress={submit}>Confirm email</AuthButton>
-      <AuthButton variant="text" onPress={() => router.back()}>Back</AuthButton>
+      <AuthButton variant="text" onPress={() => router.replace("/(auth)/register")}>Back</AuthButton>
     </ScrollView>
   );
 }

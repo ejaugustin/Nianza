@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { ChildProfile, useAuth } from "@/auth/auth-context";
 import { AuthButton, AuthField } from "@/components/auth-ui";
 import { BrandLogo } from "@/components/brand-logo";
+import { PatriciaIntro } from "@/components/patricia-intro";
 import { CategoryChip, SfIcon } from "@/components/screen-spec";
 import { theme } from "@/theme/theme";
 
@@ -44,6 +45,7 @@ export default function OnboardingScreen() {
         <Text selectable style={{ color: theme.colors.text, fontSize: 24, fontWeight: "700" }}>Let Patricia meet your family</Text>
         <Text selectable style={{ color: theme.colors.muted, fontSize: 15, lineHeight: 21 }}>These details help Nianza keep advice age-aware and personal.</Text>
       </View>
+      <PatriciaIntro />
       <AuthField label="Your name" value={parentName} onChangeText={setParentName} />
       <AuthField label="Child name" value={childName} onChangeText={setChildName} />
       <AuthField label="Child birth date" value={childBirthDate} onChangeText={setChildBirthDate} placeholder="YYYY-MM-DD" />

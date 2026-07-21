@@ -35,7 +35,7 @@ export default function ForgotPasswordScreen() {
       <AuthError message={error} />
       <AuthField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
       <AuthButton loading={loading} disabled={!email} onPress={submit}>Send reset code</AuthButton>
-      <AuthButton variant="text" onPress={() => router.back()}>Back</AuthButton>
+      <AuthButton variant="text" onPress={() => router.replace("/(auth)/login")}>Back</AuthButton>
     </ScrollView>
   );
 }

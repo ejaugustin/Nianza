@@ -1,17 +1,17 @@
 import { Tabs } from "expo-router";
-import { Image } from "expo-image";
+import { SfIcon } from "@/components/screen-spec";
 import { theme } from "@/theme/theme";
 
 const tabIcons = {
-  index: "house.fill",
-  milestones: "flag.checkered",
-  vaccines: "cross.case.fill",
-  chat: "message.fill",
-  reports: "doc.text.fill"
+  index: "home",
+  milestones: "checkmark",
+  vaccines: "shield",
+  chat: "chat",
+  reports: "doc.text"
 } as const;
 
 function TabIcon({ name, color }: { name: keyof typeof tabIcons; color: string }) {
-  return <Image source={{ uri: `sf:${tabIcons[name]}` }} style={{ width: 22, height: 22, tintColor: color }} contentFit="contain" />;
+  return <SfIcon name={tabIcons[name]} color={color} size={22} />;
 }
 
 export default function TabLayout() {

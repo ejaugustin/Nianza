@@ -1,12 +1,13 @@
 import * as Notifications from "expo-notifications";
+import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { Redirect, router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { configurePatriciaPlayback, fetchPatriciaSpeechAudio, pausePatriciaPlayer } from "@/audio/patricia-voice";
 import { ChildProfile, useAuth } from "@/auth/auth-context";
 import { AuthButton, AuthField } from "@/components/auth-ui";
 import { BrandLogo } from "@/components/brand-logo";
-import { PatriciaIntro } from "@/components/patricia-intro";
 import { CategoryChip, SfIcon } from "@/components/screen-spec";
 import { theme } from "@/theme/theme";
 
@@ -59,12 +60,76 @@ function StepDots({ active }: { active: number }) {
   );
 }
 
-function PatriciaCard({ children }: { children: string }) {
+function PatriciaCard({ children, spokenText, cacheKey }: { children: string; spokenText?: string; cacheKey: string }) {
+  const player = useAudioPlayer();
+  const status = useAudioPlayerStatus(player);
+  const [audioUri, setAudioUri] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const isPlaying = status.playing;
+  const voiceText = spokenText || children;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      playPatricia(true).catch(() => undefined);
+    }, 350);
+
+    return () => {
+      clearTimeout(timer);
+      pausePatriciaPlayer(player);
+    };
+  }, [cacheKey]);
+
+  async function playPatricia(forceRestart = false) {
+    if (isPlaying && !forceRestart) {
+      pausePatriciaPlayer(player);
+      return;
+    }
+
+    setNotice(null);
+    setIsLoading(true);
+    try {
+      await configurePatriciaPlayback();
+      let uri = audioUri;
+      if (!uri) {
+        uri = await fetchPatriciaSpeechAudio(voiceText, cacheKey);
+        setAudioUri(uri);
+      }
+      player.replace({ uri });
+      player.seekTo(0);
+      player.play();
+    } catch {
+      setNotice("I could not play my voice just now. You can continue.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
-    <View style={{ backgroundColor: theme.colors.card, borderRadius: theme.radii.card, borderLeftWidth: 3, borderLeftColor: theme.colors.bluePrimary, padding: 16 }}>
-      <Text selectable style={{ color: theme.colors.text, fontSize: 16, lineHeight: 24, fontStyle: "italic" }}>
+    <View style={{ backgroundColor: theme.colors.card, borderRadius: theme.radii.card, borderLeftWidth: 3, borderLeftColor: theme.colors.bluePrimary, padding: 16, gap: 12 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <Pressable onPress={() => playPatricia()} disabled={isLoading} accessibilityRole="button" accessibilityLabel={isPlaying ? "Pause Patricia" : "Replay Patricia"} style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center", opacity: isLoading ? 0.65 : 1 }}>
+          {isPlaying ? (
+            <View style={{ flexDirection: "row", gap: 4 }}>
+              <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: "white" }} />
+              <View style={{ width: 4, height: 16, borderRadius: 2, backgroundColor: "white" }} />
+            </View>
+          ) : (
+            <SfIcon name="speaker.wave.2.fill" color="white" size={19} />
+          )}
+        </Pressable>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text selectable style={{ color: theme.colors.text, fontSize: 14, fontWeight: "800" }}>Patricia</Text>
+          <Text selectable style={{ color: theme.colors.muted, fontSize: 12, lineHeight: 16 }}>
+            {isLoading ? "Getting my voice ready..." : isPlaying ? "I'm talking you through this." : "Tap to hear me again."}
+          </Text>
+        </View>
+      </View>
+      <Text selectable style={{ color: theme.colors.text, fontSize: 15, lineHeight: 22, fontStyle: "italic" }}>
         {children}
       </Text>
+      {isPlaying ? <View style={{ height: 2, borderRadius: 1, backgroundColor: theme.colors.bluePrimary }} /> : null}
+      {notice ? <Text selectable style={{ color: theme.colors.muted, fontSize: 11, lineHeight: 15 }}>{notice}</Text> : null}
     </View>
   );
 }
@@ -235,9 +300,13 @@ export default function OnboardingScreen() {
 
       {step === 0 ? (
         <>
-          <Header title="Before we begin" subtitle="What language feels most like home?" step={0} />
-          <PatriciaIntro />
-          <PatriciaCard>Before we begin, choose the language that feels easiest in your house. We can keep this simple.</PatriciaCard>
+          <Header title="Before we begin" subtitle="Choose a language." step={0} />
+          <PatriciaCard
+            cacheKey="onboarding-language-intro"
+            spokenText="Hello, I'm Patricia. I'm here to help you notice milestones, keep track of visits and vaccines, and talk through the moments that feel too big to hold alone. First, choose the language that feels easiest in your house. We can keep this simple."
+          >
+            Hello. I'm Patricia. I'll talk you through this.
+          </PatriciaCard>
           <View style={{ gap: 10 }}>
             {languageOptions.map((option) => {
               const disabled = "disabled" in option && option.disabled;
@@ -262,8 +331,13 @@ export default function OnboardingScreen() {
 
       {step === 1 ? (
         <>
-          <Header title="Your account is ready" subtitle="Your information stays private. Always." step={1} />
-          <PatriciaCard>Good. Your Nianza account is ready. Now I can get to know your family just enough to be useful.</PatriciaCard>
+          <Header title="You're in" subtitle="Now let's make this personal." step={1} />
+          <PatriciaCard
+            cacheKey="onboarding-account-ready"
+            spokenText="Good. Your account is ready. Now I can get to know your family just enough to be useful. We will do this one small step at a time."
+          >
+            Your account is ready. One small step at a time.
+          </PatriciaCard>
           <View style={{ borderRadius: 18, backgroundColor: "white", borderWidth: 1, borderColor: theme.colors.border, padding: 16, gap: 6 }}>
             <Text selectable style={{ color: theme.colors.muted, fontSize: 12, fontWeight: "700" }}>SIGNED IN AS</Text>
             <Text selectable style={{ color: theme.colors.text, fontSize: 16, fontWeight: "800" }}>{auth.session.email}</Text>
@@ -274,8 +348,13 @@ export default function OnboardingScreen() {
 
       {step === 2 ? (
         <>
-          <Header title="Tell me about your little one" subtitle="These details keep Patricia's notes age-aware and personal." step={2} />
-          <PatriciaCard>Tell me a little about your little one. Just enough so I can keep my notes personal and age-aware.</PatriciaCard>
+          <Header title="Your family" subtitle="Names and birth date." step={2} />
+          <PatriciaCard
+            cacheKey="onboarding-child-profile"
+            spokenText="Tell me a little about your little one, and your name too. Just enough so my notes can be personal and age-aware."
+          >
+            Tell me who I'm caring alongside.
+          </PatriciaCard>
           <AuthField label="First name" value={parentFirstName} onChangeText={setParentFirstName} placeholder="Anna" />
           <AuthField label="Last name" value={parentLastName} onChangeText={setParentLastName} placeholder="Augustin" />
           <AuthField label="Child name or nickname" value={childName} onChangeText={setChildName} placeholder="Eric" />
@@ -311,8 +390,13 @@ export default function OnboardingScreen() {
 
       {step === 3 ? (
         <>
-          <Header title="And tell me a little about you" subtitle="Every answer is optional. Patricia only uses this to choose gentler wording." step={2} />
-          <PatriciaCard>And tell me a little about you. Not a test, just a way for me to speak more like I know your house.</PatriciaCard>
+          <Header title="About you" subtitle="Optional. Helpful." step={2} />
+          <PatriciaCard
+            cacheKey="onboarding-about-parent"
+            spokenText="And tell me a little about you. You can skip anything. I only use this to speak more like I understand your house."
+          >
+            Skip anything. This only helps my wording.
+          </PatriciaCard>
           <View style={{ gap: 14 }}>
             <Text selectable style={{ color: theme.colors.text, fontSize: 15, fontWeight: "800" }}>Is {childName || "your child"} your first?</Text>
             <View style={{ flexDirection: "row", gap: 10 }}>
@@ -344,8 +428,13 @@ export default function OnboardingScreen() {
 
       {step === 4 ? (
         <>
-          <Header title="How often would you like to hear from me?" subtitle="You can change this anytime in Settings." step={3} />
-          <PatriciaCard>How often would you like to hear from me? I will keep it useful, never noisy.</PatriciaCard>
+          <Header title="How often?" subtitle="You can change this later." step={3} />
+          <PatriciaCard
+            cacheKey="onboarding-notification-cadence"
+            spokenText="How often would you like to hear from me? I will keep it useful, never noisy. Pick what feels gentle."
+          >
+            Pick what feels gentle.
+          </PatriciaCard>
           <View style={{ gap: 10 }}>
             {notificationOptions.map((option) => (
               <SelectCard key={option.value} title={option.title} subtitle={option.subtitle} active={notificationCadence === option.value} onPress={() => setNotificationCadence(option.value)} />
@@ -357,7 +446,13 @@ export default function OnboardingScreen() {
 
       {step === 5 ? (
         <>
-          <Header title="Before we begin" subtitle="Here is what Nianza keeps and why." step={4} />
+          <Header title="Privacy" subtitle="Your data stays yours." step={4} />
+          <PatriciaCard
+            cacheKey="onboarding-privacy"
+            spokenText="Before we begin, I want you to know what Nianza keeps and why. Your child's records help with milestones and vaccines. Your conversations help me remember context. You can delete everything in Settings."
+          >
+            I keep context so I can be useful. You stay in control.
+          </PatriciaCard>
           <View style={{ borderRadius: 18, backgroundColor: "white", borderWidth: 1, borderColor: theme.colors.border, padding: 16, gap: 14 }}>
             {[
               "Your child's development records - to track milestones and vaccines",
@@ -382,8 +477,13 @@ export default function OnboardingScreen() {
 
       {step === 6 ? (
         <>
-          <Header title="One gentle reminder a day" subtitle="Notifications are optional, and you can change this later." step={5} />
-          <PatriciaCard>The best way for me to reach you is through notifications. I will keep them to one a day, never more.</PatriciaCard>
+          <Header title="Reminders" subtitle="Optional." step={5} />
+          <PatriciaCard
+            cacheKey="onboarding-push-permission"
+            spokenText="The best way for me to reach you is through notifications. I will keep them gentle, and you can turn them off later."
+          >
+            Gentle reminders, only if you want them.
+          </PatriciaCard>
           <View style={{ alignItems: "center", justifyContent: "center", minHeight: 150 }}>
             <View style={{ width: 96, height: 120, borderRadius: 24, borderWidth: 3, borderColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center", backgroundColor: "white" }}>
               <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: theme.colors.blueLight, alignItems: "center", justifyContent: "center" }}>

@@ -153,6 +153,17 @@ export function SfIcon({ name, color = theme.colors.bluePrimary, size = 22 }: { 
     );
   }
 
+  if (name === "speaker.wave.2.fill") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.12, top: size * 0.36, width: size * 0.18, height: size * 0.28, borderRadius: size * 0.04, backgroundColor: color }} />
+        <View style={{ position: "absolute", left: size * 0.26, top: size * 0.24, width: size * 0.26, height: size * 0.52, backgroundColor: color, borderRadius: size * 0.04, transform: [{ skewY: "-18deg" }] }} />
+        <View style={{ position: "absolute", left: size * 0.58, top: size * 0.34, width: size * 0.24, height: size * 0.32, borderRightWidth: 2, borderColor: color, borderRadius: size * 0.18 }} />
+        <View style={{ position: "absolute", left: size * 0.54, top: size * 0.22, width: size * 0.34, height: size * 0.56, borderRightWidth: 2, borderColor: color, borderRadius: size * 0.26 }} />
+      </View>
+    );
+  }
+
   if (name === "mic.fill") {
     return (
       <View style={box}>

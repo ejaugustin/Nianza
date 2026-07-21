@@ -2,6 +2,7 @@ import * as Notifications from "expo-notifications";
 import { Redirect, router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChildProfile, useAuth } from "@/auth/auth-context";
 import { AuthButton, AuthField } from "@/components/auth-ui";
 import { BrandLogo } from "@/components/brand-logo";
@@ -135,6 +136,7 @@ function Header({ title, subtitle, step }: { title: string; subtitle?: string; s
 
 export default function OnboardingScreen() {
   const auth = useAuth();
+  const insets = useSafeAreaInsets();
   const savedName = splitName(auth.profile?.parentName);
   const [step, setStep] = useState<OnboardingStep>(0);
   const [language, setLanguage] = useState<ChildProfile["language"]>(auth.profile?.language || "en");
@@ -218,8 +220,8 @@ export default function OnboardingScreen() {
       contentContainerStyle={{
         flexGrow: 1,
         padding: 24,
-        paddingTop: step === 7 ? 90 : 52,
-        paddingBottom: 140,
+        paddingTop: step === 7 ? insets.top + 56 : insets.top + 24,
+        paddingBottom: insets.bottom + 120,
         gap: 18,
         justifyContent: step === 7 ? "center" : "flex-start"
       }}
@@ -234,6 +236,7 @@ export default function OnboardingScreen() {
       {step === 0 ? (
         <>
           <Header title="Before we begin" subtitle="What language feels most like home?" step={0} />
+          <PatriciaIntro />
           <PatriciaCard>Before we begin, choose the language that feels easiest in your house. We can keep this simple.</PatriciaCard>
           <View style={{ gap: 10 }}>
             {languageOptions.map((option) => {
@@ -248,12 +251,12 @@ export default function OnboardingScreen() {
                 onPress={() => {
                   if (disabled) return;
                   setLanguage(option.value);
-                  setTimeout(() => setStep(1), 180);
                 }}
               />
             );
             })}
           </View>
+          <AuthButton onPress={() => setStep(1)}>Continue</AuthButton>
         </>
       ) : null}
 
@@ -272,7 +275,7 @@ export default function OnboardingScreen() {
       {step === 2 ? (
         <>
           <Header title="Tell me about your little one" subtitle="These details keep Patricia's notes age-aware and personal." step={2} />
-          <PatriciaIntro />
+          <PatriciaCard>Tell me a little about your little one. Just enough so I can keep my notes personal and age-aware.</PatriciaCard>
           <AuthField label="First name" value={parentFirstName} onChangeText={setParentFirstName} placeholder="Anna" />
           <AuthField label="Last name" value={parentLastName} onChangeText={setParentLastName} placeholder="Augustin" />
           <AuthField label="Child name or nickname" value={childName} onChangeText={setChildName} placeholder="Eric" />

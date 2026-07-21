@@ -18,8 +18,8 @@ export default function LoginScreen() {
     setError("");
     setLoading(true);
     try {
-      await auth.signIn(email, password);
-      router.replace(auth.profile ? "/(tabs)" : "/(auth)/onboarding");
+      const profile = await auth.signIn(email, password);
+      router.replace(profile ? "/(tabs)" : "/(auth)/onboarding");
     } catch (err) {
       setError(friendlyAuthError(err));
     } finally {

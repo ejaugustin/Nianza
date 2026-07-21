@@ -4,7 +4,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { speakPatriciaText, transcribeVoiceNote } from "@/api/voice";
+import { transcribeVoiceNote } from "@/api/voice";
+import { configurePatriciaPlayback, fetchPatriciaSpeechAudio, pausePatriciaPlayer } from "@/audio/patricia-voice";
 import { RequireAuth, useAuth } from "@/auth/auth-context";
 import { mockTranscriptFromSeed, patriciaOpening, seedFromParams } from "@/chat/patricia-context";
 import { SfIcon } from "@/components/screen-spec";
@@ -46,22 +47,6 @@ function contentTypeFromUri(uri?: string | null) {
   return "audio/mp4";
 }
 
-async function writePatriciaAudio(messageId: string, audioBase64: string) {
-  const filename = `patricia-${messageId.replace(/[^a-z0-9-]/gi, "")}.mp3`;
-  const uri = `${FileSystem.cacheDirectory || ""}${filename}`;
-  await FileSystem.writeAsStringAsync(uri, audioBase64, { encoding: FileSystem.EncodingType.Base64 });
-  return uri;
-}
-
-async function configurePatriciaPlayback() {
-  await setAudioModeAsync({
-    allowsRecording: false,
-    interruptionMode: "doNotMix",
-    playsInSilentMode: true,
-    shouldRouteThroughEarpiece: false
-  });
-}
-
 export default function ChatScreen() {
   const params = useLocalSearchParams();
   const { profile } = useAuth();
@@ -82,11 +67,7 @@ export default function ChatScreen() {
   const isVoiceActive = voiceMode !== "idle";
 
   function stopPatriciaPlayback() {
-    try {
-      patriciaPlayer.pause();
-    } catch {
-      // Expo can release the native audio object before React cleanup runs.
-    }
+    pausePatriciaPlayer(patriciaPlayer);
     setSpeakingMessageId(null);
   }
 
@@ -109,8 +90,7 @@ export default function ChatScreen() {
 
     setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioLoading: true } : item)));
     try {
-      const response = await speakPatriciaText(message.text);
-      const audioUri = await writePatriciaAudio(message.id, response.audioBase64);
+      const audioUri = await fetchPatriciaSpeechAudio(message.text, `chat-${message.id}`);
       setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioUri, audioLoading: false } : item)));
       await playAudioUri(audioUri, message.id);
     } catch {

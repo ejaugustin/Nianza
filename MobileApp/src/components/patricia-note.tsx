@@ -1,25 +1,9 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
-import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import * as FileSystem from "expo-file-system/legacy";
+import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { Pressable, Text, View } from "react-native";
-import { speakPatriciaText } from "@/api/voice";
+import { configurePatriciaPlayback, fetchPatriciaSpeechAudio, pausePatriciaPlayer } from "@/audio/patricia-voice";
 import { SfIcon } from "@/components/screen-spec";
 import { theme } from "@/theme/theme";
-
-async function configurePatriciaPlayback() {
-  await setAudioModeAsync({
-    allowsRecording: false,
-    interruptionMode: "doNotMix",
-    playsInSilentMode: true,
-    shouldRouteThroughEarpiece: false
-  });
-}
-
-async function writePatriciaNoteAudio(audioBase64: string) {
-  const uri = `${FileSystem.cacheDirectory || ""}patricia-home-note.mp3`;
-  await FileSystem.writeAsStringAsync(uri, audioBase64, { encoding: FileSystem.EncodingType.Base64 });
-  return uri;
-}
 
 export function PatriciaNote({ children }: { children: ReactNode }) {
   const player = useAudioPlayer();
@@ -32,11 +16,7 @@ export function PatriciaNote({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return () => {
-      try {
-        player.pause();
-      } catch {
-        // Expo may release the native audio object before React cleanup runs.
-      }
+      pausePatriciaPlayer(player);
     };
   }, []);
 
@@ -60,8 +40,7 @@ export function PatriciaNote({ children }: { children: ReactNode }) {
       await configurePatriciaPlayback();
       let uri = audioUri;
       if (!uri) {
-        const response = await speakPatriciaText(noteText);
-        uri = await writePatriciaNoteAudio(response.audioBase64);
+        uri = await fetchPatriciaSpeechAudio(noteText, "home-note");
         setAudioUri(uri);
       }
       player.replace({ uri });

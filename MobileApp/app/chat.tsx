@@ -81,6 +81,15 @@ export default function ChatScreen() {
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const isVoiceActive = voiceMode !== "idle";
 
+  function stopPatriciaPlayback() {
+    try {
+      patriciaPlayer.pause();
+    } catch {
+      // Expo can release the native audio object before React cleanup runs.
+    }
+    setSpeakingMessageId(null);
+  }
+
   async function playAudioUri(uri: string, messageId: string) {
     await configurePatriciaPlayback();
     patriciaPlayer.replace({ uri });
@@ -121,12 +130,13 @@ export default function ChatScreen() {
     if (latest?.sender === "patricia") {
       speakPatriciaMessage(latest);
     }
-
-    return () => {
-      patriciaPlayer.pause();
-      setSpeakingMessageId(null);
-    };
   }, [messages.length]);
+
+  useEffect(() => {
+    return () => {
+      stopPatriciaPlayback();
+    };
+  }, []);
 
   useEffect(() => {
     if (speakingMessageId && !patriciaPlayerStatus.playing && patriciaPlayerStatus.currentTime > 0) {

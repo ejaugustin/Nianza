@@ -17,32 +17,37 @@ const weeklyCards = [
   { title: "Vitals", subtitle: "Jul 12", icon: "doc.text", href: "/vitals" }
 ];
 
+function normalizeChildNameInNote(note: string, childName: string) {
+  return note.replace(/\bSofia\b/g, childName).replace(/\bSophia\b/g, childName);
+}
+
 export default function HomeScreen() {
   const auth = useAuth();
-  const profile = auth.profile;
+  const profile = auth.profile!;
+
   const dailyNoteQuery = useQuery({
-    queryKey: ["daily-note", profile?.language || mockHome.language, profile?.ageWindowMonths || mockHome.ageWindowMonths, mockHome.dailyNoteDomain],
+    queryKey: ["daily-note", profile.language, profile.ageWindowMonths, mockHome.dailyNoteDomain],
     queryFn: () =>
       getDailyNote({
-        language: profile?.language || mockHome.language,
-        ageWindowMonths: profile?.ageWindowMonths || mockHome.ageWindowMonths,
+        language: profile.language,
+        ageWindowMonths: profile.ageWindowMonths,
         domain: mockHome.dailyNoteDomain
       }),
     staleTime: 1000 * 60 * 30,
     retry: 1
   });
   const dailyNote = dailyNoteQuery.data?.bodyText || mockHome.dailyNote;
-  const parentName = profile?.parentName || mockHome.parentName;
-  const childName = profile?.childName || mockHome.childName;
-  const childAge = profile ? `${profile.ageWindowMonths} months` : mockHome.childAge;
+  const parentName = profile.parentFirstName || profile.parentName;
+  const childName = profile.childName;
+  const childAge = `${profile.ageWindowMonths} months`;
   const personalizedDailyNote = useMemo(() => {
-    const pronouns = profile?.sexAtBirth === "boy" ? { she: "he", her: "his", hers: "his" } : { she: "she", her: "her", hers: "hers" };
-    return dailyNote
+    const pronouns = profile.sexAtBirth === "boy" ? { she: "he", her: "his", hers: "his" } : { she: "she", her: "her", hers: "hers" };
+    return normalizeChildNameInNote(dailyNote, childName)
       .replaceAll("{childName}", childName)
       .replaceAll("{she}", pronouns.she)
       .replaceAll("{her}", pronouns.her)
       .replaceAll("{hers}", pronouns.hers);
-  }, [childName, dailyNote, profile?.sexAtBirth]);
+  }, [childName, dailyNote, profile.sexAtBirth]);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>

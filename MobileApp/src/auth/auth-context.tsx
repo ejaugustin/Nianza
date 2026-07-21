@@ -22,9 +22,18 @@ export type ChildProfile = {
   childName: string;
   childBirthDate: string;
   sexAtBirth: "girl" | "boy";
+  bornEarly?: boolean;
+  weeksEarly?: number | null;
   ageWindowMonths: number;
   language: "en" | "es" | "fr" | "ar";
+  firstTimeParent?: boolean | null;
+  parentRole?: "mother" | "father" | "other" | null;
+  parentingSolo?: boolean | null;
+  multilingualHome?: boolean | null;
+  notificationCadence?: "daily" | "few-times-week" | "weekly";
   notificationsEnabled: boolean;
+  privacyConsentAcceptedAt?: string;
+  onboardingCompletedAt?: string;
 };
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
@@ -55,7 +64,23 @@ function profileKey(email: string) {
 
 async function readProfile(email: string) {
   const storedProfile = await SecureStore.getItemAsync(profileKey(email));
-  return storedProfile ? (JSON.parse(storedProfile) as ChildProfile) : null;
+  const parsedProfile = storedProfile ? (JSON.parse(storedProfile) as ChildProfile) : null;
+  return parsedProfile && isProfileComplete(parsedProfile) ? parsedProfile : null;
+}
+
+function isProfileComplete(profile: ChildProfile) {
+  return Boolean(
+    profile.parentFirstName?.trim() &&
+      profile.parentLastName?.trim() &&
+      profile.parentName?.trim() &&
+      profile.childName?.trim() &&
+      profile.childBirthDate?.trim() &&
+      profile.sexAtBirth &&
+      profile.language &&
+      profile.notificationCadence &&
+      profile.privacyConsentAcceptedAt &&
+      profile.onboardingCompletedAt
+  );
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

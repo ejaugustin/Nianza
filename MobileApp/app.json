@@ -34,6 +34,14 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/brand/splash-tagline.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#F7F9FA"
+        }
+      ],
       "expo-secure-store",
       ["expo-image-picker", {
         "photosPermission": "Nianza uses your photo library when you choose to add a child photo or share a photo with Patricia.",

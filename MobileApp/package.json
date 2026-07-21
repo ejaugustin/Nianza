@@ -29,6 +29,7 @@
     "expo-image": "~3.0.11",
     "expo-image-manipulator": "latest",
     "expo-image-picker": "~17.0.11",
+    "expo-linking": "~8.0.12",
     "expo-localization": "latest",
     "expo-notifications": "latest",
     "expo-router": "~6.0.24",

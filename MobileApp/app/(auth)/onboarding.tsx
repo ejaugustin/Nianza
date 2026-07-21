@@ -38,8 +38,8 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 24, paddingTop: 52, paddingBottom: 34, gap: 18 }} style={{ backgroundColor: theme.colors.background }}>
-      <BrandLogo width={188} height={64} />
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 24, paddingTop: 52, paddingBottom: 140, gap: 18 }} style={{ backgroundColor: theme.colors.background }}>
+      <BrandLogo width={150} height={42} />
       <View style={{ gap: 7 }}>
         <Text selectable style={{ color: theme.colors.text, fontSize: 24, fontWeight: "700" }}>Let Patricia meet your family</Text>
         <Text selectable style={{ color: theme.colors.muted, fontSize: 15, lineHeight: 21 }}>These details help Nianza keep advice age-aware and personal.</Text>

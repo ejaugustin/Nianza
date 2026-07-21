@@ -121,6 +121,16 @@ export function SfIcon({ name, color = theme.colors.bluePrimary, size = 22 }: { 
     );
   }
 
+  if (name === "eye" || name === "eye.slash") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.1, top: size * 0.28, width: size * 0.8, height: size * 0.44, borderWidth: 2, borderColor: color, borderRadius: size * 0.3, transform: [{ scaleY: 0.82 }] }} />
+        <View style={{ position: "absolute", left: size * 0.39, top: size * 0.39, width: size * 0.22, height: size * 0.22, borderRadius: size * 0.11, backgroundColor: color }} />
+        {name === "eye.slash" ? <IconLine color={color} style={{ width: size * 0.9, left: size * 0.06, top: size * 0.5, transform: [{ rotate: "-35deg" }] }} /> : null}
+      </View>
+    );
+  }
+
   if (name === "play") {
     return (
       <View style={box}>

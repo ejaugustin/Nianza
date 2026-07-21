@@ -87,7 +87,7 @@ export function signUpParent(email: string, password: string, parentName: string
       [
         new CognitoUserAttribute({ Name: "email", Value: email.trim().toLowerCase() }),
         new CognitoUserAttribute({ Name: "custom:parent_name", Value: parentName.trim() }),
-        new CognitoUserAttribute({ Name: "custom:locale", Value: locale })
+        new CognitoUserAttribute({ Name: "locale", Value: locale })
       ],
       [],
       (error) => {

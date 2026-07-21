@@ -47,7 +47,8 @@ function normalizeEmail(email: string) {
 }
 
 function profileKey(email: string) {
-  return `${PROFILE_KEY}.${normalizeEmail(email)}`;
+  const safeEmail = normalizeEmail(email).replace(/[^A-Za-z0-9._-]/g, "_");
+  return `${PROFILE_KEY}.${safeEmail}`;
 }
 
 async function readProfile(email: string) {

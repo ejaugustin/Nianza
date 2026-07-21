@@ -5,7 +5,8 @@ export type PatriciaContextEvent =
   | "visit-upcoming"
   | "sick-encounter-active"
   | "vaccines"
-  | "reports";
+  | "reports"
+  | "weekly-letter";
 
 export type ChatContextSeed = {
   source: string;
@@ -75,6 +76,10 @@ export function patriciaOpening(seed: ChatContextSeed) {
     return `You're gathering records for ${childName}. Tell me what you need this report to make easier.`;
   }
 
+  if (seed.eventType === "weekly-letter") {
+    return `I have this week's letter open with you. ${seed.title ? `It's about ${seed.title.toLowerCase()}. ` : ""}What part do you want to sit with for a minute?`;
+  }
+
   if (seed.eventType === "home" && seed.detail) {
     return `I saw the note you were reading about ${childName}. What part do you want to talk through?`;
   }
@@ -95,6 +100,10 @@ export function mockTranscriptFromSeed(seed: ChatContextSeed) {
 
   if (seed.eventType === "sick-encounter-active") {
     return `${childName} has been off today, and I want help organizing what I should pay attention to.`;
+  }
+
+  if (seed.eventType === "weekly-letter") {
+    return `I want to talk about Patricia's letter for ${childName} this week.`;
   }
 
   return `I want to talk through something I noticed with ${childName} today.`;

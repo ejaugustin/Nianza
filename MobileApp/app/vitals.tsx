@@ -1,7 +1,7 @@
-import { router } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useAuth } from "@/auth/auth-context";
 import { ScreenTitle, SectionLabel, SpecCard } from "@/components/screen-spec";
+import { openPatricia } from "@/components/talk-to-patricia-button";
 import { theme } from "@/theme/theme";
 
 export default function VitalsScreen() {
@@ -24,15 +24,15 @@ export default function VitalsScreen() {
         </View>
         <Pressable
           onPress={() =>
-            router.push({
-              pathname: "/(tabs)/chat",
-              params: {
-                sourceScreen: "F2",
+            openPatricia({
+                source: "F2-active-sick-encounter",
                 eventType: "sick-encounter-active",
                 childName,
+                childId: "primary-child",
+                entityId: "active-sick-encounter",
+                title: "Active sick encounter",
                 detail: encounterName,
                 occurredAt: new Date().toISOString()
-              }
             })
           }
         >

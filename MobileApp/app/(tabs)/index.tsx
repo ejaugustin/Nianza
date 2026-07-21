@@ -7,6 +7,7 @@ import { getDailyNote } from "@/api/content";
 import { BrandLogo } from "@/components/brand-logo";
 import { PatriciaNote } from "@/components/patricia-note";
 import { SectionLabel, SfIcon, SpecCard } from "@/components/screen-spec";
+import { TalkToPatriciaButton, openPatricia } from "@/components/talk-to-patricia-button";
 import { mockHome } from "@/content/mock-home";
 import { theme } from "@/theme/theme";
 
@@ -45,6 +46,7 @@ export default function HomeScreen() {
   }, [childName, dailyNote, profile?.sexAtBirth]);
 
   return (
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ padding: 20, paddingTop: 28, paddingBottom: 32, gap: 16 }}
@@ -104,15 +106,15 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             onPress={() =>
-              router.push({
-                pathname: "/(tabs)/chat",
-                params: {
-                  sourceScreen: "C1-visit",
+              openPatricia({
+                  source: "C1-home-visit-card",
                   eventType: "visit-upcoming",
                   childName,
+                  childId: "primary-child",
+                  entityId: "four-month-visit",
+                  title: "Four-month visit",
                   detail: "Four-month visit this week",
                   occurredAt: new Date().toISOString()
-                }
               })
             }
           >
@@ -121,5 +123,7 @@ export default function HomeScreen() {
         </View>
       </SpecCard>
     </ScrollView>
+    <TalkToPatriciaButton source="C1-home" eventType="home" detail={personalizedDailyNote} />
+    </View>
   );
 }

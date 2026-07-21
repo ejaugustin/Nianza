@@ -1,8 +1,8 @@
-import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useAuth } from "@/auth/auth-context";
 import { CategoryChip, EmptyCircle, ScreenTitle, SectionLabel, SfIcon } from "@/components/screen-spec";
+import { TalkToPatriciaButton, openPatricia } from "@/components/talk-to-patricia-button";
 import { theme } from "@/theme/theme";
 
 const milestones = [
@@ -18,6 +18,7 @@ export default function MilestonesScreen() {
   const [notice, setNotice] = useState("");
 
   return (
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ padding: 20, paddingTop: 52, paddingBottom: 32, gap: 24 }}
@@ -57,15 +58,15 @@ export default function MilestonesScreen() {
                 </View>
                 <Pressable
                   onPress={() =>
-                    router.push({
-                      pathname: "/(tabs)/chat",
-                      params: {
-                        sourceScreen: "D2",
+                    openPatricia({
+                        source: "D2-milestone-checked",
                         eventType: "milestone-checked",
                         childName,
+                        childId: "primary-child",
+                        entityId: `movement-${index}`,
+                        title: "Milestone checked",
                         detail: milestone,
                         occurredAt: new Date().toISOString()
-                      }
                     })
                   }
                 >
@@ -84,5 +85,7 @@ export default function MilestonesScreen() {
         <SfIcon name="chevron.down" color={theme.colors.greyIcon} size={20} />
       </View>
     </ScrollView>
+    <TalkToPatriciaButton source="D1-milestones" eventType="general" detail={`${childName} milestone screen`} />
+    </View>
   );
 }

@@ -153,6 +153,19 @@ export function SfIcon({ name, color = theme.colors.bluePrimary, size = 22 }: { 
     );
   }
 
+  if (name === "gear") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.2, top: size * 0.2, width: size * 0.6, height: size * 0.6, borderWidth: 2, borderColor: color, borderRadius: size * 0.3 }} />
+        <View style={{ position: "absolute", left: size * 0.42, top: size * 0.42, width: size * 0.16, height: size * 0.16, borderRadius: size * 0.08, backgroundColor: color }} />
+        {Array.from({ length: 8 }).map((_, index) => {
+          const rotate = `${index * 45}deg`;
+          return <IconLine key={index} color={color} style={{ width: size * 0.18, left: size * 0.41, top: size * 0.49, transform: [{ rotate }, { translateX: size * 0.35 }] }} />;
+        })}
+      </View>
+    );
+  }
+
   if (name === "speaker.wave.2.fill") {
     return (
       <View style={box}>
@@ -205,12 +218,13 @@ export function SfIcon({ name, color = theme.colors.bluePrimary, size = 22 }: { 
     );
   }
 
-  if (name === "chevron.left" || name === "chevron.down") {
+  if (name === "chevron.left" || name === "chevron.right" || name === "chevron.down") {
     const down = name === "chevron.down";
+    const right = name === "chevron.right";
     return (
       <View style={box}>
-        <IconLine color={color} style={{ width: size * 0.45, left: down ? size * 0.18 : size * 0.2, top: down ? size * 0.42 : size * 0.34, transform: [{ rotate: down ? "40deg" : "-45deg" }] }} />
-        <IconLine color={color} style={{ width: size * 0.45, left: down ? size * 0.47 : size * 0.2, top: down ? size * 0.42 : size * 0.64, transform: [{ rotate: down ? "-40deg" : "45deg" }] }} />
+        <IconLine color={color} style={{ width: size * 0.45, left: down ? size * 0.18 : right ? size * 0.34 : size * 0.2, top: down ? size * 0.42 : size * 0.34, transform: [{ rotate: down ? "40deg" : right ? "45deg" : "-45deg" }] }} />
+        <IconLine color={color} style={{ width: size * 0.45, left: down ? size * 0.47 : right ? size * 0.34 : size * 0.2, top: down ? size * 0.42 : size * 0.64, transform: [{ rotate: down ? "-40deg" : right ? "-45deg" : "45deg" }] }} />
       </View>
     );
   }

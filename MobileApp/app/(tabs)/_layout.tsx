@@ -7,8 +7,8 @@ const tabIcons = {
   index: "home",
   milestones: "checkmark",
   vaccines: "shield",
-  chat: "mic.fill",
-  reports: "doc.text"
+  reports: "doc.text",
+  settings: "gear"
 } as const;
 
 function TabIcon({ name, color }: { name: keyof typeof tabIcons; color: string }) {
@@ -30,8 +30,8 @@ export default function TabLayout() {
         <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: ({ color }) => <TabIcon name="index" color={color} /> }} />
         <Tabs.Screen name="milestones" options={{ title: "Milestones", tabBarIcon: ({ color }) => <TabIcon name="milestones" color={color} /> }} />
         <Tabs.Screen name="vaccines" options={{ title: "Vaccines", tabBarIcon: ({ color }) => <TabIcon name="vaccines" color={color} /> }} />
-        <Tabs.Screen name="chat" options={{ title: "Chat", tabBarIcon: ({ color }) => <TabIcon name="chat" color={color} /> }} />
         <Tabs.Screen name="reports" options={{ title: "Reports", tabBarIcon: ({ color }) => <TabIcon name="reports" color={color} /> }} />
+        <Tabs.Screen name="settings" options={{ title: "Settings", tabBarIcon: ({ color }) => <TabIcon name="settings" color={color} /> }} />
       </Tabs>
     </RequireAuth>
   );

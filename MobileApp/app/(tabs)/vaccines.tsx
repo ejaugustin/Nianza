@@ -1,5 +1,6 @@
 import { ScrollView, Text, View } from "react-native";
 import { EmptyCircle, Pill, ScreenTitle, SectionLabel } from "@/components/screen-spec";
+import { TalkToPatriciaButton } from "@/components/talk-to-patricia-button";
 import { theme } from "@/theme/theme";
 
 const vaccines = [
@@ -9,6 +10,7 @@ const vaccines = [
 
 export default function VaccinesScreen() {
   return (
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ padding: 20, paddingTop: 52, paddingBottom: 32, gap: 18 }}
@@ -34,5 +36,7 @@ export default function VaccinesScreen() {
         ))}
       </View>
     </ScrollView>
+    <TalkToPatriciaButton source="E1-vaccines" eventType="vaccines" detail="Vaccine schedule visible" entityId="vaccines-schedule" />
+    </View>
   );
 }

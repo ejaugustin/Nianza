@@ -1,10 +1,11 @@
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus, useAudioRecorder, useAudioRecorderState } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { speakPatriciaText, transcribeVoiceNote } from "@/api/voice";
-import { useAuth } from "@/auth/auth-context";
+import { RequireAuth, useAuth } from "@/auth/auth-context";
+import { mockTranscriptFromSeed, patriciaOpening, seedFromParams } from "@/chat/patricia-context";
 import { SfIcon } from "@/components/screen-spec";
 import { theme } from "@/theme/theme";
 
@@ -16,41 +17,11 @@ type ChatMessage = {
   audioLoading?: boolean;
 };
 
-function one(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function patriciaOpening(eventType?: string, childName = "Sofia", detail?: string) {
-  if (eventType === "milestone-checked") {
-    return `${childName} ${detail?.toLowerCase() || "did something new"}? Oh, I love hearing that. Tell me what you noticed first.`;
-  }
-  if (eventType === "visit-upcoming") {
-    return `A visit coming up can make your mind feel crowded. Let's sort through what you want to ask about ${childName}, one thing at a time.`;
-  }
-  if (eventType === "sick-encounter-active") {
-    return `I'm here with you. Tell me what's been happening with ${childName}, and we'll keep the notes clear while you decide what needs a clinician.`;
-  }
-  return "Hello. I'm Patricia. I've been with a lot of new parents over the years, and I'm glad you're here. What's on your mind?";
-}
-
 function formatDuration(durationMillis: number) {
   const totalSeconds = Math.max(0, Math.floor(durationMillis / 1000));
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = `${totalSeconds % 60}`.padStart(2, "0");
   return `${minutes}:${seconds}`;
-}
-
-function mockTranscript(childName: string, eventType?: string, detail?: string) {
-  if (eventType === "milestone-checked") {
-    return `I noticed ${childName} ${detail?.toLowerCase() || "doing something new"}, and I want to understand what to watch for next.`;
-  }
-  if (eventType === "visit-upcoming") {
-    return `I want to prepare a few clear questions for ${childName}'s visit.`;
-  }
-  if (eventType === "sick-encounter-active") {
-    return `${childName} has been off today, and I want help organizing what I should pay attention to.`;
-  }
-  return `I want to talk through something I noticed with ${childName} today.`;
 }
 
 function patriciaReply() {
@@ -84,9 +55,8 @@ async function writePatriciaAudio(messageId: string, audioBase64: string) {
 export default function ChatScreen() {
   const params = useLocalSearchParams();
   const { profile } = useAuth();
-  const childName = one(params.childName) || profile?.childName || "Sofia";
-  const eventType = one(params.eventType);
-  const detail = one(params.detail);
+  const seed = useMemo(() => seedFromParams(params, profile?.childName || "Sofia"), [params, profile?.childName]);
+  const childName = seed.childName || "Sofia";
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 250);
   const patriciaPlayer = useAudioPlayer();
@@ -94,7 +64,7 @@ export default function ChatScreen() {
   const [draft, setDraft] = useState("");
   const [mode, setMode] = useState<"idle" | "camera">("idle");
   const [voiceMode, setVoiceMode] = useState<"idle" | "recording" | "paused" | "transcribing">("idle");
-  const opening = useMemo(() => patriciaOpening(eventType, childName, detail), [childName, detail, eventType]);
+  const opening = useMemo(() => patriciaOpening(seed), [seed]);
   const [messages, setMessages] = useState<ChatMessage[]>(() => [makeMessage("patricia", opening)]);
   const [notice, setNotice] = useState<string | null>(null);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
@@ -229,7 +199,7 @@ export default function ChatScreen() {
             language: "en"
           })
         : null;
-      const transcript = response?.transcript || mockTranscript(childName, eventType, detail);
+      const transcript = response?.transcript || mockTranscriptFromSeed(seed);
       setMessages((current) => [
         ...current,
         makeMessage("parent", transcript),
@@ -237,7 +207,7 @@ export default function ChatScreen() {
       ]);
       setVoiceMode("idle");
     } catch {
-      const transcript = mockTranscript(childName, eventType, detail);
+      const transcript = mockTranscriptFromSeed(seed);
       setMessages((current) => [
         ...current,
         makeMessage("parent", transcript),
@@ -249,9 +219,12 @@ export default function ChatScreen() {
   }
 
   return (
+    <RequireAuth>
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View style={{ height: 66, backgroundColor: "white", borderBottomWidth: 1, borderBottomColor: theme.colors.border, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 }}>
-        <SfIcon name="chevron.left" color={theme.colors.text} size={22} />
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))} style={{ minWidth: 44, minHeight: 44, alignItems: "flex-start", justifyContent: "center" }}>
+          <SfIcon name="chevron.left" color={theme.colors.text} size={22} />
+        </Pressable>
         <Text selectable style={{ color: theme.colors.text, fontSize: 17, fontWeight: "600" }}>Patricia</Text>
         <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.6, borderColor: theme.colors.muted, alignItems: "center", justifyContent: "center" }}>
           <Text selectable style={{ color: theme.colors.muted, fontSize: 11, fontStyle: "italic" }}>i</Text>
@@ -341,5 +314,6 @@ export default function ChatScreen() {
         </Text>
       </View>
     </View>
+    </RequireAuth>
   );
 }

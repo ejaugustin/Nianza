@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Pill, ScreenTitle, SectionLabel, SfIcon, SpecCard } from "@/components/screen-spec";
+import { TalkToPatriciaButton } from "@/components/talk-to-patricia-button";
 import { theme } from "@/theme/theme";
 
 const reports = [
@@ -20,6 +21,7 @@ export default function ReportsScreen() {
   const [activeReport, setActiveReport] = useState<string | null>(null);
 
   return (
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ padding: 20, paddingTop: 52, paddingBottom: 32, gap: 16 }}
@@ -58,5 +60,7 @@ export default function ReportsScreen() {
 
       <SectionLabel>PAST REPORTS</SectionLabel>
     </ScrollView>
+    <TalkToPatriciaButton source="H1-reports" eventType="reports" detail="Reports screen visible" entityId="reports" />
+    </View>
   );
 }

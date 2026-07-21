@@ -40,7 +40,22 @@ export default function HomeScreen() {
         {["Milestones\n2 this month", "Vaccines\nNext: DTaP", "Vitals\nJul 12"].map((label) => {
           const [title, subtitle] = label.split("\n");
           return (
-            <View key={title} style={{ flex: 1, backgroundColor: "white", borderRadius: theme.radii.card, padding: 14, gap: 8, minHeight: 88, boxShadow: "0 2px 8px rgba(20, 40, 50, 0.08)" }}>
+            <View
+              key={title}
+              style={{
+                flex: 1,
+                backgroundColor: "white",
+                borderRadius: theme.radii.card,
+                padding: 14,
+                gap: 8,
+                minHeight: 88,
+                shadowColor: "#142832",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.08,
+                shadowRadius: 8,
+                elevation: 2
+              }}
+            >
               <Text selectable style={{ color: theme.colors.text, fontSize: 12, fontWeight: "700" }}>{title}</Text>
               <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>{subtitle}</Text>
             </View>

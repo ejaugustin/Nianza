@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/auth/auth-context";
 import { seedToParams, type ChatContextSeed, type PatriciaContextEvent } from "@/chat/patricia-context";
 import { SfIcon } from "@/components/screen-spec";
@@ -24,6 +25,7 @@ export function TalkToPatriciaButton({
   entityId?: string;
 }) {
   const { profile } = useAuth();
+  const insets = useSafeAreaInsets();
   const childName = profile?.childName || "Sofia";
 
   return (
@@ -43,7 +45,7 @@ export function TalkToPatriciaButton({
       }
       style={{
         position: "absolute",
-        top: 18,
+        top: Math.max(insets.top + 8, 18),
         right: 18,
         zIndex: 20,
         borderRadius: 24,

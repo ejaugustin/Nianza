@@ -3,6 +3,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { speakPatriciaText, transcribeVoiceNote } from "@/api/voice";
 import { RequireAuth, useAuth } from "@/auth/auth-context";
 import { mockTranscriptFromSeed, patriciaOpening, seedFromParams } from "@/chat/patricia-context";
@@ -55,6 +56,7 @@ async function writePatriciaAudio(messageId: string, audioBase64: string) {
 export default function ChatScreen() {
   const params = useLocalSearchParams();
   const { profile } = useAuth();
+  const insets = useSafeAreaInsets();
   const seed = useMemo(() => seedFromParams(params, profile?.childName || "Sofia"), [params, profile?.childName]);
   const childName = seed.childName || "Sofia";
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
@@ -221,7 +223,7 @@ export default function ChatScreen() {
   return (
     <RequireAuth>
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <View style={{ height: 66, backgroundColor: "white", borderBottomWidth: 1, borderBottomColor: theme.colors.border, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 }}>
+      <View style={{ height: insets.top + 62, paddingTop: insets.top, backgroundColor: "white", borderBottomWidth: 1, borderBottomColor: theme.colors.border, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 }}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))} style={{ minWidth: 44, minHeight: 44, alignItems: "flex-start", justifyContent: "center" }}>
           <SfIcon name="chevron.left" color={theme.colors.text} size={22} />
         </Pressable>
@@ -231,7 +233,7 @@ export default function ChatScreen() {
         </View>
       </View>
 
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 20, paddingTop: 24, paddingBottom: 128, gap: 14 }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 20, paddingTop: 24, paddingBottom: 138 + insets.bottom, gap: 14 }}>
         {messages.map((message, index) => {
           const fromParent = message.sender === "parent";
           const isSpeaking = speakingMessageId === message.id;
@@ -266,7 +268,7 @@ export default function ChatScreen() {
         ) : null}
       </ScrollView>
 
-      <View style={{ position: "absolute", left: 16, right: 16, bottom: 22, gap: 9 }}>
+      <View style={{ position: "absolute", left: 16, right: 16, bottom: Math.max(insets.bottom, 12) + 10, gap: 9 }}>
         {isVoiceActive ? (
           <View style={{ minHeight: 74, borderRadius: 30, backgroundColor: theme.colors.voicePanel, flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 10, boxShadow: "0 8px 24px rgba(10, 20, 28, 0.24)" }}>
             <Pressable disabled={voiceMode === "transcribing"} onPress={discardVoiceMessage} style={{ width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", opacity: voiceMode === "transcribing" ? 0.4 : 1 }}>

@@ -1,3 +1,4 @@
+import { Image } from "expo-image";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useAuth } from "@/auth/auth-context";
 import { ScreenTitle, SectionLabel, SfIcon, SpecCard } from "@/components/screen-spec";
@@ -14,6 +15,7 @@ const settingsRows = [
 export default function SettingsScreen() {
   const { profile, signOut } = useAuth();
   const childName = profile?.childName || "your child";
+  const childPhotoUri = profile?.childPhotoUri;
 
   return (
     <ScrollView
@@ -25,8 +27,12 @@ export default function SettingsScreen() {
 
       <SpecCard style={{ gap: 8 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center" }}>
-            <Text selectable={false} style={{ color: "white", fontSize: 16, fontWeight: "800" }}>{(profile?.parentName || "M").slice(0, 1)}</Text>
+          <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            {childPhotoUri ? (
+              <Image source={{ uri: childPhotoUri }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
+            ) : (
+              <Text selectable={false} style={{ color: "white", fontSize: 16, fontWeight: "800" }}>{(profile?.parentName || "M").slice(0, 1)}</Text>
+            )}
           </View>
           <View style={{ flex: 1 }}>
             <Text selectable style={{ color: theme.colors.text, fontSize: 15, fontWeight: "700" }}>{profile?.parentName || "Maria"}</Text>

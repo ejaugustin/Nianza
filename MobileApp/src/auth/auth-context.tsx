@@ -32,6 +32,7 @@ export type ChildProfile = {
   multilingualHome?: boolean | null;
   notificationCadence?: "daily" | "few-times-week" | "weekly";
   notificationsEnabled: boolean;
+  childPhotoUri?: string | null;
   privacyConsentAcceptedAt?: string;
   onboardingCompletedAt?: string;
 };

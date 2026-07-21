@@ -1,5 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { Redirect, router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -236,7 +238,6 @@ export default function OnboardingScreen() {
   const [sexAtBirth, setSexAtBirth] = useState<ChildProfile["sexAtBirth"] | null>(auth.profile?.sexAtBirth || null);
   const [bornEarly, setBornEarly] = useState(auth.profile?.bornEarly || false);
   const [weeksEarly, setWeeksEarly] = useState(auth.profile?.weeksEarly ? String(auth.profile.weeksEarly) : "");
-  const [photoSelected, setPhotoSelected] = useState(false);
   const [firstTimeParent, setFirstTimeParent] = useState<boolean | null>(auth.profile?.firstTimeParent ?? null);
   const [parentRole, setParentRole] = useState<ChildProfile["parentRole"]>(auth.profile?.parentRole ?? null);
   const [parentingSolo, setParentingSolo] = useState<boolean | null>(auth.profile?.parentingSolo ?? null);
@@ -244,6 +245,8 @@ export default function OnboardingScreen() {
   const [notificationCadence, setNotificationCadence] = useState<NotificationCadence>(auth.profile?.notificationCadence || "daily");
   const [notificationsEnabled, setNotificationsEnabled] = useState(auth.profile?.notificationsEnabled ?? false);
   const [privacyAccepted, setPrivacyAccepted] = useState(Boolean(auth.profile?.privacyConsentAcceptedAt));
+  const [childPhotoUri, setChildPhotoUri] = useState<string | null>(auth.profile?.childPhotoUri || null);
+  const [photoNotice, setPhotoNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (step !== 7) return;
@@ -292,10 +295,35 @@ export default function OnboardingScreen() {
       multilingualHome,
       notificationCadence,
       notificationsEnabled: nextNotificationsEnabled,
+      childPhotoUri,
       privacyConsentAcceptedAt: new Date().toISOString(),
       onboardingCompletedAt: new Date().toISOString()
     });
     setStep(7);
+  }
+
+  async function chooseChildPhoto() {
+    setPhotoNotice(null);
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setPhotoNotice("Photo access is needed to add a picture. You can skip this.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8
+      });
+
+      if (!result.canceled && result.assets[0]?.uri) {
+        setChildPhotoUri(result.assets[0].uri);
+      }
+    } catch {
+      setPhotoNotice("I could not open photos just now. You can continue without one.");
+    }
   }
 
   const childProfileReady = Boolean(childName.trim() && childBirthDate.trim() && sexAtBirth);
@@ -402,11 +430,21 @@ export default function OnboardingScreen() {
             </View>
             {bornEarly ? <AuthField label="How many weeks early?" value={weeksEarly} onChangeText={setWeeksEarly} keyboardType="number-pad" placeholder="4" /> : null}
           </View>
-          <Pressable onPress={() => setPhotoSelected(!photoSelected)} style={{ alignItems: "center", borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 18, gap: 8 }}>
-            <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 1.5, borderColor: theme.colors.bluePrimary, backgroundColor: photoSelected ? theme.colors.bluePrimary : theme.colors.blueLight, alignItems: "center", justifyContent: "center" }}>
-              <SfIcon name={photoSelected ? "checkmark" : "camera"} color={photoSelected ? "white" : theme.colors.bluePrimary} size={24} />
+          <Pressable onPress={chooseChildPhoto} style={{ alignItems: "center", borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: 18, gap: 8 }}>
+            <View style={{ width: 76, height: 76, borderRadius: 38, borderWidth: 1.5, borderColor: theme.colors.bluePrimary, backgroundColor: theme.colors.blueLight, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+              {childPhotoUri ? (
+                <Image source={{ uri: childPhotoUri }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
+              ) : (
+                <SfIcon name="camera" color={theme.colors.bluePrimary} size={28} />
+              )}
             </View>
-            <Text selectable style={{ color: theme.colors.muted, fontSize: 14 }}>{photoSelected ? "Photo placeholder selected" : `Add a photo of ${childName || "your child"} (optional)`}</Text>
+            <Text selectable style={{ color: theme.colors.muted, fontSize: 14 }}>
+              {childPhotoUri ? `Photo added for ${childName || "your child"}` : `Add a photo of ${childName || "your child"} (optional)`}
+            </Text>
+            {childPhotoUri ? (
+              <Text selectable style={{ color: theme.colors.bluePrimary, fontSize: 12, fontWeight: "800" }}>Tap to change photo</Text>
+            ) : null}
+            {photoNotice ? <Text selectable style={{ color: theme.colors.muted, fontSize: 12, lineHeight: 16, textAlign: "center" }}>{photoNotice}</Text> : null}
           </Pressable>
           <AuthButton disabled={!parentReady || !childProfileReady} onPress={() => setStep(3)}>Continue</AuthButton>
         </>

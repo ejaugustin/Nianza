@@ -51,8 +51,8 @@ export default function ChatScreen() {
   const params = useLocalSearchParams();
   const { profile } = useAuth();
   const insets = useSafeAreaInsets();
-  const seed = useMemo(() => seedFromParams(params, profile?.childName || "Sofia"), [params, profile?.childName]);
-  const childName = seed.childName || "Sofia";
+  const seed = useMemo(() => seedFromParams(params, profile?.childName || "your child"), [params, profile?.childName]);
+  const childName = seed.childName || "your child";
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 250);
   const patriciaPlayer = useAudioPlayer();

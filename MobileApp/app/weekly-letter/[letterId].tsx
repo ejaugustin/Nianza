@@ -35,11 +35,12 @@ export default function WeeklyLetterScreen() {
   const [autoPlayedLetterId, setAutoPlayedLetterId] = useState<string | null>(null);
   const [audioLoading, setAudioLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const childName = profile?.childName || "Sofia";
+  const childName = profile?.childName || "your child";
+  const parentFirstName = profile?.parentFirstName || profile?.parentName?.split(/\s+/)[0] || "there";
 
   const letterQuery = useQuery({
     queryKey: ["weekly-letter", letterId],
-    queryFn: () => getWeeklyLetter(letterId),
+    queryFn: () => getWeeklyLetter(letterId, { childName, parentFirstName }),
     enabled: Boolean(letterId)
   });
 

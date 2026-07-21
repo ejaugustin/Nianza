@@ -5,7 +5,7 @@ import { theme } from "@/theme/theme";
 
 const settingsRows = [
   { title: "Your profile", subtitle: "Name, email, and account basics" },
-  { title: "Sofia's profile", subtitle: "Birth date, language, and child details" },
+  { title: "Child profile", subtitle: "Birth date, language, and child details" },
   { title: "Notifications", subtitle: "Daily notes and gentle reminders" },
   { title: "Language", subtitle: "English now, Spanish next" },
   { title: "Privacy & data", subtitle: "Export or delete your Nianza data" }
@@ -13,7 +13,7 @@ const settingsRows = [
 
 export default function SettingsScreen() {
   const { profile, signOut } = useAuth();
-  const childName = profile?.childName || "Sofia";
+  const childName = profile?.childName || "your child";
 
   return (
     <ScrollView
@@ -40,7 +40,9 @@ export default function SettingsScreen() {
         {settingsRows.map((row, index) => (
           <Pressable key={row.title} style={{ minHeight: 62, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 }}>
             <View style={{ flex: 1, gap: 3 }}>
-              <Text selectable style={{ color: theme.colors.text, fontSize: 14, fontWeight: "700" }}>{row.title.replace("Sofia", childName)}</Text>
+              <Text selectable style={{ color: theme.colors.text, fontSize: 14, fontWeight: "700" }}>
+                {row.title === "Child profile" ? `${childName}'s profile` : row.title}
+              </Text>
               <Text selectable style={{ color: theme.colors.muted, fontSize: 11, lineHeight: 15 }}>{row.subtitle}</Text>
             </View>
             <SfIcon name="chevron.right" color={theme.colors.greyIcon} size={16} />

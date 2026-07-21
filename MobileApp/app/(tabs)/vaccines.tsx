@@ -1,4 +1,5 @@
 import { ScrollView, Text, View } from "react-native";
+import { useAuth } from "@/auth/auth-context";
 import { EmptyCircle, Pill, ScreenTitle, SectionLabel } from "@/components/screen-spec";
 import { TalkToPatriciaButton } from "@/components/talk-to-patricia-button";
 import { theme } from "@/theme/theme";
@@ -9,6 +10,9 @@ const vaccines = [
 ];
 
 export default function VaccinesScreen() {
+  const { profile } = useAuth();
+  const childName = profile?.childName || "Your child";
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
     <ScrollView
@@ -18,7 +22,7 @@ export default function VaccinesScreen() {
     >
       <ScreenTitle
         title="Vaccines"
-        subtitle="Sofia's immunization schedule"
+        subtitle={`${childName}'s immunization schedule`}
         note={"Parent-recorded information only. Bring your child's official card to all visits."}
       />
 

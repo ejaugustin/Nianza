@@ -26,7 +26,7 @@ export function TalkToPatriciaButton({
 }) {
   const { profile } = useAuth();
   const insets = useSafeAreaInsets();
-  const childName = profile?.childName || "Sofia";
+  const childName = profile?.childName || "your child";
 
   return (
     <Pressable

@@ -32,7 +32,7 @@ export default function RegisterScreen() {
   async function submit() {
     setError("");
     if (!parentName.trim()) {
-      setError("Add your name before creating the account.");
+      setError("Add your first name before creating the account.");
       return;
     }
     if (!email.trim()) {
@@ -66,7 +66,7 @@ export default function RegisterScreen() {
         <Text selectable style={{ color: theme.colors.muted, fontSize: 15, lineHeight: 21 }}>A few basics so Patricia knows who she is talking with.</Text>
       </View>
       <AuthError message={error} />
-      <AuthField label="Your name" value={parentName} onChangeText={setParentName} placeholder="Maria" />
+      <AuthField label="First name" value={parentName} onChangeText={setParentName} placeholder="Anna" />
       <AuthField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="you@example.com" />
       <AuthField label="Password" value={password} onChangeText={setPassword} secureTextEntry placeholder="10+ characters" />
       <AuthField label="Confirm password" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholder="Type it again" />

@@ -1,10 +1,10 @@
 export const mockHome = {
-  parentName: "Maria",
-  childName: "Sofia",
-  childAge: "4 months, 2 weeks",
+  parentName: "there",
+  childName: "your child",
+  childAge: "newborn",
   language: "en",
   ageWindowMonths: 4,
   dailyNoteDomain: "movement",
-  dailyNote: "Around now, Sofia is starting to connect voices to faces — yours especially. Try narrating what you're doing as you move through the room.",
+  dailyNote: "Around now, {childName} is starting to connect voices to faces - yours especially. Try narrating what you're doing as you move through the room.",
   dateLabel: "Thursday, July 17"
 };

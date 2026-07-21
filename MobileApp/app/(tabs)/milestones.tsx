@@ -13,7 +13,7 @@ const milestones = [
 
 export default function MilestonesScreen() {
   const { profile } = useAuth();
-  const childName = profile?.childName || "Sofia";
+  const childName = profile?.childName || "your child";
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [notice, setNotice] = useState("");
 

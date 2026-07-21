@@ -16,6 +16,8 @@ const SESSION_KEY = "nianza.mobile.session";
 const PROFILE_KEY = "nianza.mobile.profile";
 
 export type ChildProfile = {
+  parentFirstName?: string;
+  parentLastName?: string;
   parentName: string;
   childName: string;
   childBirthDate: string;

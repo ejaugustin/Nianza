@@ -30,11 +30,12 @@ export default function ReportsScreen() {
   const { profile } = useAuth();
   const [activeReport, setActiveReport] = useState<string | null>(null);
   const [weeklyLettersOpen, setWeeklyLettersOpen] = useState(false);
+  const childName = profile?.childName || "your child";
+  const parentFirstName = profile?.parentFirstName || profile?.parentName?.split(/\s+/)[0] || "there";
   const lettersQuery = useQuery({
-    queryKey: ["weekly-letters", "primary-child"],
-    queryFn: () => listWeeklyLetters("primary-child")
+    queryKey: ["weekly-letters", "primary-child", childName, parentFirstName],
+    queryFn: () => listWeeklyLetters("primary-child", { childName, parentFirstName })
   });
-  const childName = profile?.childName || "Sofia";
   const weeklyLetters = lettersQuery.data || [];
   const latestLetter = weeklyLetters[0];
 

@@ -15,21 +15,35 @@ function monthsSince(dateValue: string) {
   return Math.max(0, (now.getFullYear() - date.getFullYear()) * 12 + now.getMonth() - date.getMonth());
 }
 
+function splitName(name?: string) {
+  const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts[0] || "",
+    lastName: parts.slice(1).join(" ")
+  };
+}
+
 export default function OnboardingScreen() {
   const auth = useAuth();
-  const [parentName, setParentName] = useState(auth.profile?.parentName || "Maria");
-  const [childName, setChildName] = useState(auth.profile?.childName || "Sofia");
-  const [childBirthDate, setChildBirthDate] = useState(auth.profile?.childBirthDate || "2026-03-03");
-  const [sexAtBirth, setSexAtBirth] = useState<ChildProfile["sexAtBirth"]>(auth.profile?.sexAtBirth || "girl");
+  const savedName = splitName(auth.profile?.parentName);
+  const [parentFirstName, setParentFirstName] = useState(auth.profile?.parentFirstName || savedName.firstName);
+  const [parentLastName, setParentLastName] = useState(auth.profile?.parentLastName || savedName.lastName);
+  const [childName, setChildName] = useState(auth.profile?.childName || "");
+  const [childBirthDate, setChildBirthDate] = useState(auth.profile?.childBirthDate || "");
+  const [sexAtBirth, setSexAtBirth] = useState<ChildProfile["sexAtBirth"] | null>(auth.profile?.sexAtBirth || null);
   const [language, setLanguage] = useState<ChildProfile["language"]>(auth.profile?.language || "en");
   const [notificationsEnabled, setNotificationsEnabled] = useState(auth.profile?.notificationsEnabled ?? true);
   const [photoSelected, setPhotoSelected] = useState(false);
 
   async function submit() {
+    if (!sexAtBirth) return;
+    const parentName = `${parentFirstName.trim()} ${parentLastName.trim()}`.trim();
     await auth.completeOnboarding({
+      parentFirstName: parentFirstName.trim(),
+      parentLastName: parentLastName.trim(),
       parentName,
-      childName,
-      childBirthDate,
+      childName: childName.trim(),
+      childBirthDate: childBirthDate.trim(),
       sexAtBirth,
       language,
       notificationsEnabled,
@@ -46,8 +60,9 @@ export default function OnboardingScreen() {
         <Text selectable style={{ color: theme.colors.muted, fontSize: 15, lineHeight: 21 }}>These details help Nianza keep advice age-aware and personal.</Text>
       </View>
       <PatriciaIntro />
-      <AuthField label="Your name" value={parentName} onChangeText={setParentName} />
-      <AuthField label="Child name" value={childName} onChangeText={setChildName} />
+      <AuthField label="First name" value={parentFirstName} onChangeText={setParentFirstName} placeholder="Anna" />
+      <AuthField label="Last name" value={parentLastName} onChangeText={setParentLastName} placeholder="Augustin" />
+      <AuthField label="Child name" value={childName} onChangeText={setChildName} placeholder="Eric" />
       <AuthField label="Child birth date" value={childBirthDate} onChangeText={setChildBirthDate} placeholder="YYYY-MM-DD" />
       <View style={{ gap: 8 }}>
         <Text selectable style={{ color: theme.colors.muted, fontSize: 13, fontWeight: "600" }}>Sex at birth</Text>
@@ -84,7 +99,7 @@ export default function OnboardingScreen() {
         </View>
         <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} trackColor={{ true: theme.colors.blueLight, false: theme.colors.border }} thumbColor={notificationsEnabled ? theme.colors.bluePrimary : "white"} />
       </View>
-      <AuthButton disabled={!parentName || !childName || !childBirthDate} onPress={submit}>Continue</AuthButton>
+      <AuthButton disabled={!parentFirstName.trim() || !parentLastName.trim() || !childName.trim() || !childBirthDate.trim() || !sexAtBirth} onPress={submit}>Continue</AuthButton>
       <AuthButton variant="text" onPress={auth.signOut}>Sign out</AuthButton>
     </ScrollView>
   );

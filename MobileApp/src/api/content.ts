@@ -9,6 +9,8 @@ export type MobileContentItem = {
   domain: string | null;
   bodyText: string;
   sourceRef: string;
+  audioUrl?: string | null;
+  milestoneTag?: string | null;
   ttsEnabled: boolean;
   status: "approved";
   updatedAt?: string;

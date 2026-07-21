@@ -1,30 +1,48 @@
-import { ScrollView, Text, View } from "react-native";
+import { Link, router } from "expo-router";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/auth/auth-context";
 import { getDailyNote } from "@/api/content";
+import { BrandLogo } from "@/components/brand-logo";
 import { PatriciaNote } from "@/components/patricia-note";
 import { SectionLabel, SfIcon, SpecCard } from "@/components/screen-spec";
 import { mockHome } from "@/content/mock-home";
 import { theme } from "@/theme/theme";
 
 const weeklyCards = [
-  { title: "Milestones", subtitle: "2 this month", icon: "checkmark" },
-  { title: "Vaccines", subtitle: "Next: DTaP", icon: "shield" },
-  { title: "Vitals", subtitle: "Jul 12", icon: "doc.text" }
+  { title: "Milestones", subtitle: "2 this month", icon: "checkmark", href: "/(tabs)/milestones" },
+  { title: "Vaccines", subtitle: "Next: DTaP", icon: "shield", href: "/(tabs)/vaccines" },
+  { title: "Vitals", subtitle: "Jul 12", icon: "doc.text", href: "/vitals" }
 ];
 
 export default function HomeScreen() {
+  const auth = useAuth();
+  const profile = auth.profile;
+  const [dailyNotePlaying, setDailyNotePlaying] = useState(false);
   const dailyNoteQuery = useQuery({
-    queryKey: ["daily-note", mockHome.language, mockHome.ageWindowMonths, mockHome.dailyNoteDomain],
+    queryKey: ["daily-note", profile?.language || mockHome.language, profile?.ageWindowMonths || mockHome.ageWindowMonths, mockHome.dailyNoteDomain],
     queryFn: () =>
       getDailyNote({
-        language: mockHome.language,
-        ageWindowMonths: mockHome.ageWindowMonths,
+        language: profile?.language || mockHome.language,
+        ageWindowMonths: profile?.ageWindowMonths || mockHome.ageWindowMonths,
         domain: mockHome.dailyNoteDomain
       }),
     staleTime: 1000 * 60 * 30,
     retry: 1
   });
   const dailyNote = dailyNoteQuery.data?.bodyText || mockHome.dailyNote;
+  const parentName = profile?.parentName || mockHome.parentName;
+  const childName = profile?.childName || mockHome.childName;
+  const childAge = profile ? `${profile.ageWindowMonths} months` : mockHome.childAge;
+  const personalizedDailyNote = useMemo(() => {
+    const pronouns = profile?.sexAtBirth === "boy" ? { she: "he", her: "his", hers: "his" } : { she: "she", her: "her", hers: "hers" };
+    return dailyNote
+      .replaceAll("{childName}", childName)
+      .replaceAll("{she}", pronouns.she)
+      .replaceAll("{her}", pronouns.her)
+      .replaceAll("{hers}", pronouns.hers);
+  }, [childName, dailyNote, profile?.sexAtBirth]);
 
   return (
     <ScrollView
@@ -33,32 +51,33 @@ export default function HomeScreen() {
       style={{ backgroundColor: theme.colors.background }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <View style={{ width: 22, height: 22, borderRadius: 12, backgroundColor: theme.colors.blueDeep }} />
-          <Text selectable style={{ color: theme.colors.blueDeep, fontSize: 18, fontWeight: "700", letterSpacing: 0.5 }}>Nianza</Text>
-        </View>
+        <BrandLogo width={124} height={44} />
         <SfIcon name="bell" color={theme.colors.muted} size={22} />
       </View>
 
       <View style={{ gap: 4 }}>
-        <Text selectable style={{ color: theme.colors.muted, fontSize: 14 }}>Good morning, {mockHome.parentName}.</Text>
+        <Text selectable style={{ color: theme.colors.muted, fontSize: 14 }}>Good morning, {parentName}.</Text>
         <Text selectable numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={{ color: theme.colors.text, fontSize: 22, fontWeight: "700" }}>
-          {mockHome.childName} - {mockHome.childAge}
+          {childName} - {childAge}
         </Text>
       </View>
 
-      <PatriciaNote>{dailyNote}</PatriciaNote>
+      <PatriciaNote isPlaying={dailyNotePlaying} onTogglePlay={() => setDailyNotePlaying((current) => !current)}>{personalizedDailyNote}</PatriciaNote>
       {dailyNoteQuery.isError ? <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>Showing Patricia's saved note.</Text> : null}
       <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>{mockHome.dateLabel}</Text>
 
       <SectionLabel>THIS WEEK</SectionLabel>
       <View style={{ flexDirection: "row", gap: 8 }}>
         {weeklyCards.map((card) => (
-          <SpecCard key={card.title} style={{ flex: 1, minHeight: 88, padding: 14, gap: 8 }}>
-            <SfIcon name={card.icon} size={22} />
-            <Text selectable numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: theme.colors.text, fontSize: 12, fontWeight: "600" }}>{card.title}</Text>
-            <Text selectable numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: theme.colors.greyIcon, fontSize: 11 }}>{card.subtitle}</Text>
-          </SpecCard>
+          <Link key={card.title} href={card.href} asChild>
+            <Pressable style={{ flex: 1 }}>
+              <SpecCard style={{ minHeight: 88, padding: 14, gap: 8 }}>
+                <SfIcon name={card.icon} size={22} />
+                <Text selectable numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ color: theme.colors.text, fontSize: 12, fontWeight: "600" }}>{card.title}</Text>
+                <Text selectable numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: theme.colors.greyIcon, fontSize: 11 }}>{card.subtitle}</Text>
+              </SpecCard>
+            </Pressable>
+          </Link>
         ))}
       </View>
 
@@ -70,6 +89,35 @@ export default function HomeScreen() {
             <Text selectable style={{ color: theme.colors.text, fontSize: 13, fontWeight: "600" }}>DTaP vaccine</Text>
             <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 12 }}>Due around 6 months</Text>
           </View>
+        </View>
+      </SpecCard>
+
+      <SpecCard style={{ padding: 16, gap: 10 }}>
+        <Text selectable style={{ color: theme.colors.text, fontSize: 14, fontWeight: "700" }}>Four-month visit</Text>
+        <Text selectable style={{ color: theme.colors.muted, fontSize: 12, lineHeight: 18 }}>A gentle place to gather questions before you walk in.</Text>
+        <View style={{ gap: 8 }}>
+          <Pressable onPress={() => router.push("/(tabs)/reports")}>
+            <Text selectable style={{ color: theme.colors.bluePrimary, fontSize: 13, fontWeight: "700" }}>Prepare visit pack</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push("/(tabs)/vaccines")}>
+            <Text selectable style={{ color: theme.colors.bluePrimary, fontSize: 13, fontWeight: "700" }}>Review vaccine notes</Text>
+          </Pressable>
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/(tabs)/chat",
+                params: {
+                  sourceScreen: "C1-visit",
+                  eventType: "visit-upcoming",
+                  childName,
+                  detail: "Four-month visit this week",
+                  occurredAt: new Date().toISOString()
+                }
+              })
+            }
+          >
+            <Text selectable style={{ color: theme.colors.bluePrimary, fontSize: 13, fontWeight: "700" }}>Talk it through with Patricia</Text>
+          </Pressable>
         </View>
       </SpecCard>
     </ScrollView>

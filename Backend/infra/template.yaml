@@ -33,6 +33,68 @@ Globals:
       AllowOrigin: "'*'"
 
 Resources:
+  MobileUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub nianza-mobile-${Environment}
+      UserPoolTags:
+        App: Nianza
+        Env: !Ref Environment
+        Owner: eja
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 10
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: parent_name
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: locale
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+
+  MobileUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub nianza-mobile-app-${Environment}
+      UserPoolId: !Ref MobileUserPool
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      ExplicitAuthFlows:
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 90
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      ReadAttributes:
+        - email
+        - custom:parent_name
+        - custom:locale
+      WriteAttributes:
+        - email
+        - custom:parent_name
+        - custom:locale
+
   AdminUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -305,6 +367,12 @@ Outputs:
     Value: !Sub https://${AdminApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/admin/v1
   MobileApiUrl:
     Value: !Sub https://${MobileApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/mobile/v1
+  MobileUserPoolId:
+    Value: !Ref MobileUserPool
+  MobileUserPoolClientId:
+    Value: !Ref MobileUserPoolClient
+  MobileUserPoolArn:
+    Value: !GetAtt MobileUserPool.Arn
   AdminUserPoolId:
     Value: !Ref AdminUserPool
   AdminUserPoolClientId:

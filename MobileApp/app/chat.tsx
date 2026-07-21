@@ -53,6 +53,15 @@ async function writePatriciaAudio(messageId: string, audioBase64: string) {
   return uri;
 }
 
+async function configurePatriciaPlayback() {
+  await setAudioModeAsync({
+    allowsRecording: false,
+    interruptionMode: "doNotMix",
+    playsInSilentMode: true,
+    shouldRouteThroughEarpiece: false
+  });
+}
+
 export default function ChatScreen() {
   const params = useLocalSearchParams();
   const { profile } = useAuth();
@@ -73,6 +82,7 @@ export default function ChatScreen() {
   const isVoiceActive = voiceMode !== "idle";
 
   async function playAudioUri(uri: string, messageId: string) {
+    await configurePatriciaPlayback();
     patriciaPlayer.replace({ uri });
     patriciaPlayer.seekTo(0);
     patriciaPlayer.play();
@@ -99,6 +109,12 @@ export default function ChatScreen() {
       setNotice("Patricia could not play audio just now. You can tap replay to try again.");
     }
   }
+
+  useEffect(() => {
+    configurePatriciaPlayback().catch(() => {
+      setNotice("Patricia could not prepare audio playback just now.");
+    });
+  }, []);
 
   useEffect(() => {
     const latest = messages[messages.length - 1];
@@ -138,7 +154,11 @@ export default function ChatScreen() {
     }
 
     try {
-      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
+        shouldRouteThroughEarpiece: false
+      });
       await recorder.prepareToRecordAsync();
       recorder.record();
       setVoiceMode("recording");
@@ -157,7 +177,7 @@ export default function ChatScreen() {
     } catch {
       // The recorder may already be stopped by the native layer.
     }
-    await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
+    await configurePatriciaPlayback();
     setVoiceMode("idle");
     setNotice("Voice note discarded.");
   }
@@ -183,7 +203,7 @@ export default function ChatScreen() {
       if (recorderState.isRecording || voiceMode === "recording" || voiceMode === "paused") {
         await recorder.stop();
       }
-      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
+      await configurePatriciaPlayback();
     } catch {
       setNotice("Voice captured locally, but Patricia had trouble ending the recording cleanly.");
     }

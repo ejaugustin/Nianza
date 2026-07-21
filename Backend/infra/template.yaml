@@ -102,11 +102,11 @@ Resources:
       ReadAttributes:
         - email
         - custom:parent_name
-        - custom:locale
+        - locale
       WriteAttributes:
         - email
         - custom:parent_name
-        - custom:locale
+        - locale
 
   AdminUserPool:
     Type: AWS::Cognito::UserPool

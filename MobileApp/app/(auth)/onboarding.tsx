@@ -194,12 +194,19 @@ function ChoicePill({ label, active, onPress }: { label: string; active: boolean
         borderRadius: 16,
         alignItems: "center",
         justifyContent: "center",
+        paddingHorizontal: 10,
         backgroundColor: active ? theme.colors.blueLight : "white",
         borderWidth: 1.5,
         borderColor: active ? theme.colors.bluePrimary : theme.colors.border
       }}
     >
-      <Text selectable style={{ color: active ? theme.colors.blueDeep : theme.colors.text, fontSize: 16, fontWeight: "800" }}>
+      <Text
+        selectable
+        numberOfLines={2}
+        adjustsFontSizeToFit
+        minimumFontScale={0.82}
+        style={{ color: active ? theme.colors.blueDeep : theme.colors.text, fontSize: 16, fontWeight: "800", textAlign: "center" }}
+      >
         {label}
       </Text>
     </Pressable>
@@ -460,12 +467,12 @@ export default function OnboardingScreen() {
             Skip anything. This only helps my wording.
           </PatriciaCard>
           <View style={{ gap: 14 }}>
-            <Text selectable style={{ color: theme.colors.text, fontSize: 15, fontWeight: "800" }}>Is {childName || "your child"} your first?</Text>
+            <Text selectable style={{ color: theme.colors.text, fontSize: 15, fontWeight: "800" }}>Is this your first baby?</Text>
             <View style={{ flexDirection: "row", gap: 10 }}>
-              <SelectCard title="My first" active={firstTimeParent === true} onPress={() => setFirstTimeParent(true)} />
-              <SelectCard title="I've done this before" active={firstTimeParent === false} onPress={() => setFirstTimeParent(false)} />
+              <ChoicePill label="First baby" active={firstTimeParent === true} onPress={() => setFirstTimeParent(true)} />
+              <ChoicePill label="Not my first" active={firstTimeParent === false} onPress={() => setFirstTimeParent(false)} />
             </View>
-            <Text selectable style={{ color: theme.colors.text, fontSize: 15, fontWeight: "800" }}>And you are {childName || "your child"}'s...</Text>
+            <Text selectable style={{ color: theme.colors.text, fontSize: 15, fontWeight: "800" }}>Your role with {childName || "your child"}</Text>
             <View style={{ gap: 8 }}>
               <SelectCard title="Mom" active={parentRole === "mother"} onPress={() => setParentRole("mother")} />
               <SelectCard title="Dad" active={parentRole === "father"} onPress={() => setParentRole("father")} />
@@ -477,10 +484,10 @@ export default function OnboardingScreen() {
               <SelectCard title="On my own" active={parentingSolo === true} onPress={() => setParentingSolo(true)} />
               <SelectCard title="Rather not say" active={parentingSolo === null} onPress={() => setParentingSolo(null)} />
             </View>
-            <Text selectable style={{ color: theme.colors.text, fontSize: 15, fontWeight: "800" }}>Does {childName || "your child"} hear more than one language at home?</Text>
+            <Text selectable style={{ color: theme.colors.text, fontSize: 15, fontWeight: "800" }}>More than one language at home?</Text>
             <View style={{ flexDirection: "row", gap: 10 }}>
-              <SelectCard title="Yes" active={multilingualHome === true} onPress={() => setMultilingualHome(true)} />
-              <SelectCard title="Just one" active={multilingualHome === false} onPress={() => setMultilingualHome(false)} />
+              <ChoicePill label="Yes" active={multilingualHome === true} onPress={() => setMultilingualHome(true)} />
+              <ChoicePill label="Just one" active={multilingualHome === false} onPress={() => setMultilingualHome(false)} />
             </View>
           </View>
           <AuthButton onPress={() => setStep(4)}>Continue</AuthButton>

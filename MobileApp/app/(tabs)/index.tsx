@@ -1,9 +1,24 @@
 import { ScrollView, Text, View } from "react-native";
+import { useQuery } from "@tanstack/react-query";
+import { getDailyNote } from "@/api/content";
 import { PatriciaNote } from "@/components/patricia-note";
 import { mockHome } from "@/content/mock-home";
 import { theme } from "@/theme/theme";
 
 export default function HomeScreen() {
+  const dailyNoteQuery = useQuery({
+    queryKey: ["daily-note", mockHome.language, mockHome.ageWindowMonths, mockHome.dailyNoteDomain],
+    queryFn: () =>
+      getDailyNote({
+        language: mockHome.language,
+        ageWindowMonths: mockHome.ageWindowMonths,
+        domain: mockHome.dailyNoteDomain
+      }),
+    staleTime: 1000 * 60 * 30,
+    retry: 1
+  });
+  const dailyNote = dailyNoteQuery.data?.bodyText || mockHome.dailyNote;
+
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 20, paddingTop: 28, gap: 16 }} style={{ backgroundColor: theme.colors.background }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -16,7 +31,8 @@ export default function HomeScreen() {
         <Text selectable style={{ color: theme.colors.text, fontSize: 22, fontWeight: "700" }}>{mockHome.childName} · {mockHome.childAge}</Text>
       </View>
 
-      <PatriciaNote>{mockHome.dailyNote}</PatriciaNote>
+      <PatriciaNote>{dailyNote}</PatriciaNote>
+      {dailyNoteQuery.isError ? <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>Showing Patricia's saved note.</Text> : null}
       <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>{mockHome.dateLabel}</Text>
 
       <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11, letterSpacing: 1, marginTop: 10 }}>THIS WEEK</Text>

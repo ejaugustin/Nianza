@@ -131,6 +131,12 @@ Resources:
           ResponseTemplates:
             application/json: '{"error":"Forbidden"}'
 
+  MobileApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub nianza-mobile-api-${Environment}
+      StageName: !Ref Environment
+
   AdminAuditLogTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
@@ -274,9 +280,31 @@ Resources:
             Path: /admin/v1/content/{contentId}/approve
             Method: POST
 
+  MobileContentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-content-${Environment}
+      CodeUri: ../
+      Handler: mobile/content/handler.handler
+      Environment:
+        Variables:
+          CONTENT_TABLE: !Ref ContentLibraryTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ContentLibraryTable
+      Events:
+        DailyNote:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/content/daily-note
+            Method: GET
+
 Outputs:
   AdminApiUrl:
     Value: !Sub https://${AdminApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/admin/v1
+  MobileApiUrl:
+    Value: !Sub https://${MobileApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/mobile/v1
   AdminUserPoolId:
     Value: !Ref AdminUserPool
   AdminUserPoolClientId:

@@ -38,7 +38,7 @@
       }]
     ],
     "extra": {
-      "apiUrl": "https://api-dev.nianza.com/v1"
+      "apiUrl": "https://api-dev.nianza.com/mobile/v1"
     }
   }
 }

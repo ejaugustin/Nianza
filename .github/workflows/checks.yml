@@ -26,6 +26,7 @@ jobs:
       - name: Validate backend sources
         run: |
           node --check Backend/admin/content/handler.js
+          node --check Backend/mobile/content/handler.js
           node --check Backend/shared/auth.js
           node --check Backend/shared/audit.js
           node --check Backend/shared/response.js

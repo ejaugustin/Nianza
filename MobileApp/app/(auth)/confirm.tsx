@@ -28,7 +28,7 @@ export default function ConfirmScreen() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 24, paddingTop: 72, paddingBottom: 34, gap: 18 }} style={{ backgroundColor: theme.colors.background }}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 24, paddingTop: 72, paddingBottom: 140, gap: 18 }} style={{ backgroundColor: theme.colors.background }}>
       <View style={{ gap: 7 }}>
         <Text selectable style={{ color: theme.colors.text, fontSize: 24, fontWeight: "700" }}>Confirm your email</Text>
         <Text selectable style={{ color: theme.colors.muted, fontSize: 15, lineHeight: 21 }}>Enter the code Cognito sent to your inbox.</Text>
@@ -37,7 +37,7 @@ export default function ConfirmScreen() {
       <AuthField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
       <AuthField label="Code" value={code} onChangeText={setCode} keyboardType="number-pad" />
       <AuthButton loading={loading} disabled={!email || !code} onPress={submit}>Confirm email</AuthButton>
-      <AuthButton variant="text" onPress={() => router.back()}>Back</AuthButton>
+      <AuthButton variant="text" onPress={() => router.replace("/(auth)/register")}>Back</AuthButton>
     </ScrollView>
   );
 }

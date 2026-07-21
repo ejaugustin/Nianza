@@ -29,7 +29,7 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 24, paddingTop: 72, paddingBottom: 34, gap: 18 }} style={{ backgroundColor: theme.colors.background }}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 24, paddingTop: 72, paddingBottom: 140, gap: 18 }} style={{ backgroundColor: theme.colors.background }}>
       <View style={{ gap: 7 }}>
         <Text selectable style={{ color: theme.colors.text, fontSize: 24, fontWeight: "700" }}>Choose a new password</Text>
         <Text selectable style={{ color: theme.colors.muted, fontSize: 15, lineHeight: 21 }}>Use the newest code from your email.</Text>

@@ -27,7 +27,7 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 24, paddingTop: 72, paddingBottom: 34, gap: 18 }} style={{ backgroundColor: theme.colors.background }}>
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 24, paddingTop: 72, paddingBottom: 140, gap: 18 }} style={{ backgroundColor: theme.colors.background }}>
       <View style={{ gap: 7 }}>
         <Text selectable style={{ color: theme.colors.text, fontSize: 24, fontWeight: "700" }}>Reset your password</Text>
         <Text selectable style={{ color: theme.colors.muted, fontSize: 15, lineHeight: 21 }}>We will send a reset code to your email.</Text>
@@ -35,7 +35,7 @@ export default function ForgotPasswordScreen() {
       <AuthError message={error} />
       <AuthField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
       <AuthButton loading={loading} disabled={!email} onPress={submit}>Send reset code</AuthButton>
-      <AuthButton variant="text" onPress={() => router.back()}>Back</AuthButton>
+      <AuthButton variant="text" onPress={() => router.replace("/(auth)/login")}>Back</AuthButton>
     </ScrollView>
   );
 }

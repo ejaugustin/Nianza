@@ -12,11 +12,16 @@ export default function RegisterScreen() {
   const [parentName, setParentName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function submit() {
     setError("");
+    if (password !== confirmPassword) {
+      setError("Those passwords do not match yet.");
+      return;
+    }
     setLoading(true);
     try {
       await auth.signUp(email, password, parentName, "en");
@@ -29,8 +34,8 @@ export default function RegisterScreen() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 24, paddingTop: 52, paddingBottom: 34, gap: 18 }} style={{ backgroundColor: theme.colors.background }}>
-      <BrandLogo width={188} height={64} />
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 24, paddingTop: 72, paddingBottom: 140, gap: 18 }} style={{ backgroundColor: theme.colors.background }}>
+      <BrandLogo width={150} height={42} />
       <View style={{ gap: 7 }}>
         <Text selectable style={{ color: theme.colors.text, fontSize: 24, fontWeight: "700" }}>Create your account</Text>
         <Text selectable style={{ color: theme.colors.muted, fontSize: 15, lineHeight: 21 }}>A few basics so Patricia knows who she is talking with.</Text>
@@ -39,8 +44,9 @@ export default function RegisterScreen() {
       <AuthField label="Your name" value={parentName} onChangeText={setParentName} placeholder="Maria" />
       <AuthField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="you@example.com" />
       <AuthField label="Password" value={password} onChangeText={setPassword} secureTextEntry placeholder="10+ characters" />
-      <AuthButton loading={loading} disabled={!parentName || !email || password.length < 10} onPress={submit}>Create account</AuthButton>
-      <AuthButton variant="text" onPress={() => router.back()}>Back</AuthButton>
+      <AuthField label="Confirm password" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholder="Type it again" />
+      <AuthButton loading={loading} disabled={!parentName || !email || password.length < 10 || confirmPassword.length < 10} onPress={submit}>Create account</AuthButton>
+      <AuthButton variant="text" onPress={() => router.replace("/(auth)/welcome")}>Back</AuthButton>
     </ScrollView>
   );
 }

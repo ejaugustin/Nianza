@@ -1,5 +1,6 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { ActivityIndicator, Pressable, PressableProps, Text, TextInput, View } from "react-native";
+import { SfIcon } from "@/components/screen-spec";
 import { theme } from "@/theme/theme";
 
 export function AuthButton({
@@ -61,28 +62,47 @@ export function AuthField({
   secureTextEntry?: boolean;
   keyboardType?: "default" | "email-address" | "number-pad";
 }) {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const isPassword = Boolean(secureTextEntry);
+
   return (
     <View style={{ gap: 7 }}>
       <Text selectable style={{ color: theme.colors.muted, fontSize: 13, fontWeight: "600" }}>{label}</Text>
-      <TextInput
-        autoCapitalize="none"
-        keyboardType={keyboardType}
-        placeholder={placeholder}
-        placeholderTextColor={theme.colors.greyIcon}
-        secureTextEntry={secureTextEntry}
-        value={value}
-        onChangeText={onChangeText}
+      <View
         style={{
           minHeight: 52,
           borderRadius: theme.radii.control,
           borderWidth: 1.5,
           borderColor: theme.colors.border,
           backgroundColor: "white",
-          color: theme.colors.text,
-          fontSize: 15,
-          paddingHorizontal: 14
+          flexDirection: "row",
+          alignItems: "center",
+          paddingLeft: 14,
+          paddingRight: isPassword ? 8 : 14
         }}
-      />
+      >
+        <TextInput
+          autoCapitalize="none"
+          keyboardType={keyboardType}
+          placeholder={placeholder}
+          placeholderTextColor={theme.colors.greyIcon}
+          returnKeyType="next"
+          secureTextEntry={isPassword && !passwordVisible}
+          value={value}
+          onChangeText={onChangeText}
+          style={{
+            flex: 1,
+            minHeight: 52,
+            color: theme.colors.text,
+            fontSize: 15
+          }}
+        />
+        {isPassword ? (
+          <Pressable accessibilityLabel={passwordVisible ? "Hide password" : "Show password"} accessibilityRole="button" onPress={() => setPasswordVisible((current) => !current)} style={{ width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" }}>
+            <SfIcon name={passwordVisible ? "eye.slash" : "eye"} color={theme.colors.greyIcon} size={22} />
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }

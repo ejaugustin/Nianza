@@ -33,8 +33,8 @@ const mockWeeklyLetters: WeeklyLetter[] = [
     readAt: null,
     greeting: "Dear Maria,",
     bodyText:
-      "This week, Sofia is doing something quiet and powerful: she is learning that your voice belongs to safety. Around this age, babies often start connecting familiar sounds with familiar faces. Your ordinary narration, the small songs, the way you say her name while changing a diaper or moving through the room, all become part of how she understands the world.\n\nYou do not need to make every moment educational. You are already teaching her through repetition, warmth, and presence. Try saying what you are doing out loud once or twice during a routine you already have. Patricia would call that a small anchor: simple enough for a tired day, steady enough for Sofia to feel.",
-    closing: "With you this week, Patricia"
+      "This week, Sofia is doing something quiet and powerful: she is learning that your voice belongs to safety. Around this age, babies often start connecting familiar sounds with familiar faces. Your ordinary narration, the small songs, the way you say her name while changing a diaper or moving through the room, all become part of how she understands the world.\n\nYou do not need to make every moment educational. You are already teaching her through repetition, warmth, and presence. Try saying what you are doing out loud once or twice during a routine you already have. I would call that a small anchor: simple enough for a tired day, steady enough for Sofia to feel.",
+    closing: "With you this week"
   },
   {
     letterId: "weekly-letter-2026-07-05",
@@ -50,7 +50,7 @@ const mockWeeklyLetters: WeeklyLetter[] = [
     greeting: "Dear Maria,",
     bodyText:
       "This week may not look dramatic from the outside. Still, Sofia is taking in patterns: how the morning begins, how feeding feels, how your face changes when you are close. When days blur together, it can help to choose one tiny routine and let it be enough.\n\nMaybe it is opening the curtain and saying good morning. Maybe it is the same phrase before sleep. These little repeated signals help babies feel the shape of the day, and they help parents feel less lost inside it too.",
-    closing: "Warmly, Patricia"
+    closing: "Warmly"
   },
   {
     letterId: "weekly-letter-2026-06-28",
@@ -66,7 +66,7 @@ const mockWeeklyLetters: WeeklyLetter[] = [
     greeting: "Dear Maria,",
     bodyText:
       "A lot of parenting happens in the noticing. You saw when Sofia seemed a little fussier, when feeding changed, when she wanted to be held longer. Those notes may feel ordinary, but they help you understand her patterns.\n\nThis week, let Nianza hold a few of those observations for you. You do not need to remember everything. You only need a place to put what matters so you can return to it when your mind is crowded.",
-    closing: "Here when you need me, Patricia"
+    closing: "Here when you need me"
   }
 ];
 

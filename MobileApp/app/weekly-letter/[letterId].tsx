@@ -153,7 +153,7 @@ export default function WeeklyLetterScreen() {
                   {letter.title}
                 </Text>
                 <Text selectable style={{ color: theme.colors.muted, fontSize: 14, lineHeight: 20 }}>
-                  Patricia reads each letter in the same voice you hear throughout Nianza.
+                  I read each letter in the same voice you hear throughout Nianza.
                 </Text>
               </View>
 
@@ -182,7 +182,7 @@ export default function WeeklyLetterScreen() {
                 >
                   <SfIcon name={isPlaying ? "pause.fill" : "speaker.wave.2.fill"} color="white" size={22} />
                   <Text selectable={false} style={{ color: "white", fontSize: 15, fontWeight: "900" }}>
-                    {audioLoading ? "Preparing Patricia..." : isPlaying ? "Pause Patricia" : "Replay Patricia's letter"}
+                    {audioLoading ? "Preparing my voice..." : isPlaying ? "Pause my voice" : "Replay my letter"}
                   </Text>
                 </Pressable>
 

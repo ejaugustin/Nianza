@@ -1,5 +1,5 @@
 import { Link, router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/auth-context";
@@ -20,7 +20,6 @@ const weeklyCards = [
 export default function HomeScreen() {
   const auth = useAuth();
   const profile = auth.profile;
-  const [dailyNotePlaying, setDailyNotePlaying] = useState(false);
   const dailyNoteQuery = useQuery({
     queryKey: ["daily-note", profile?.language || mockHome.language, profile?.ageWindowMonths || mockHome.ageWindowMonths, mockHome.dailyNoteDomain],
     queryFn: () =>
@@ -64,7 +63,7 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      <PatriciaNote isPlaying={dailyNotePlaying} onTogglePlay={() => setDailyNotePlaying((current) => !current)}>{personalizedDailyNote}</PatriciaNote>
+      <PatriciaNote>{personalizedDailyNote}</PatriciaNote>
       {dailyNoteQuery.isError ? <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>Showing Patricia's saved note.</Text> : null}
       <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>{mockHome.dateLabel}</Text>
 

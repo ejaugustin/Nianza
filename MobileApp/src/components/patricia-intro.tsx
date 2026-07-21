@@ -6,7 +6,7 @@ import { SfIcon } from "@/components/screen-spec";
 import { theme } from "@/theme/theme";
 
 const introText =
-  "Hello, Maria. I'm Patricia. I'm here to help you notice Sofia's milestones, keep track of visits and vaccines, and think through the moments that feel too big to hold alone. We will take this journey one day at a time.";
+  "Hello, I'm Patricia. I'm here to help you notice milestones, keep track of visits and vaccines, and talk through the moments that feel too big to hold alone. Tell me a little about your family, and we'll take this one day at a time.";
 
 export function PatriciaIntro() {
   const player = useAudioPlayer();
@@ -42,7 +42,7 @@ export function PatriciaIntro() {
       await configurePatriciaPlayback();
       let uri = audioUri;
       if (!uri) {
-        uri = await fetchPatriciaSpeechAudio(introText, "onboarding-intro");
+        uri = await fetchPatriciaSpeechAudio(introText, "onboarding-intro-first-meeting");
         setAudioUri(uri);
       }
       player.replace({ uri });

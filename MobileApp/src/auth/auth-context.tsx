@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import { Redirect } from "expo-router";
 import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { setAuthToken } from "@/api/client";
@@ -52,8 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function restore() {
       const [storedSession, storedProfile] = await Promise.all([
-        AsyncStorage.getItem(SESSION_KEY),
-        AsyncStorage.getItem(PROFILE_KEY)
+        SecureStore.getItemAsync(SESSION_KEY),
+        SecureStore.getItemAsync(PROFILE_KEY)
       ]);
       const parsedSession = storedSession ? (JSON.parse(storedSession) as AuthSession) : null;
       const parsedProfile = storedProfile ? (JSON.parse(storedProfile) as ChildProfile) : null;
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthToken(parsedSession?.idToken || null);
         setStatus("authenticated");
       } else {
-        await AsyncStorage.removeItem(SESSION_KEY);
+        await SecureStore.deleteItemAsync(SESSION_KEY);
         setAuthToken(null);
         setStatus("unauthenticated");
       }
@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(nextSession);
     setAuthToken(nextSession.idToken);
     setStatus("authenticated");
-    await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
+    await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(nextSession));
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -104,13 +104,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       confirmReset: confirmPasswordReset,
       completeOnboarding: async (nextProfile) => {
         setProfile(nextProfile);
-        await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(nextProfile));
+        await SecureStore.setItemAsync(PROFILE_KEY, JSON.stringify(nextProfile));
       },
       signOut: async () => {
         setSession(null);
         setAuthToken(null);
         setStatus("unauthenticated");
-        await AsyncStorage.removeItem(SESSION_KEY);
+        await SecureStore.deleteItemAsync(SESSION_KEY);
       }
     }),
     [persistSession, profile, session, status]

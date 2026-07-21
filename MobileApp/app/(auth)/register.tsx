@@ -12,11 +12,16 @@ export default function RegisterScreen() {
   const [parentName, setParentName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function submit() {
     setError("");
+    if (password !== confirmPassword) {
+      setError("Those passwords do not match yet.");
+      return;
+    }
     setLoading(true);
     try {
       await auth.signUp(email, password, parentName, "en");
@@ -39,7 +44,8 @@ export default function RegisterScreen() {
       <AuthField label="Your name" value={parentName} onChangeText={setParentName} placeholder="Maria" />
       <AuthField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="you@example.com" />
       <AuthField label="Password" value={password} onChangeText={setPassword} secureTextEntry placeholder="10+ characters" />
-      <AuthButton loading={loading} disabled={!parentName || !email || password.length < 10} onPress={submit}>Create account</AuthButton>
+      <AuthField label="Confirm password" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholder="Type it again" />
+      <AuthButton loading={loading} disabled={!parentName || !email || password.length < 10 || confirmPassword.length < 10} onPress={submit}>Create account</AuthButton>
       <AuthButton variant="text" onPress={() => router.back()}>Back</AuthButton>
     </ScrollView>
   );

@@ -8,6 +8,23 @@ export type PatriciaContextEvent =
   | "reports"
   | "weekly-letter";
 
+export type LocalTimeLabel = "morning" | "afternoon" | "witching-hour" | "night";
+
+export type AmbientContext = {
+  sourceScreen: string;
+  screenState: string | null;
+  localTime: LocalTimeLabel;
+};
+
+export type BackendContextSeed = {
+  sourceScreen: "D2" | "F2" | "C1-visit" | "D6" | "D7";
+  eventType: BackendContextSeedEvent;
+  detail: string;
+  occurredAt: string;
+};
+
+type BackendContextSeedEvent = "milestone-checked" | "sick-encounter-active" | "visit-upcoming" | "capsule-invite" | "custom-first";
+
 export type ChatContextSeed = {
   source: string;
   childId?: string;
@@ -50,6 +67,49 @@ export function seedFromParams(params: Record<string, string | string[] | undefi
     title: one(params.title),
     detail: one(params.detail),
     occurredAt: one(params.occurredAt)
+  };
+}
+
+export function localTimeLabel(date = new Date()): LocalTimeLabel {
+  const hour = date.getHours();
+  if (hour >= 0 && hour < 5) return "night";
+  if (hour >= 16 && hour < 19) return "witching-hour";
+  if (hour < 12) return "morning";
+  return "afternoon";
+}
+
+export function ambientContextFromSeed(seed: ChatContextSeed): AmbientContext {
+  const screenState = [seed.title, seed.detail].filter(Boolean).join(" - ");
+  return {
+    sourceScreen: seed.source || "floating-patricia",
+    screenState: screenState || null,
+    localTime: localTimeLabel()
+  };
+}
+
+function backendSourceScreen(seed: ChatContextSeed): BackendContextSeed["sourceScreen"] | null {
+  if (seed.eventType === "milestone-checked") return "D2";
+  if (seed.eventType === "sick-encounter-active") return "F2";
+  if (seed.eventType === "visit-upcoming") return "C1-visit";
+  return null;
+}
+
+function backendEventType(seed: ChatContextSeed): BackendContextSeedEvent | null {
+  if (seed.eventType === "milestone-checked") return "milestone-checked";
+  if (seed.eventType === "sick-encounter-active") return "sick-encounter-active";
+  if (seed.eventType === "visit-upcoming") return "visit-upcoming";
+  return null;
+}
+
+export function backendContextSeedFromSeed(seed: ChatContextSeed): BackendContextSeed | undefined {
+  const sourceScreen = backendSourceScreen(seed);
+  const eventType = backendEventType(seed);
+  if (!sourceScreen || !eventType) return undefined;
+  return {
+    sourceScreen,
+    eventType,
+    detail: seed.detail || seed.title || "Parent-opened context",
+    occurredAt: seed.occurredAt || new Date().toISOString()
   };
 }
 

@@ -211,6 +211,13 @@ Resources:
     Properties:
       Name: !Sub nianza-mobile-api-${Environment}
       StageName: !Ref Environment
+      Auth:
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          MobileCognitoAuthorizer:
+            UserPoolArn: !GetAtt MobileUserPool.Arn
+            Identity:
+              Header: Authorization
 
   AdminAuditLogTable:
     Type: AWS::DynamoDB::Table
@@ -314,6 +321,139 @@ Resources:
           Projection:
             ProjectionType: ALL
 
+  MobileUsersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-users-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+
+  MobileChildrenTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-children-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: childId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: childId
+          KeyType: RANGE
+
+  MilestoneProgressTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-milestone-progress-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: childId
+          AttributeType: S
+        - AttributeName: observedAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: childId
+          KeyType: HASH
+        - AttributeName: observedAt
+          KeyType: RANGE
+
+  SickEncountersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-sick-encounters-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: childId
+          AttributeType: S
+        - AttributeName: encounterId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: childId
+          KeyType: HASH
+        - AttributeName: encounterId
+          KeyType: RANGE
+
+  MobileConversationsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-conversations-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: sessionId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: updatedAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sessionId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: user-updatedAt-index
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: updatedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
   AdminContentFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -402,6 +542,45 @@ Resources:
             Path: /mobile/v1/voice/speak
             Method: POST
 
+  MobileChatFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-chat-${Environment}
+      CodeUri: ../
+      Handler: mobile/chat/handler.handler
+      Timeout: 30
+      MemorySize: 512
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MobileUsersTable
+          CHILDREN_TABLE: !Ref MobileChildrenTable
+          MILESTONES_TABLE: !Ref MilestoneProgressTable
+          SICK_ENCOUNTERS_TABLE: !Ref SickEncountersTable
+          CONTENT_TABLE: !Ref ContentLibraryTable
+          CONVERSATIONS_TABLE: !Ref MobileConversationsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileUsersTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MilestoneProgressTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref SickEncountersTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref ContentLibraryTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileConversationsTable
+      Events:
+        Chat:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/chat
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+
 Outputs:
   AdminApiUrl:
     Value: !Sub https://${AdminApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/admin/v1
@@ -427,3 +606,13 @@ Outputs:
     Value: !Ref AdminSessionsTable
   ContentLibraryTableName:
     Value: !Ref ContentLibraryTable
+  MobileUsersTableName:
+    Value: !Ref MobileUsersTable
+  MobileChildrenTableName:
+    Value: !Ref MobileChildrenTable
+  MilestoneProgressTableName:
+    Value: !Ref MilestoneProgressTable
+  SickEncountersTableName:
+    Value: !Ref SickEncountersTable
+  MobileConversationsTableName:
+    Value: !Ref MobileConversationsTable

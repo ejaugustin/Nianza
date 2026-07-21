@@ -4,10 +4,11 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { sendChatMessage } from "@/api/chat";
 import { transcribeVoiceNote } from "@/api/voice";
 import { configurePatriciaPlayback, fetchPatriciaSpeechAudio, pausePatriciaPlayer } from "@/audio/patricia-voice";
 import { RequireAuth, useAuth } from "@/auth/auth-context";
-import { mockTranscriptFromSeed, patriciaOpening, seedFromParams } from "@/chat/patricia-context";
+import { ambientContextFromSeed, backendContextSeedFromSeed, mockTranscriptFromSeed, patriciaOpening, seedFromParams } from "@/chat/patricia-context";
 import { SfIcon } from "@/components/screen-spec";
 import { theme } from "@/theme/theme";
 
@@ -53,6 +54,7 @@ export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const seed = useMemo(() => seedFromParams(params, profile?.childName || "your child"), [params, profile?.childName]);
   const childName = seed.childName || "your child";
+  const sessionId = useMemo(() => `mobile-${Date.now()}-${Math.random().toString(16).slice(2)}`, []);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 250);
   const patriciaPlayer = useAudioPlayer();
@@ -124,15 +126,32 @@ export default function ChatScreen() {
     }
   }, [patriciaPlayerStatus.currentTime, patriciaPlayerStatus.playing, speakingMessageId]);
 
-  function sendMessage() {
+  async function getPatriciaReply(parentMessage: string) {
+    const response = await sendChatMessage({
+      sessionId,
+      message: parentMessage,
+      childId: seed.childId || "primary-child",
+      language: profile?.language || "en",
+      ambientContext: ambientContextFromSeed(seed),
+      contextSeed: backendContextSeedFromSeed(seed)
+    });
+    return response.message.text;
+  }
+
+  async function sendMessage() {
     const message = draft.trim();
     if (!message) return;
-    setMessages((current) => [
-      ...current,
-      makeMessage("parent", message),
-      makeMessage("patricia", "I hear you. Start with the part that feels heaviest, and we can make it smaller together.")
-    ]);
     setDraft("");
+    setMessages((current) => [...current, makeMessage("parent", message)]);
+    try {
+      const reply = await getPatriciaReply(message);
+      setMessages((current) => [...current, makeMessage("patricia", reply)]);
+    } catch {
+      setMessages((current) => [
+        ...current,
+        makeMessage("patricia", "I hear you. Start with the part that feels heaviest, and we can make it smaller together.")
+      ]);
+    }
   }
 
   async function startVoiceMessage() {
@@ -212,11 +231,13 @@ export default function ChatScreen() {
           })
         : null;
       const transcript = response?.transcript || mockTranscriptFromSeed(seed);
-      setMessages((current) => [
-        ...current,
-        makeMessage("parent", transcript),
-        makeMessage("patricia", patriciaReply())
-      ]);
+      setMessages((current) => [...current, makeMessage("parent", transcript)]);
+      try {
+        const reply = await getPatriciaReply(transcript);
+        setMessages((current) => [...current, makeMessage("patricia", reply)]);
+      } catch {
+        setMessages((current) => [...current, makeMessage("patricia", patriciaReply())]);
+      }
       setVoiceMode("idle");
     } catch {
       const transcript = mockTranscriptFromSeed(seed);

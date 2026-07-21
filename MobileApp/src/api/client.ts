@@ -8,6 +8,8 @@ export const apiClient = axios.create({
   headers: { "Content-Type": "application/json" }
 });
 
+let authToken: string | null = null;
+
 export class ApiError extends Error {
   constructor(message: string, public status: number, public code?: string) {
     super(message);
@@ -49,7 +51,8 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
       method: "POST",
       headers: {
         Accept: "application/json",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
       },
       body: JSON.stringify(body || {})
     });
@@ -67,6 +70,7 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
 }
 
 export function setAuthToken(idToken: string | null) {
+  authToken = idToken;
   if (idToken) {
     apiClient.defaults.headers.common.Authorization = `Bearer ${idToken}`;
   } else {

@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "validate:template": "sam validate --template-file infra/template.yaml",
-    "build": "sam build --template-file infra/template.yaml"
+    "build": "sam build --template-file infra/template.yaml",
+    "test:acceptance": "node mobile/chat/acceptance.ej.test.js"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.864.0",

@@ -9,7 +9,7 @@
     "icon": "./assets/brand/app-icon-1024.png",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/brand/app-icon-512.png",
+      "image": "./assets/brand/splash-tagline.png",
       "resizeMode": "contain",
       "backgroundColor": "#F7F9FA"
     },

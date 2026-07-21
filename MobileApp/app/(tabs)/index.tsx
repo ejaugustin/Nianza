@@ -36,7 +36,7 @@ export default function HomeScreen() {
       <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>{mockHome.dateLabel}</Text>
 
       <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11, letterSpacing: 1, marginTop: 10 }}>THIS WEEK</Text>
-      <View style={{ flexDirection: "row", gap: 8 }}>
+      <View style={{ flexDirection: "row", gap: 10 }}>
         {["Milestones\n2 this month", "Vaccines\nNext: DTaP", "Vitals\nJul 12"].map((label) => {
           const [title, subtitle] = label.split("\n");
           return (
@@ -46,7 +46,7 @@ export default function HomeScreen() {
                 flex: 1,
                 backgroundColor: "white",
                 borderRadius: theme.radii.card,
-                padding: 14,
+                padding: 12,
                 gap: 8,
                 minHeight: 88,
                 shadowColor: "#142832",
@@ -56,8 +56,8 @@ export default function HomeScreen() {
                 elevation: 2
               }}
             >
-              <Text selectable style={{ color: theme.colors.text, fontSize: 12, fontWeight: "700" }}>{title}</Text>
-              <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>{subtitle}</Text>
+              <Text selectable numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={{ color: theme.colors.text, fontSize: 13, fontWeight: "700" }}>{title}</Text>
+              <Text selectable numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: theme.colors.greyIcon, fontSize: 11 }}>{subtitle}</Text>
             </View>
           );
         })}

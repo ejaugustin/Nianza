@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="140" viewBox="0 0 600 140">
+  <g transform="translate(20,26) scale(0.88)">
+    <path d="M50,15 C70,25 78,50 65,72 C55,88 35,88 28,70 C18,48 30,20 50,15 Z" fill="#34ABC4"></path><path d="M48,85 Q40,95 29,92" stroke="#34ABC4" stroke-width="6" fill="none" stroke-linecap="round"></path>
+  </g>
+  <text x="150" y="98" font-family="Poppins, sans-serif" font-weight="500" font-size="72" letter-spacing="4" fill="#1D7A91">Nianza</text>
+</svg>

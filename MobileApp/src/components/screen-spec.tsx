@@ -24,11 +24,7 @@ export function SpecCard({ children, style }: { children: ReactNode; style?: obj
           backgroundColor: "white",
           borderRadius: 16,
           padding: 16,
-          shadowColor: "#142832",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.08,
-          shadowRadius: 8,
-          elevation: 2
+          boxShadow: "0 2px 8px rgba(20, 40, 50, 0.08)"
         },
         style
       ]}
@@ -111,6 +107,38 @@ export function SfIcon({ name, color = theme.colors.bluePrimary, size = 22 }: { 
         <View style={{ position: "absolute", left: size * 0.22, top: size * 0.18, width: size * 0.56, height: size * 0.56, borderWidth: 2, borderColor: color, borderRadius: size * 0.28, borderBottomWidth: 0 }} />
         <IconLine color={color} style={{ width: size * 0.66, left: size * 0.17, top: size * 0.72 }} />
         <View style={{ position: "absolute", left: size * 0.44, top: size * 0.82, width: size * 0.12, height: size * 0.12, borderRadius: size * 0.06, backgroundColor: color }} />
+      </View>
+    );
+  }
+
+  if (name === "camera") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.12, top: size * 0.28, width: size * 0.76, height: size * 0.5, borderWidth: 2, borderColor: color, borderRadius: size * 0.12 }} />
+        <View style={{ position: "absolute", left: size * 0.32, top: size * 0.42, width: size * 0.36, height: size * 0.24, borderWidth: 2, borderColor: color, borderRadius: size * 0.18 }} />
+        <IconLine color={color} style={{ width: size * 0.2, left: size * 0.26, top: size * 0.22 }} />
+      </View>
+    );
+  }
+
+  if (name === "play") {
+    return (
+      <View style={box}>
+        <View
+          style={{
+            position: "absolute",
+            left: size * 0.34,
+            top: size * 0.18,
+            width: 0,
+            height: 0,
+            borderTopWidth: size * 0.32,
+            borderBottomWidth: size * 0.32,
+            borderLeftWidth: size * 0.46,
+            borderTopColor: "transparent",
+            borderBottomColor: "transparent",
+            borderLeftColor: color
+          }}
+        />
       </View>
     );
   }

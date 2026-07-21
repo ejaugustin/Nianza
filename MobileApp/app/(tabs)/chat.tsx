@@ -1,8 +1,9 @@
-import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from "expo-audio";
+import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus, useAudioRecorder, useAudioRecorderState } from "expo-audio";
+import * as FileSystem from "expo-file-system/legacy";
 import { useLocalSearchParams } from "expo-router";
-import * as Speech from "expo-speech";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { speakPatriciaText, transcribeVoiceNote } from "@/api/voice";
 import { useAuth } from "@/auth/auth-context";
 import { SfIcon } from "@/components/screen-spec";
 import { theme } from "@/theme/theme";
@@ -11,6 +12,8 @@ type ChatMessage = {
   id: string;
   sender: "patricia" | "parent";
   text: string;
+  audioUri?: string;
+  audioLoading?: boolean;
 };
 
 function one(value: string | string[] | undefined) {
@@ -62,6 +65,22 @@ function makeMessage(sender: ChatMessage["sender"], text: string): ChatMessage {
   };
 }
 
+function contentTypeFromUri(uri?: string | null) {
+  if (!uri) return "audio/mp4";
+  const lower = uri.toLowerCase();
+  if (lower.endsWith(".wav")) return "audio/wav";
+  if (lower.endsWith(".mp3")) return "audio/mpeg";
+  if (lower.endsWith(".m4a")) return "audio/mp4";
+  return "audio/mp4";
+}
+
+async function writePatriciaAudio(messageId: string, audioBase64: string) {
+  const filename = `patricia-${messageId.replace(/[^a-z0-9-]/gi, "")}.mp3`;
+  const uri = `${FileSystem.cacheDirectory || ""}${filename}`;
+  await FileSystem.writeAsStringAsync(uri, audioBase64, { encoding: FileSystem.EncodingType.Base64 });
+  return uri;
+}
+
 export default function ChatScreen() {
   const params = useLocalSearchParams();
   const { profile } = useAuth();
@@ -70,6 +89,8 @@ export default function ChatScreen() {
   const detail = one(params.detail);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 250);
+  const patriciaPlayer = useAudioPlayer();
+  const patriciaPlayerStatus = useAudioPlayerStatus(patriciaPlayer);
   const [draft, setDraft] = useState("");
   const [mode, setMode] = useState<"idle" | "camera">("idle");
   const [voiceMode, setVoiceMode] = useState<"idle" | "recording" | "paused" | "transcribing">("idle");
@@ -79,21 +100,32 @@ export default function ChatScreen() {
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const isVoiceActive = voiceMode !== "idle";
 
-  function speakPatriciaMessage(message: ChatMessage) {
+  async function playAudioUri(uri: string, messageId: string) {
+    patriciaPlayer.replace({ uri });
+    patriciaPlayer.seekTo(0);
+    patriciaPlayer.play();
+    setSpeakingMessageId(messageId);
+  }
+
+  async function speakPatriciaMessage(message: ChatMessage) {
     if (message.sender !== "patricia") return;
-    Speech.stop();
-    setSpeakingMessageId(message.id);
-    Speech.speak(message.text, {
-      language: "en-US",
-      pitch: 1.02,
-      rate: 0.9,
-      onDone: () => setSpeakingMessageId(null),
-      onStopped: () => setSpeakingMessageId(null),
-      onError: () => {
-        setSpeakingMessageId(null);
-        setNotice("Patricia could not play audio just now. You can tap replay to try again.");
-      }
-    });
+    setNotice(null);
+
+    if (message.audioUri) {
+      await playAudioUri(message.audioUri, message.id);
+      return;
+    }
+
+    setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioLoading: true } : item)));
+    try {
+      const response = await speakPatriciaText(message.text);
+      const audioUri = await writePatriciaAudio(message.id, response.audioBase64);
+      setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioUri, audioLoading: false } : item)));
+      await playAudioUri(audioUri, message.id);
+    } catch {
+      setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioLoading: false } : item)));
+      setNotice("Patricia could not play audio just now. You can tap replay to try again.");
+    }
   }
 
   useEffect(() => {
@@ -103,9 +135,16 @@ export default function ChatScreen() {
     }
 
     return () => {
-      Speech.stop();
+      patriciaPlayer.pause();
+      setSpeakingMessageId(null);
     };
-  }, [messages]);
+  }, [messages.length]);
+
+  useEffect(() => {
+    if (speakingMessageId && !patriciaPlayerStatus.playing && patriciaPlayerStatus.currentTime > 0) {
+      setSpeakingMessageId(null);
+    }
+  }, [patriciaPlayerStatus.currentTime, patriciaPlayerStatus.playing, speakingMessageId]);
 
   function sendMessage() {
     const message = draft.trim();
@@ -177,15 +216,36 @@ export default function ChatScreen() {
       setNotice("Voice captured locally, but Patricia had trouble ending the recording cleanly.");
     }
 
-    const transcript = mockTranscript(childName, eventType, detail);
-    setTimeout(() => {
+    const recordingUri = recorder.uri || recorderState.url;
+
+    try {
+      const audioBase64 = recordingUri
+        ? await FileSystem.readAsStringAsync(recordingUri, { encoding: FileSystem.EncodingType.Base64 })
+        : "";
+      const response = audioBase64
+        ? await transcribeVoiceNote({
+            audioBase64,
+            contentType: contentTypeFromUri(recordingUri),
+            language: "en"
+          })
+        : null;
+      const transcript = response?.transcript || mockTranscript(childName, eventType, detail);
       setMessages((current) => [
         ...current,
         makeMessage("parent", transcript),
         makeMessage("patricia", patriciaReply())
       ]);
       setVoiceMode("idle");
-    }, 650);
+    } catch {
+      const transcript = mockTranscript(childName, eventType, detail);
+      setMessages((current) => [
+        ...current,
+        makeMessage("parent", transcript),
+        makeMessage("patricia", "I had trouble hearing the recording clearly, so I saved a placeholder for now. Tell me the part you most want help sorting out.")
+      ]);
+      setVoiceMode("idle");
+      setNotice("Patricia could not transcribe that voice note yet. Check the Deepgram backend configuration and try again.");
+    }
   }
 
   return (
@@ -214,7 +274,7 @@ export default function ChatScreen() {
                 {!fromParent ? (
                   <Pressable onPress={() => speakPatriciaMessage(message)} style={{ alignSelf: "flex-start", minHeight: 32, borderRadius: 16, flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 10, backgroundColor: isSpeaking ? theme.colors.blueLight : "white" }}>
                     <SfIcon name="speaker.wave.2.fill" color={theme.colors.bluePrimary} size={17} />
-                    <Text selectable style={{ color: theme.colors.blueDeep, fontSize: 12, fontWeight: "700" }}>{isSpeaking ? "Playing" : "Replay"}</Text>
+                    <Text selectable style={{ color: theme.colors.blueDeep, fontSize: 12, fontWeight: "700" }}>{message.audioLoading ? "Loading" : isSpeaking ? "Playing" : "Replay"}</Text>
                   </Pressable>
                 ) : null}
               </View>

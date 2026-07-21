@@ -16,6 +16,19 @@ Parameters:
     Default: super_admin
     AllowedValues: [super_admin, content_editor, operations]
     Description: Application role assigned to the initial admin user.
+  DeepgramApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Deepgram API key for mobile voice STT/TTS. Pass from a secure local variable at deploy time.
+  DeepgramTtsModel:
+    Type: String
+    Default: aura-2-cordelia-en
+    Description: Deepgram Aura voice model used for Patricia.
+  DeepgramSttModel:
+    Type: String
+    Default: nova-2
+    Description: Deepgram speech-to-text model for parent voice notes.
 
 Globals:
   Function:
@@ -361,6 +374,33 @@ Resources:
             RestApiId: !Ref MobileApi
             Path: /mobile/v1/content/daily-note
             Method: GET
+
+  MobileVoiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-voice-${Environment}
+      CodeUri: ../
+      Handler: mobile/voice/handler.handler
+      Timeout: 45
+      MemorySize: 512
+      Environment:
+        Variables:
+          DEEPGRAM_API_KEY: !Ref DeepgramApiKey
+          DEEPGRAM_TTS_MODEL: !Ref DeepgramTtsModel
+          DEEPGRAM_STT_MODEL: !Ref DeepgramSttModel
+      Events:
+        VoiceTranscribe:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/voice/transcribe
+            Method: POST
+        VoiceSpeak:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/voice/speak
+            Method: POST
 
 Outputs:
   AdminApiUrl:

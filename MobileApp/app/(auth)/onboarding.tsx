@@ -180,6 +180,30 @@ function SelectCard({
   );
 }
 
+function ChoicePill({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      style={{
+        flex: 1,
+        minHeight: 54,
+        borderRadius: 16,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: active ? theme.colors.blueLight : "white",
+        borderWidth: 1.5,
+        borderColor: active ? theme.colors.bluePrimary : theme.colors.border
+      }}
+    >
+      <Text selectable style={{ color: active ? theme.colors.blueDeep : theme.colors.text, fontSize: 16, fontWeight: "800" }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 function Header({ title, subtitle, step }: { title: string; subtitle?: string; step?: number }) {
   return (
     <View style={{ gap: 14 }}>
@@ -373,8 +397,8 @@ export default function OnboardingScreen() {
           <View style={{ gap: 8 }}>
             <Text selectable style={{ color: theme.colors.muted, fontSize: 13, fontWeight: "700" }}>Was your baby born early?</Text>
             <View style={{ flexDirection: "row", gap: 10 }}>
-              <SelectCard title="No" active={!bornEarly} onPress={() => setBornEarly(false)} />
-              <SelectCard title="Yes" active={bornEarly} onPress={() => setBornEarly(true)} />
+              <ChoicePill label="No" active={!bornEarly} onPress={() => setBornEarly(false)} />
+              <ChoicePill label="Yes" active={bornEarly} onPress={() => setBornEarly(true)} />
             </View>
             {bornEarly ? <AuthField label="How many weeks early?" value={weeksEarly} onChangeText={setWeeksEarly} keyboardType="number-pad" placeholder="4" /> : null}
           </View>

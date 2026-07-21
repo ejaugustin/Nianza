@@ -85,6 +85,7 @@ export default function OnboardingScreen() {
         <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} trackColor={{ true: theme.colors.blueLight, false: theme.colors.border }} thumbColor={notificationsEnabled ? theme.colors.bluePrimary : "white"} />
       </View>
       <AuthButton disabled={!parentName || !childName || !childBirthDate} onPress={submit}>Continue</AuthButton>
+      <AuthButton variant="text" onPress={auth.signOut}>Sign out</AuthButton>
     </ScrollView>
   );
 }

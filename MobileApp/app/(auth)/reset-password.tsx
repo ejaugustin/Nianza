@@ -39,6 +39,7 @@ export default function ResetPasswordScreen() {
       <AuthField label="Code" value={code} onChangeText={setCode} keyboardType="number-pad" />
       <AuthField label="New password" value={password} onChangeText={setPassword} secureTextEntry />
       <AuthButton loading={loading} disabled={!email || !code || password.length < 10} onPress={submit}>Reset password</AuthButton>
+      <AuthButton variant="text" onPress={() => router.replace("/(auth)/login")}>Back</AuthButton>
     </ScrollView>
   );
 }

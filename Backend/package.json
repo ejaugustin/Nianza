@@ -6,7 +6,8 @@
     "validate:template": "sam validate --template-file infra/template.yaml",
     "build": "sam build --template-file infra/template.yaml",
     "test:acceptance": "node mobile/chat/acceptance.ej.test.js",
-    "test:milestones": "node mobile/milestones/acceptance.test.js"
+    "test:milestones": "node mobile/milestones/acceptance.test.js",
+    "test:vaccines": "node mobile/vaccines/acceptance.test.js"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.864.0",

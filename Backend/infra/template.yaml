@@ -392,6 +392,31 @@ Resources:
         - AttributeName: observedAt
           KeyType: RANGE
 
+  ImmunizationStatusTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-immunization-status-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: childId
+          AttributeType: S
+        - AttributeName: doseId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: childId
+          KeyType: HASH
+        - AttributeName: doseId
+          KeyType: RANGE
+
   SickEncountersTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
@@ -453,6 +478,31 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: expiresAt
         Enabled: true
+
+  MobileReportsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-reports-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: childId
+          AttributeType: S
+        - AttributeName: reportId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: childId
+          KeyType: HASH
+        - AttributeName: reportId
+          KeyType: RANGE
 
   AdminContentFunction:
     Type: AWS::Serverless::Function
@@ -564,6 +614,57 @@ Resources:
             Auth:
               Authorizer: MobileCognitoAuthorizer
 
+  MobileVaccinesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-vaccines-${Environment}
+      CodeUri: ../
+      Handler: mobile/vaccines/handler.handler
+      Environment:
+        Variables:
+          CHILDREN_TABLE: !Ref MobileChildrenTable
+          VACCINES_TABLE: !Ref ImmunizationStatusTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ImmunizationStatusTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref MobileChildrenTable
+      Events:
+        VaccinesGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/vaccines/{childId}
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        VaccineRecord:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/vaccines/{childId}/{doseId}
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        VaccineDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/vaccines/{childId}/{doseId}
+            Method: DELETE
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        VaccineBackfillOffered:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/vaccines/{childId}/backfill-offered
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+
   MobileVoiceFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -630,6 +731,47 @@ Resources:
             Auth:
               Authorizer: MobileCognitoAuthorizer
 
+  MobileReportsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-reports-${Environment}
+      CodeUri: ../
+      Handler: mobile/reports/handler.handler
+      Environment:
+        Variables:
+          CHILDREN_TABLE: !Ref MobileChildrenTable
+          REPORTS_TABLE: !Ref MobileReportsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileReportsTable
+      Events:
+        ReportsList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/reports/{childId}
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        ReportsCreate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/reports/{childId}
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        ReportGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/reports/{childId}/{reportId}
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+
 Outputs:
   AdminApiUrl:
     Value: !Sub https://${AdminApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/admin/v1
@@ -661,7 +803,11 @@ Outputs:
     Value: !Ref MobileChildrenTable
   MilestoneProgressTableName:
     Value: !Ref MilestoneProgressTable
+  ImmunizationStatusTableName:
+    Value: !Ref ImmunizationStatusTable
   SickEncountersTableName:
     Value: !Ref SickEncountersTable
   MobileConversationsTableName:
     Value: !Ref MobileConversationsTable
+  MobileReportsTableName:
+    Value: !Ref MobileReportsTable

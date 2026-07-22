@@ -72,6 +72,29 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   }
 }
 
+export async function apiDelete<T>(path: string): Promise<T> {
+  try {
+    const response = await fetch(buildUrl(path), {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+      }
+    });
+
+    if (!response.ok) {
+      const responseBody = await response.json().catch(() => ({}));
+      throw new ApiError(responseBody.message || responseBody.error || `Request failed with status ${response.status}`, response.status, responseBody.code);
+    }
+
+    if (response.status === 204) return undefined as T;
+    return response.json();
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError("Network error. Please check your connection.", 0, "NETWORK_ERROR");
+  }
+}
+
 export function setAuthToken(idToken: string | null) {
   authToken = idToken;
   if (idToken) {

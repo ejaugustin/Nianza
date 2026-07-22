@@ -1,23 +1,31 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { createMobileReport, listMobileReports, type ReportType } from "@/api/reports";
 import { listWeeklyLetters } from "@/api/weekly-letters";
 import { useAuth } from "@/auth/auth-context";
 import { Pill, ScreenTitle, SectionLabel, SfIcon, SpecCard } from "@/components/screen-spec";
 import { TalkToPatriciaButton } from "@/components/talk-to-patricia-button";
 import { theme } from "@/theme/theme";
 
-const reports = [
+const reportActions: Array<{
+  title: string;
+  subtitle: string;
+  action: string;
+  reportType: ReportType;
+}> = [
   {
     title: "Monthly Progress Report",
     subtitle: "Milestones, vaccines, and vitals for this month",
-    action: "Generate"
+    action: "Generate",
+    reportType: "monthly"
   },
   {
     title: "Doctor Visit Pack",
     subtitle: "Questions and records for your next visit",
-    action: "Prepare pack"
+    action: "Prepare pack",
+    reportType: "visit-pack"
   }
 ];
 
@@ -28,16 +36,39 @@ function formatDateRange(startDate: string, endDate: string) {
 
 export default function ReportsScreen() {
   const { profile } = useAuth();
+  const queryClient = useQueryClient();
   const [activeReport, setActiveReport] = useState<string | null>(null);
+  const [reportNotice, setReportNotice] = useState<string | null>(null);
   const [weeklyLettersOpen, setWeeklyLettersOpen] = useState(false);
   const childName = profile?.childName || "your child";
   const parentFirstName = profile?.parentFirstName || profile?.parentName?.split(/\s+/)[0] || "there";
+  const childId = "primary-child";
   const lettersQuery = useQuery({
-    queryKey: ["weekly-letters", "primary-child", childName, parentFirstName],
-    queryFn: () => listWeeklyLetters("primary-child", { childName, parentFirstName })
+    queryKey: ["weekly-letters", childId, childName, parentFirstName],
+    queryFn: () => listWeeklyLetters(childId, { childName, parentFirstName })
+  });
+  const mobileReportsQuery = useQuery({
+    queryKey: ["mobile-reports", childId],
+    queryFn: () => listMobileReports(childId)
+  });
+  const createReportMutation = useMutation({
+    mutationFn: (reportType: ReportType) => createMobileReport(childId, reportType, {
+      includeMilestones: true,
+      includeVaccines: true,
+      includeVitals: true
+    }),
+    onSuccess: (report) => {
+      setReportNotice(`${report.title} is ready for the next PDF step.`);
+      setActiveReport(report.title);
+      queryClient.invalidateQueries({ queryKey: ["mobile-reports", childId] });
+    },
+    onError: (err) => {
+      setReportNotice(err instanceof Error ? err.message : "I could not create that report yet.");
+    }
   });
   const weeklyLetters = lettersQuery.data || [];
   const latestLetter = weeklyLetters[0];
+  const generatedReports = mobileReportsQuery.data || [];
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -47,6 +78,13 @@ export default function ReportsScreen() {
       style={{ backgroundColor: theme.colors.background }}
     >
       <ScreenTitle title="Reports" subtitle={`Generated for ${childName}`} />
+      {reportNotice ? (
+        <View style={{ borderWidth: 1, borderColor: theme.colors.bluePrimary, backgroundColor: theme.colors.blueLight, borderRadius: 18, padding: 14 }}>
+          <Text selectable style={{ color: theme.colors.blueDeep, fontSize: 13, fontWeight: "700", lineHeight: 18 }}>
+            {reportNotice}
+          </Text>
+        </View>
+      ) : null}
 
       <SectionLabel>WEEKLY LETTERS</SectionLabel>
       <Pressable onPress={() => setWeeklyLettersOpen((open) => !open)}>
@@ -128,12 +166,15 @@ export default function ReportsScreen() {
 
       <SectionLabel>GENERATED REPORTS</SectionLabel>
 
-      {reports.map((report) => (
+      {reportActions.map((report) => (
         <SpecCard key={report.title} style={{ minHeight: 110, gap: 14 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
             <SfIcon name="doc.text" size={28} />
-            <Pressable onPress={() => setActiveReport(activeReport === report.title ? null : report.title)}>
-              <Pill label={report.action} />
+            <Pressable
+              disabled={createReportMutation.isPending}
+              onPress={() => createReportMutation.mutate(report.reportType)}
+            >
+              <Pill label={createReportMutation.isPending ? "Working" : report.action} />
             </Pressable>
           </View>
           <View style={{ gap: 7 }}>
@@ -158,6 +199,30 @@ export default function ReportsScreen() {
       ))}
 
       <SectionLabel>PAST REPORTS</SectionLabel>
+      {mobileReportsQuery.isLoading ? (
+        <Text selectable style={{ color: theme.colors.muted, fontSize: 13 }}>Loading report history...</Text>
+      ) : generatedReports.length ? (
+        generatedReports.map((report) => (
+          <SpecCard key={report.reportId} style={{ gap: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Text selectable style={{ color: theme.colors.text, fontSize: 16, fontWeight: "800" }}>{report.title}</Text>
+                <Text selectable style={{ color: theme.colors.muted, fontSize: 12, lineHeight: 17 }}>
+                  {report.periodLabel} - {new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(report.generatedAt))}
+                </Text>
+              </View>
+              <Pill label={report.status === "ready" ? "Ready" : report.status} />
+            </View>
+            <Text selectable style={{ color: theme.colors.muted, fontSize: 12, lineHeight: 17 }}>
+              PDF generation and email delivery will attach here next.
+            </Text>
+          </SpecCard>
+        ))
+      ) : (
+        <Text selectable style={{ color: theme.colors.muted, fontSize: 13 }}>
+          Generated reports will appear here by date.
+        </Text>
+      )}
     </ScrollView>
     <TalkToPatriciaButton source="H1-reports" eventType="reports" detail="Reports screen visible" entityId="reports" />
     </View>

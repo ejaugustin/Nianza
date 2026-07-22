@@ -191,15 +191,25 @@ export default function ChatScreen() {
     setNotice("Voice note discarded.");
   }
 
-  function toggleVoicePause() {
-    if (voiceMode === "recording") {
-      recorder.pause();
+  async function toggleVoicePause() {
+    try {
+      if (voiceMode === "recording") {
+        recorder.pause();
+        setVoiceMode("paused");
+        return;
+      }
+      if (voiceMode === "paused") {
+        await setAudioModeAsync({
+          allowsRecording: true,
+          playsInSilentMode: true,
+          shouldRouteThroughEarpiece: false
+        });
+        recorder.record();
+        setVoiceMode("recording");
+      }
+    } catch {
+      setNotice("Patricia could not resume listening. Try starting a fresh voice note.");
       setVoiceMode("paused");
-      return;
-    }
-    if (voiceMode === "paused") {
-      recorder.record();
-      setVoiceMode("recording");
     }
   }
 

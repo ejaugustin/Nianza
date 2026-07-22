@@ -11,7 +11,8 @@ const ANTHROPIC_API_KEY_PARAMETER = process.env.ANTHROPIC_API_KEY_PARAMETER;
 const ANTHROPIC_MODEL_PARAMETER = process.env.ANTHROPIC_MODEL_PARAMETER;
 const DEFAULT_ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || null;
 const MAX_TOKENS = Number(process.env.PATRICIA_MAX_TOKENS || 450);
-const TEMPERATURE = Number(process.env.PATRICIA_TEMPERATURE || 0.7);
+const RAW_TEMPERATURE = process.env.PATRICIA_TEMPERATURE;
+const TEMPERATURE = RAW_TEMPERATURE === undefined || RAW_TEMPERATURE === "" ? null : Number(RAW_TEMPERATURE);
 
 let promptCache = null;
 let apiKeyCache = null;
@@ -75,6 +76,21 @@ function cleanMessages(messages) {
     }));
 }
 
+function buildAnthropicPayload({ model, maxTokens, temperature, system, messages }) {
+  const payload = {
+    model,
+    max_tokens: maxTokens,
+    system,
+    messages
+  };
+
+  if (Number.isFinite(temperature) && !String(model || "").startsWith("claude-sonnet-5")) {
+    payload.temperature = temperature;
+  }
+
+  return payload;
+}
+
 async function callPatriciaModel({ message, messages, bundle }) {
   const { apiKey, model } = await getAnthropicConfig();
   if (!apiKey || !model) {
@@ -98,16 +114,16 @@ async function callPatriciaModel({ message, messages, bundle }) {
       "anthropic-version": "2023-06-01",
       "x-api-key": apiKey
     },
-    body: JSON.stringify({
+    body: JSON.stringify(buildAnthropicPayload({
       model,
-      max_tokens: MAX_TOKENS,
+      maxTokens: MAX_TOKENS,
       temperature: TEMPERATURE,
       system: system.join("\n\n"),
       messages: [
         ...cleanMessages(messages),
         { role: "user", content: String(message || "").slice(0, 4000) }
       ]
-    })
+    }))
   });
 
   const payload = await response.json().catch(() => ({}));
@@ -147,13 +163,13 @@ async function classifyMessage(message) {
       "anthropic-version": "2023-06-01",
       "x-api-key": apiKey
     },
-    body: JSON.stringify({
+    body: JSON.stringify(buildAnthropicPayload({
       model,
-      max_tokens: 8,
+      maxTokens: 8,
       temperature: 0,
       system: "Classify the parent message as exactly one label: distress, vaccine-hesitancy, clear. Emergency phrases should be distress here because hard emergency matching already ran. Output only the label.",
       messages: [{ role: "user", content: String(message || "").slice(0, 1000) }]
-    })
+    }))
   });
 
   if (!response.ok) return "clear";

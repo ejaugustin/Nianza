@@ -14,6 +14,7 @@ const documentClient = DynamoDBDocumentClient.from(rawClient, {
 
 const CHILDREN_TABLE = process.env.CHILDREN_TABLE;
 const REPORTS_TABLE = process.env.REPORTS_TABLE;
+const VITALS_TABLE = process.env.VITALS_TABLE;
 
 function parseBody(event) {
   if (!event.body) return {};
@@ -52,6 +53,48 @@ async function getChild(userId, childId) {
     Key: { userId, childId }
   }));
   return result.Item || null;
+}
+
+function titleForVitals(entryType) {
+  return {
+    temperature: "Temperature",
+    medication: "Medication",
+    symptom: "Symptom",
+    weight: "Weight",
+    height: "Length / height",
+    head_circumference: "Head circumference",
+    feeding: "Feeding",
+    diaper: "Diaper",
+    sleep: "Sleep",
+    note: "Note"
+  }[entryType] || "Vitals";
+}
+
+function labelForVitals(entry) {
+  if (entry.entryType === "temperature") return entry.valueText;
+  if (entry.entryType === "medication") return [entry.medName, entry.doseText].filter(Boolean).join(" - ");
+  if (entry.entryType === "symptom") return entry.symptomType === "other" ? entry.otherText : entry.symptomType;
+  if (["weight", "height", "head_circumference"].includes(entry.entryType)) return `${entry.value} ${entry.unit}`;
+  if (entry.entryType === "feeding") return [entry.feedingType, entry.amount].filter(Boolean).join(" - ");
+  if (entry.entryType === "diaper") return entry.diaperType;
+  return entry.note;
+}
+
+async function recentHealthLog(childId) {
+  if (!VITALS_TABLE) return [];
+  const result = await documentClient.send(new QueryCommand({
+    TableName: VITALS_TABLE,
+    KeyConditionExpression: "childId = :childId",
+    ExpressionAttributeValues: { ":childId": childId },
+    ScanIndexForward: false,
+    Limit: 20
+  }));
+  return (result.Items || []).map((entry) => ({
+    recordedAt: entry.recordedAt,
+    title: titleForVitals(entry.entryType),
+    label: labelForVitals(entry),
+    encounterName: entry.encounterName || null
+  }));
 }
 
 async function handleListReports(event) {
@@ -97,6 +140,9 @@ async function handleCreateReport(event) {
     url: null,
     expiresIn: 0,
     options: body.options || {},
+    sections: {
+      healthLog: body.options?.includeVitals ? await recentHealthLog(childId) : []
+    },
     generatedAt: now.toISOString(),
     updatedAt: now.toISOString()
   };

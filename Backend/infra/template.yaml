@@ -442,6 +442,31 @@ Resources:
         - AttributeName: encounterId
           KeyType: RANGE
 
+  VitalsLogTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-vitals-log-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: childId
+          AttributeType: S
+        - AttributeName: entryId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: childId
+          KeyType: HASH
+        - AttributeName: entryId
+          KeyType: RANGE
+
   MobileConversationsTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
@@ -665,6 +690,74 @@ Resources:
             Auth:
               Authorizer: MobileCognitoAuthorizer
 
+  MobileVitalsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-vitals-${Environment}
+      CodeUri: ../
+      Handler: mobile/vitals/handler.handler
+      Environment:
+        Variables:
+          CHILDREN_TABLE: !Ref MobileChildrenTable
+          VITALS_TABLE: !Ref VitalsLogTable
+          SICK_ENCOUNTERS_TABLE: !Ref SickEncountersTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref VitalsLogTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SickEncountersTable
+      Events:
+        VitalsList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/vitals/{childId}
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        VitalsCreate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/vitals/{childId}
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        VitalsDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/vitals/{childId}/{entryId}
+            Method: DELETE
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        EncountersList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/vitals/{childId}/encounters
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        EncountersCreate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/vitals/{childId}/encounters
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        EncounterEnd:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/vitals/{childId}/encounters/{encounterId}/end
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+
   MobileVoiceFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -741,11 +834,14 @@ Resources:
         Variables:
           CHILDREN_TABLE: !Ref MobileChildrenTable
           REPORTS_TABLE: !Ref MobileReportsTable
+          VITALS_TABLE: !Ref VitalsLogTable
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref MobileChildrenTable
         - DynamoDBCrudPolicy:
             TableName: !Ref MobileReportsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref VitalsLogTable
       Events:
         ReportsList:
           Type: Api
@@ -807,6 +903,8 @@ Outputs:
     Value: !Ref ImmunizationStatusTable
   SickEncountersTableName:
     Value: !Ref SickEncountersTable
+  VitalsLogTableName:
+    Value: !Ref VitalsLogTable
   MobileConversationsTableName:
     Value: !Ref MobileConversationsTable
   MobileReportsTableName:

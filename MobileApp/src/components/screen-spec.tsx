@@ -218,6 +218,74 @@ export function SfIcon({ name, color = theme.colors.bluePrimary, size = 22 }: { 
     );
   }
 
+  if (name === "thermometer") {
+    return (
+      <View style={box}>
+        <IconLine color={color} style={{ width: 2, height: size * 0.58, left: size * 0.48, top: size * 0.14 }} />
+        <View style={{ position: "absolute", left: size * 0.34, top: size * 0.62, width: size * 0.32, height: size * 0.32, borderRadius: size * 0.16, borderWidth: 2, borderColor: color }} />
+      </View>
+    );
+  }
+
+  if (name === "pills") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.1, top: size * 0.32, width: size * 0.42, height: size * 0.26, borderRadius: size * 0.13, borderWidth: 2, borderColor: color, transform: [{ rotate: "-28deg" }] }} />
+        <View style={{ position: "absolute", right: size * 0.1, top: size * 0.4, width: size * 0.42, height: size * 0.26, borderRadius: size * 0.13, borderWidth: 2, borderColor: color, transform: [{ rotate: "28deg" }] }} />
+      </View>
+    );
+  }
+
+  if (name === "cross.case") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.16, top: size * 0.18, width: size * 0.68, height: size * 0.62, borderRadius: size * 0.1, borderWidth: 2, borderColor: color }} />
+        <IconLine color={color} style={{ width: size * 0.34, left: size * 0.33, top: size * 0.49 }} />
+        <IconLine color={color} style={{ width: 2, height: size * 0.34, left: size * 0.49, top: size * 0.33 }} />
+      </View>
+    );
+  }
+
+  if (name === "scalemass" || name === "ruler") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.16, top: size * 0.26, width: size * 0.68, height: size * 0.48, borderRadius: size * 0.12, borderWidth: 2, borderColor: color }} />
+        <IconLine color={color} style={{ width: size * 0.36, left: size * 0.32, top: size * 0.45 }} />
+        <IconLine color={color} style={{ width: 2, height: size * 0.18, left: size * 0.49, top: size * 0.45 }} />
+      </View>
+    );
+  }
+
+  if (name === "circle") {
+    return <View style={[box, { borderRadius: size / 2, borderWidth: 2, borderColor: color }]} />;
+  }
+
+  if (name === "drop") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.28, top: size * 0.12, width: size * 0.44, height: size * 0.66, borderRadius: size * 0.24, borderWidth: 2, borderColor: color, transform: [{ rotate: "18deg" }] }} />
+      </View>
+    );
+  }
+
+  if (name === "square.stack") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.18, top: size * 0.2, width: size * 0.48, height: size * 0.48, borderRadius: size * 0.08, borderWidth: 2, borderColor: color }} />
+        <View style={{ position: "absolute", left: size * 0.34, top: size * 0.34, width: size * 0.48, height: size * 0.48, borderRadius: size * 0.08, borderWidth: 2, borderColor: color }} />
+      </View>
+    );
+  }
+
+  if (name === "moon") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.2, top: size * 0.12, width: size * 0.58, height: size * 0.74, borderRadius: size * 0.34, borderWidth: 2, borderColor: color }} />
+        <View style={{ position: "absolute", left: size * 0.38, top: size * 0.02, width: size * 0.52, height: size * 0.76, borderRadius: size * 0.34, backgroundColor: theme.colors.background }} />
+      </View>
+    );
+  }
+
   if (name === "chevron.left" || name === "chevron.right" || name === "chevron.down") {
     const down = name === "chevron.down";
     const right = name === "chevron.right";

@@ -12,6 +12,14 @@ export type MobileReport = {
   distribution: string[];
   pdfStatus: string;
   url: string | null;
+  sections?: {
+    healthLog?: Array<{
+      recordedAt: string;
+      title: string;
+      label?: string;
+      encounterName?: string | null;
+    }>;
+  };
   generatedAt: string;
   updatedAt: string;
 };

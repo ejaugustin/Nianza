@@ -1,4 +1,4 @@
-const vaccineLibrary = require("../../../MobileApp/src/data/vaccines-en.json");
+const vaccineLibrary = require("./vaccines-en.json");
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const FLU_SEASON_START_MONTH = 7;

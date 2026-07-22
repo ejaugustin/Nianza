@@ -1,0 +1,308 @@
+{
+ "version": "1.0",
+ "scheduleSource": "AAP Recommended Childhood Immunization Schedule 2026 (core birth–6y series; identical to CDC schedule as of May 2025 per court-ordered reversion)",
+ "sourceVerifiedBy": null,
+ "language": "en",
+ "ageBasis": "chronological",
+ "series": [
+  {
+   "vaccineId": "HEPB",
+   "name": "HepB",
+   "fullName": "Hepatitis B",
+   "doses": [
+    {
+     "doseId": "VX-HEPB-1",
+     "doseNum": 1,
+     "windowStartMonths": 0,
+     "windowEndMonths": 2,
+     "displayGroup": "Birth"
+    },
+    {
+     "doseId": "VX-HEPB-2",
+     "doseNum": 2,
+     "windowStartMonths": 1,
+     "windowEndMonths": 2,
+     "displayGroup": "1–2 Months"
+    },
+    {
+     "doseId": "VX-HEPB-3",
+     "doseNum": 3,
+     "windowStartMonths": 6,
+     "windowEndMonths": 18,
+     "displayGroup": "6 Months"
+    }
+   ]
+  },
+  {
+   "vaccineId": "RV",
+   "name": "RV",
+   "fullName": "Rotavirus",
+   "doses": [
+    {
+     "doseId": "VX-RV-1",
+     "doseNum": 1,
+     "windowStartMonths": 2,
+     "windowEndMonths": 2,
+     "displayGroup": "2 Months"
+    },
+    {
+     "doseId": "VX-RV-2",
+     "doseNum": 2,
+     "windowStartMonths": 4,
+     "windowEndMonths": 4,
+     "displayGroup": "4 Months"
+    },
+    {
+     "doseId": "VX-RV-3",
+     "doseNum": 3,
+     "windowStartMonths": 6,
+     "windowEndMonths": 6,
+     "displayGroup": "6 Months",
+     "note": "Third dose only for some brands — your doctor will say"
+    }
+   ]
+  },
+  {
+   "vaccineId": "DTAP",
+   "name": "DTaP",
+   "fullName": "Diphtheria, Tetanus, & acellular Pertussis",
+   "doses": [
+    {
+     "doseId": "VX-DTAP-1",
+     "doseNum": 1,
+     "windowStartMonths": 2,
+     "windowEndMonths": 2,
+     "displayGroup": "2 Months"
+    },
+    {
+     "doseId": "VX-DTAP-2",
+     "doseNum": 2,
+     "windowStartMonths": 4,
+     "windowEndMonths": 4,
+     "displayGroup": "4 Months"
+    },
+    {
+     "doseId": "VX-DTAP-3",
+     "doseNum": 3,
+     "windowStartMonths": 6,
+     "windowEndMonths": 6,
+     "displayGroup": "6 Months"
+    },
+    {
+     "doseId": "VX-DTAP-4",
+     "doseNum": 4,
+     "windowStartMonths": 15,
+     "windowEndMonths": 18,
+     "displayGroup": "15–18 Months"
+    },
+    {
+     "doseId": "VX-DTAP-5",
+     "doseNum": 5,
+     "windowStartMonths": 48,
+     "windowEndMonths": 72,
+     "displayGroup": "4–6 Years"
+    }
+   ]
+  },
+  {
+   "vaccineId": "HIB",
+   "name": "Hib",
+   "fullName": "Haemophilus influenzae type b",
+   "doses": [
+    {
+     "doseId": "VX-HIB-1",
+     "doseNum": 1,
+     "windowStartMonths": 2,
+     "windowEndMonths": 2,
+     "displayGroup": "2 Months"
+    },
+    {
+     "doseId": "VX-HIB-2",
+     "doseNum": 2,
+     "windowStartMonths": 4,
+     "windowEndMonths": 4,
+     "displayGroup": "4 Months"
+    },
+    {
+     "doseId": "VX-HIB-3",
+     "doseNum": 3,
+     "windowStartMonths": 6,
+     "windowEndMonths": 6,
+     "displayGroup": "6 Months",
+     "note": "Only for some brands — your doctor will say"
+    },
+    {
+     "doseId": "VX-HIB-4",
+     "doseNum": 4,
+     "windowStartMonths": 12,
+     "windowEndMonths": 15,
+     "displayGroup": "12–15 Months"
+    }
+   ]
+  },
+  {
+   "vaccineId": "PCV",
+   "name": "PCV",
+   "fullName": "Pneumococcal conjugate",
+   "doses": [
+    {
+     "doseId": "VX-PCV-1",
+     "doseNum": 1,
+     "windowStartMonths": 2,
+     "windowEndMonths": 2,
+     "displayGroup": "2 Months"
+    },
+    {
+     "doseId": "VX-PCV-2",
+     "doseNum": 2,
+     "windowStartMonths": 4,
+     "windowEndMonths": 4,
+     "displayGroup": "4 Months"
+    },
+    {
+     "doseId": "VX-PCV-3",
+     "doseNum": 3,
+     "windowStartMonths": 6,
+     "windowEndMonths": 6,
+     "displayGroup": "6 Months"
+    },
+    {
+     "doseId": "VX-PCV-4",
+     "doseNum": 4,
+     "windowStartMonths": 12,
+     "windowEndMonths": 15,
+     "displayGroup": "12–15 Months"
+    }
+   ]
+  },
+  {
+   "vaccineId": "IPV",
+   "name": "IPV",
+   "fullName": "Inactivated Poliovirus",
+   "doses": [
+    {
+     "doseId": "VX-IPV-1",
+     "doseNum": 1,
+     "windowStartMonths": 2,
+     "windowEndMonths": 2,
+     "displayGroup": "2 Months"
+    },
+    {
+     "doseId": "VX-IPV-2",
+     "doseNum": 2,
+     "windowStartMonths": 4,
+     "windowEndMonths": 4,
+     "displayGroup": "4 Months"
+    },
+    {
+     "doseId": "VX-IPV-3",
+     "doseNum": 3,
+     "windowStartMonths": 6,
+     "windowEndMonths": 18,
+     "displayGroup": "6 Months"
+    },
+    {
+     "doseId": "VX-IPV-4",
+     "doseNum": 4,
+     "windowStartMonths": 48,
+     "windowEndMonths": 72,
+     "displayGroup": "4–6 Years"
+    }
+   ]
+  },
+  {
+   "vaccineId": "FLU",
+   "name": "Flu",
+   "fullName": "Influenza (every year)",
+   "seasonal": true,
+   "doses": [
+    {
+     "doseId": "VX-FLU-SEASON",
+     "doseNum": 1,
+     "windowStartMonths": 6,
+     "windowEndMonths": 72,
+     "displayGroup": "Every year",
+     "note": "One dose each season starting at 6 months; two doses the first season for some children — your doctor will say"
+    }
+   ]
+  },
+  {
+   "vaccineId": "MMR",
+   "name": "MMR",
+   "fullName": "Measles, Mumps, & Rubella",
+   "doses": [
+    {
+     "doseId": "VX-MMR-1",
+     "doseNum": 1,
+     "windowStartMonths": 12,
+     "windowEndMonths": 15,
+     "displayGroup": "12–15 Months"
+    },
+    {
+     "doseId": "VX-MMR-2",
+     "doseNum": 2,
+     "windowStartMonths": 48,
+     "windowEndMonths": 72,
+     "displayGroup": "4–6 Years"
+    }
+   ]
+  },
+  {
+   "vaccineId": "VAR",
+   "name": "Varicella",
+   "fullName": "Varicella (chickenpox)",
+   "doses": [
+    {
+     "doseId": "VX-VAR-1",
+     "doseNum": 1,
+     "windowStartMonths": 12,
+     "windowEndMonths": 15,
+     "displayGroup": "12–15 Months"
+    },
+    {
+     "doseId": "VX-VAR-2",
+     "doseNum": 2,
+     "windowStartMonths": 48,
+     "windowEndMonths": 72,
+     "displayGroup": "4–6 Years"
+    }
+   ]
+  },
+  {
+   "vaccineId": "HEPA",
+   "name": "HepA",
+   "fullName": "Hepatitis A",
+   "doses": [
+    {
+     "doseId": "VX-HEPA-1",
+     "doseNum": 1,
+     "windowStartMonths": 12,
+     "windowEndMonths": 23,
+     "displayGroup": "12–23 Months"
+    },
+    {
+     "doseId": "VX-HEPA-2",
+     "doseNum": 2,
+     "windowStartMonths": 18,
+     "windowEndMonths": 23,
+     "displayGroup": "12–23 Months",
+     "note": "At least 6 months after the first dose"
+    }
+   ]
+  }
+ ],
+ "informational": [
+  {
+   "infoId": "VX-INFO-RSV",
+   "name": "RSV protection",
+   "text": "Protection against RSV is available for babies entering their first RSV season (or through a vaccine given in pregnancy). Ask your pediatrician what's right for your baby.",
+   "displayGroup": "Ask your pediatrician"
+  },
+  {
+   "infoId": "VX-INFO-COVID",
+   "name": "COVID-19",
+   "text": "COVID-19 vaccination recommendations for young children vary. Your pediatrician can walk you through the current guidance for your child.",
+   "displayGroup": "Ask your pediatrician"
+  }
+ ]
+}

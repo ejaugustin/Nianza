@@ -326,7 +326,7 @@ export default function ChatScreen() {
               disabled={voiceMode === "transcribing"}
               onPress={sendVoiceMessage}
               style={{
-                minWidth: 104,
+                minWidth: 82,
                 height: 52,
                 borderRadius: 26,
                 backgroundColor: theme.colors.bluePrimary,
@@ -340,7 +340,7 @@ export default function ChatScreen() {
             >
               <SfIcon name="paperplane.fill" color="white" size={18} />
               <Text selectable={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={{ color: "white", fontSize: 14, fontWeight: "800" }}>
-                {voiceMode === "transcribing" ? "Sending" : "Send voice"}
+                {voiceMode === "transcribing" ? "Sending" : "Send"}
               </Text>
             </Pressable>
           </View>

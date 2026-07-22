@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { upsertPrimaryChild } from "@/api/children";
 import { getVaccineProgress, markVaccineBackfillOffered, recordVaccineDose, removeVaccineDose } from "@/api/vaccines";
-import { ApiError } from "@/api/client";
+import { ApiError, apiUrl } from "@/api/client";
 import { useAuth } from "@/auth/auth-context";
 import { openPatricia, TalkToPatriciaButton } from "@/components/talk-to-patricia-button";
 import { EmptyCircle, ScreenTitle, SectionLabel, SfIcon, SpecCard } from "@/components/screen-spec";
@@ -212,21 +212,28 @@ export default function VaccinesScreen() {
   }
 
   const vaccineErrorCopy = useMemo(() => {
+    const details = vaccineError ? ` (${vaccineError.status || "network"}${vaccineError.code ? `/${vaccineError.code}` : ""})` : "";
     if (vaccineError?.status === 401 || vaccineError?.status === 403) {
       return {
         title: "Please sign in again.",
-        body: "Your secure session needs a refresh before Nianza can load vaccine notes."
+        body: `Your secure session needs a refresh before Nianza can load vaccine notes.${details}`
       };
     }
     if (vaccineError?.code === "CHILD_NOT_FOUND") {
       return {
         title: `${childName}'s profile needs to sync.`,
-        body: "Tap Try again so Nianza can create the child record, then load vaccine notes."
+        body: `Tap Try again so Nianza can create the child record, then load vaccine notes.${details}`
+      };
+    }
+    if (vaccineError?.code === "NETWORK_ERROR") {
+      return {
+        title: "Nianza could not be reached.",
+        body: `The app could not reach ${apiUrl}. Check that the app bundle has the deployed API URL, then try again.${details}`
       };
     }
     return {
       title: "Vaccine notes need a connection.",
-      body: "Try again when the app can reach Nianza."
+      body: `${vaccineError?.message || "Try again when the app can reach Nianza."}${details}`
     };
   }, [childName, vaccineError?.code, vaccineError?.status]);
 

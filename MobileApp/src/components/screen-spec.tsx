@@ -153,6 +153,30 @@ export function SfIcon({ name, color = theme.colors.bluePrimary, size = 22 }: { 
     );
   }
 
+  if (name === "gear") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.2, top: size * 0.2, width: size * 0.6, height: size * 0.6, borderWidth: 2, borderColor: color, borderRadius: size * 0.3 }} />
+        <View style={{ position: "absolute", left: size * 0.42, top: size * 0.42, width: size * 0.16, height: size * 0.16, borderRadius: size * 0.08, backgroundColor: color }} />
+        {Array.from({ length: 8 }).map((_, index) => {
+          const rotate = `${index * 45}deg`;
+          return <IconLine key={index} color={color} style={{ width: size * 0.18, left: size * 0.41, top: size * 0.49, transform: [{ rotate }, { translateX: size * 0.35 }] }} />;
+        })}
+      </View>
+    );
+  }
+
+  if (name === "speaker.wave.2.fill") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.12, top: size * 0.36, width: size * 0.18, height: size * 0.28, borderRadius: size * 0.04, backgroundColor: color }} />
+        <View style={{ position: "absolute", left: size * 0.26, top: size * 0.24, width: size * 0.26, height: size * 0.52, backgroundColor: color, borderRadius: size * 0.04, transform: [{ skewY: "-18deg" }] }} />
+        <View style={{ position: "absolute", left: size * 0.58, top: size * 0.34, width: size * 0.24, height: size * 0.32, borderRightWidth: 2, borderColor: color, borderRadius: size * 0.18 }} />
+        <View style={{ position: "absolute", left: size * 0.54, top: size * 0.22, width: size * 0.34, height: size * 0.56, borderRightWidth: 2, borderColor: color, borderRadius: size * 0.26 }} />
+      </View>
+    );
+  }
+
   if (name === "mic.fill") {
     return (
       <View style={box}>
@@ -164,12 +188,43 @@ export function SfIcon({ name, color = theme.colors.bluePrimary, size = 22 }: { 
     );
   }
 
-  if (name === "chevron.left" || name === "chevron.down") {
-    const down = name === "chevron.down";
+  if (name === "pause.fill") {
     return (
       <View style={box}>
-        <IconLine color={color} style={{ width: size * 0.45, left: down ? size * 0.18 : size * 0.2, top: down ? size * 0.42 : size * 0.34, transform: [{ rotate: down ? "40deg" : "-45deg" }] }} />
-        <IconLine color={color} style={{ width: size * 0.45, left: down ? size * 0.47 : size * 0.2, top: down ? size * 0.42 : size * 0.64, transform: [{ rotate: down ? "-40deg" : "45deg" }] }} />
+        <View style={{ position: "absolute", left: size * 0.26, top: size * 0.18, width: size * 0.16, height: size * 0.64, borderRadius: size * 0.04, backgroundColor: color }} />
+        <View style={{ position: "absolute", right: size * 0.26, top: size * 0.18, width: size * 0.16, height: size * 0.64, borderRadius: size * 0.04, backgroundColor: color }} />
+      </View>
+    );
+  }
+
+  if (name === "paperplane.fill") {
+    return (
+      <View style={box}>
+        <View style={{ position: "absolute", left: size * 0.1, top: size * 0.18, width: size * 0.76, height: size * 0.44, backgroundColor: color, transform: [{ rotate: "18deg" }], borderTopLeftRadius: size * 0.08, borderBottomLeftRadius: size * 0.08 }} />
+        <View style={{ position: "absolute", left: size * 0.46, top: size * 0.44, width: size * 0.28, height: size * 0.28, backgroundColor: color, transform: [{ rotate: "45deg" }], borderRadius: size * 0.03 }} />
+      </View>
+    );
+  }
+
+  if (name === "trash") {
+    return (
+      <View style={box}>
+        <IconLine color={color} style={{ width: size * 0.52, left: size * 0.24, top: size * 0.24 }} />
+        <IconLine color={color} style={{ width: size * 0.3, left: size * 0.35, top: size * 0.12 }} />
+        <View style={{ position: "absolute", left: size * 0.26, top: size * 0.32, width: size * 0.48, height: size * 0.56, borderWidth: 2, borderColor: color, borderTopWidth: 0, borderBottomLeftRadius: size * 0.08, borderBottomRightRadius: size * 0.08 }} />
+        <IconLine color={color} style={{ width: 2, height: size * 0.36, left: size * 0.4, top: size * 0.42 }} />
+        <IconLine color={color} style={{ width: 2, height: size * 0.36, left: size * 0.58, top: size * 0.42 }} />
+      </View>
+    );
+  }
+
+  if (name === "chevron.left" || name === "chevron.right" || name === "chevron.down") {
+    const down = name === "chevron.down";
+    const right = name === "chevron.right";
+    return (
+      <View style={box}>
+        <IconLine color={color} style={{ width: size * 0.45, left: down ? size * 0.18 : right ? size * 0.34 : size * 0.2, top: down ? size * 0.42 : size * 0.34, transform: [{ rotate: down ? "40deg" : right ? "45deg" : "-45deg" }] }} />
+        <IconLine color={color} style={{ width: size * 0.45, left: down ? size * 0.47 : right ? size * 0.34 : size * 0.2, top: down ? size * 0.42 : size * 0.64, transform: [{ rotate: down ? "-40deg" : right ? "-45deg" : "45deg" }] }} />
       </View>
     );
   }

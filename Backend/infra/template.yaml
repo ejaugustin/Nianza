@@ -16,6 +16,19 @@ Parameters:
     Default: super_admin
     AllowedValues: [super_admin, content_editor, operations]
     Description: Application role assigned to the initial admin user.
+  DeepgramApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+    Description: Deepgram API key for mobile voice STT/TTS. Pass from a secure local variable at deploy time.
+  DeepgramTtsModel:
+    Type: String
+    Default: aura-2-cordelia-en
+    Description: Deepgram Aura voice model used for Patricia.
+  DeepgramSttModel:
+    Type: String
+    Default: nova-2
+    Description: Deepgram speech-to-text model for parent voice notes.
 
 Globals:
   Function:
@@ -89,11 +102,11 @@ Resources:
       ReadAttributes:
         - email
         - custom:parent_name
-        - custom:locale
+        - locale
       WriteAttributes:
         - email
         - custom:parent_name
-        - custom:locale
+        - locale
 
   AdminUserPool:
     Type: AWS::Cognito::UserPool
@@ -198,6 +211,13 @@ Resources:
     Properties:
       Name: !Sub nianza-mobile-api-${Environment}
       StageName: !Ref Environment
+      Auth:
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          MobileCognitoAuthorizer:
+            UserPoolArn: !GetAtt MobileUserPool.Arn
+            Identity:
+              Header: Authorization
 
   AdminAuditLogTable:
     Type: AWS::DynamoDB::Table
@@ -301,6 +321,139 @@ Resources:
           Projection:
             ProjectionType: ALL
 
+  MobileUsersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-users-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+
+  MobileChildrenTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-children-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: childId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: childId
+          KeyType: RANGE
+
+  MilestoneProgressTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-milestone-progress-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: childId
+          AttributeType: S
+        - AttributeName: observedAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: childId
+          KeyType: HASH
+        - AttributeName: observedAt
+          KeyType: RANGE
+
+  SickEncountersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-sick-encounters-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: childId
+          AttributeType: S
+        - AttributeName: encounterId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: childId
+          KeyType: HASH
+        - AttributeName: encounterId
+          KeyType: RANGE
+
+  MobileConversationsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-conversations-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: sessionId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: updatedAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sessionId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: user-updatedAt-index
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: updatedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
   AdminContentFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -362,6 +515,121 @@ Resources:
             Path: /mobile/v1/content/daily-note
             Method: GET
 
+  MobileMilestonesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-milestones-${Environment}
+      CodeUri: ../
+      Handler: mobile/milestones/handler.handler
+      Environment:
+        Variables:
+          CHILDREN_TABLE: !Ref MobileChildrenTable
+          MILESTONES_TABLE: !Ref MilestoneProgressTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MilestoneProgressTable
+      Events:
+        ChildProfileUpsert:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/children/{childId}
+            Method: PUT
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        MilestonesGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/milestones/{childId}
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        MilestoneObserve:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/milestones/{childId}/observations
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        MilestoneBackfillOffered:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/milestones/{childId}/backfill-offered
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+
+  MobileVoiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-voice-${Environment}
+      CodeUri: ../
+      Handler: mobile/voice/handler.handler
+      Timeout: 45
+      MemorySize: 512
+      Environment:
+        Variables:
+          DEEPGRAM_API_KEY: !Ref DeepgramApiKey
+          DEEPGRAM_TTS_MODEL: !Ref DeepgramTtsModel
+          DEEPGRAM_STT_MODEL: !Ref DeepgramSttModel
+      Events:
+        VoiceTranscribe:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/voice/transcribe
+            Method: POST
+        VoiceSpeak:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/voice/speak
+            Method: POST
+
+  MobileChatFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-chat-${Environment}
+      CodeUri: ../
+      Handler: mobile/chat/handler.handler
+      Timeout: 30
+      MemorySize: 512
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MobileUsersTable
+          CHILDREN_TABLE: !Ref MobileChildrenTable
+          MILESTONES_TABLE: !Ref MilestoneProgressTable
+          SICK_ENCOUNTERS_TABLE: !Ref SickEncountersTable
+          CONTENT_TABLE: !Ref ContentLibraryTable
+          CONVERSATIONS_TABLE: !Ref MobileConversationsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileUsersTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MilestoneProgressTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref SickEncountersTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref ContentLibraryTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileConversationsTable
+      Events:
+        Chat:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/chat
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+
 Outputs:
   AdminApiUrl:
     Value: !Sub https://${AdminApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/admin/v1
@@ -387,3 +655,13 @@ Outputs:
     Value: !Ref AdminSessionsTable
   ContentLibraryTableName:
     Value: !Ref ContentLibraryTable
+  MobileUsersTableName:
+    Value: !Ref MobileUsersTable
+  MobileChildrenTableName:
+    Value: !Ref MobileChildrenTable
+  MilestoneProgressTableName:
+    Value: !Ref MilestoneProgressTable
+  SickEncountersTableName:
+    Value: !Ref SickEncountersTable
+  MobileConversationsTableName:
+    Value: !Ref MobileConversationsTable

@@ -1,5 +1,5 @@
 import { Link, router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/auth-context";
@@ -7,6 +7,7 @@ import { getDailyNote } from "@/api/content";
 import { BrandLogo } from "@/components/brand-logo";
 import { PatriciaNote } from "@/components/patricia-note";
 import { SectionLabel, SfIcon, SpecCard } from "@/components/screen-spec";
+import { TalkToPatriciaButton, openPatricia } from "@/components/talk-to-patricia-button";
 import { mockHome } from "@/content/mock-home";
 import { theme } from "@/theme/theme";
 
@@ -16,35 +17,40 @@ const weeklyCards = [
   { title: "Vitals", subtitle: "Jul 12", icon: "doc.text", href: "/vitals" }
 ];
 
+function normalizeChildNameInNote(note: string, childName: string) {
+  return note.replace(/\bSofia\b/g, childName).replace(/\bSophia\b/g, childName);
+}
+
 export default function HomeScreen() {
   const auth = useAuth();
-  const profile = auth.profile;
-  const [dailyNotePlaying, setDailyNotePlaying] = useState(false);
+  const profile = auth.profile!;
+
   const dailyNoteQuery = useQuery({
-    queryKey: ["daily-note", profile?.language || mockHome.language, profile?.ageWindowMonths || mockHome.ageWindowMonths, mockHome.dailyNoteDomain],
+    queryKey: ["daily-note", profile.language, profile.ageWindowMonths, mockHome.dailyNoteDomain],
     queryFn: () =>
       getDailyNote({
-        language: profile?.language || mockHome.language,
-        ageWindowMonths: profile?.ageWindowMonths || mockHome.ageWindowMonths,
+        language: profile.language,
+        ageWindowMonths: profile.ageWindowMonths,
         domain: mockHome.dailyNoteDomain
       }),
     staleTime: 1000 * 60 * 30,
     retry: 1
   });
   const dailyNote = dailyNoteQuery.data?.bodyText || mockHome.dailyNote;
-  const parentName = profile?.parentName || mockHome.parentName;
-  const childName = profile?.childName || mockHome.childName;
-  const childAge = profile ? `${profile.ageWindowMonths} months` : mockHome.childAge;
+  const parentName = profile.parentFirstName || profile.parentName;
+  const childName = profile.childName;
+  const childAge = `${profile.ageWindowMonths} months`;
   const personalizedDailyNote = useMemo(() => {
-    const pronouns = profile?.sexAtBirth === "boy" ? { she: "he", her: "his", hers: "his" } : { she: "she", her: "her", hers: "hers" };
-    return dailyNote
+    const pronouns = profile.sexAtBirth === "boy" ? { she: "he", her: "his", hers: "his" } : { she: "she", her: "her", hers: "hers" };
+    return normalizeChildNameInNote(dailyNote, childName)
       .replaceAll("{childName}", childName)
       .replaceAll("{she}", pronouns.she)
       .replaceAll("{her}", pronouns.her)
       .replaceAll("{hers}", pronouns.hers);
-  }, [childName, dailyNote, profile?.sexAtBirth]);
+  }, [childName, dailyNote, profile.sexAtBirth]);
 
   return (
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ padding: 20, paddingTop: 28, paddingBottom: 32, gap: 16 }}
@@ -62,7 +68,7 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      <PatriciaNote isPlaying={dailyNotePlaying} onTogglePlay={() => setDailyNotePlaying((current) => !current)}>{personalizedDailyNote}</PatriciaNote>
+      <PatriciaNote>{personalizedDailyNote}</PatriciaNote>
       {dailyNoteQuery.isError ? <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>Showing Patricia's saved note.</Text> : null}
       <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>{mockHome.dateLabel}</Text>
 
@@ -104,15 +110,15 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             onPress={() =>
-              router.push({
-                pathname: "/(tabs)/chat",
-                params: {
-                  sourceScreen: "C1-visit",
+              openPatricia({
+                  source: "C1-home-visit-card",
                   eventType: "visit-upcoming",
                   childName,
+                  childId: "primary-child",
+                  entityId: "four-month-visit",
+                  title: "Four-month visit",
                   detail: "Four-month visit this week",
                   occurredAt: new Date().toISOString()
-                }
               })
             }
           >
@@ -121,5 +127,7 @@ export default function HomeScreen() {
         </View>
       </SpecCard>
     </ScrollView>
+    <TalkToPatriciaButton source="C1-home" eventType="home" detail={personalizedDailyNote} />
+    </View>
   );
 }

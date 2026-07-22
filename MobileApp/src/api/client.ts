@@ -8,6 +8,8 @@ export const apiClient = axios.create({
   headers: { "Content-Type": "application/json" }
 });
 
+let authToken: string | null = null;
+
 export class ApiError extends Error {
   constructor(message: string, public status: number, public code?: string) {
     super(message);
@@ -43,7 +45,32 @@ export async function apiGet<T>(path: string, params?: Record<string, string | n
   }
 }
 
+export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
+  try {
+    const response = await fetch(buildUrl(path), {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+      },
+      body: JSON.stringify(body || {})
+    });
+
+    if (!response.ok) {
+      const responseBody = await response.json().catch(() => ({}));
+      throw new ApiError(responseBody.message || responseBody.error || `Request failed with status ${response.status}`, response.status, responseBody.code);
+    }
+
+    return response.json();
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError("Network error. Please check your connection.", 0, "NETWORK_ERROR");
+  }
+}
+
 export function setAuthToken(idToken: string | null) {
+  authToken = idToken;
   if (idToken) {
     apiClient.defaults.headers.common.Authorization = `Bearer ${idToken}`;
   } else {

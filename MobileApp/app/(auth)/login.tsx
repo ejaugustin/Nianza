@@ -7,6 +7,12 @@ import { AuthButton, AuthError, AuthField } from "@/components/auth-ui";
 import { BrandLogo } from "@/components/brand-logo";
 import { theme } from "@/theme/theme";
 
+function waitForPaint() {
+  return new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+}
+
 export default function LoginScreen() {
   const auth = useAuth();
   const [email, setEmail] = useState("");
@@ -18,8 +24,9 @@ export default function LoginScreen() {
     setError("");
     setLoading(true);
     try {
-      await auth.signIn(email, password);
-      router.replace(auth.profile ? "/(tabs)" : "/(auth)/onboarding");
+      await waitForPaint();
+      const profile = await auth.signIn(email, password);
+      router.replace(profile ? "/(tabs)" : "/(auth)/onboarding");
     } catch (err) {
       setError(friendlyAuthError(err));
     } finally {

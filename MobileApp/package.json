@@ -22,7 +22,7 @@
     "axios": "latest",
     "dayjs": "latest",
     "expo": "~54.0.33",
-    "expo-audio": "latest",
+    "expo-audio": "~1.1.1",
     "expo-constants": "~18.0.13",
     "expo-device": "latest",
     "expo-file-system": "latest",

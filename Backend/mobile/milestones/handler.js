@@ -130,23 +130,28 @@ async function handleObserveMilestone(event) {
   if (!child) return error(404, "CHILD_NOT_FOUND", "Create the child profile before recording milestone progress.");
 
   const body = parseBody(event);
-  const milestoneId = truncate(body.milestoneId, 120);
+  const milestoneId = truncate(body.milestoneId || body.actEarlyId, 120);
   if (!milestoneId) return error(400, "INVALID_FIELD", "milestoneId is required.");
 
-  const found = milestones.findMilestone(milestoneId);
+  const isWatchFor = milestoneId.startsWith("AE-");
+  const found = isWatchFor ? milestones.findActEarly(milestoneId) : milestones.findMilestone(milestoneId);
   if (!found && !milestoneId.startsWith("custom#")) {
-    return error(400, "UNKNOWN_MILESTONE", "milestoneId is not in the milestone library.");
+    return error(400, "UNKNOWN_PROGRESS_ITEM", "milestoneId is not in the milestone library.");
   }
 
   const now = new Date().toISOString();
   const observedAt = truncate(body.observedAt, 40) || now;
+  const checked = body.checked !== false;
   const item = {
     childId,
     observedAt,
     milestoneId,
-    milestoneName: truncate(body.milestoneName || found?.milestone.text, 500),
+    ...(isWatchFor ? { actEarlyId: milestoneId } : {}),
+    progressType: isWatchFor ? "watch-for" : "milestone",
+    milestoneName: truncate(body.milestoneName || found?.milestone?.text || found?.actEarly?.text, 500),
     originWindow: found?.window.ageKey || null,
     originLabel: found?.window.label || null,
+    cleared: !checked,
     backfilled: Boolean(body.backfilled),
     photoUrls: Array.isArray(body.photoUrls) ? body.photoUrls.filter(Boolean).slice(0, 8) : [],
     recordedBy: userId,
@@ -158,7 +163,7 @@ async function handleObserveMilestone(event) {
     Item: item
   }));
 
-  return json(201, { observation: item });
+  return json(checked ? 201 : 200, { observation: item });
 }
 
 async function handleBackfillOffered(event) {

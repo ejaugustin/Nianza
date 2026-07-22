@@ -92,7 +92,7 @@ async function getRecentMilestones(childId) {
     Limit: 10,
     ScanIndexForward: false
   }));
-  return (result.Items || []).map((item) => ({
+  return (result.Items || []).filter((item) => !String(item.milestoneId || "").startsWith("AE-")).map((item) => ({
     name: item.customName || item.milestoneName || item.milestoneId,
     observedAt: item.observedAt,
     isCustomFirst: String(item.milestoneId || "").startsWith("custom#")

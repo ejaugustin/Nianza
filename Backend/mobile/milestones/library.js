@@ -77,7 +77,7 @@ function isWindowTracked(child, window, now = new Date()) {
 function latestProgressByMilestone(progressItems = []) {
   const byMilestone = new Map();
   for (const item of progressItems) {
-    if (!item?.milestoneId) continue;
+    if (!item?.milestoneId || isWatchForId(item.milestoneId)) continue;
     const current = byMilestone.get(item.milestoneId);
     if (!current || String(item.observedAt || "").localeCompare(String(current.observedAt || "")) > 0) {
       byMilestone.set(item.milestoneId, item);
@@ -86,10 +86,39 @@ function latestProgressByMilestone(progressItems = []) {
   return byMilestone;
 }
 
+function isWatchForId(id) {
+  return typeof id === "string" && id.startsWith("AE-");
+}
+
+function isCelebratoryProgress(item) {
+  return Boolean(item?.milestoneId && !isWatchForId(item.milestoneId));
+}
+
+function latestProgressByWatchFor(progressItems = []) {
+  const byWatchFor = new Map();
+  for (const item of progressItems) {
+    const actEarlyId = item?.actEarlyId || item?.milestoneId;
+    if (!isWatchForId(actEarlyId)) continue;
+    const current = byWatchFor.get(actEarlyId);
+    if (!current || String(item.observedAt || "").localeCompare(String(current.observedAt || "")) > 0) {
+      byWatchFor.set(actEarlyId, item);
+    }
+  }
+  return byWatchFor;
+}
+
 function findMilestone(milestoneId) {
   for (const window of library.windows) {
     const milestone = window.milestones.find((item) => item.milestoneId === milestoneId);
     if (milestone) return { window, milestone };
+  }
+  return null;
+}
+
+function findActEarly(actEarlyId) {
+  for (const window of library.windows) {
+    const actEarly = (window.actEarly || []).find((item) => item.actEarlyId === actEarlyId);
+    if (actEarly) return { window, actEarly };
   }
   return null;
 }
@@ -109,13 +138,36 @@ function serializeMilestone(milestone, progress, extra = {}) {
   };
 }
 
+function serializeWatchFor(actEarly, progress, extra = {}) {
+  const checked = Boolean(progress && !progress.cleared);
+  return {
+    actEarlyId: actEarly.actEarlyId,
+    text: actEarly.text,
+    status: checked ? "checked" : "unchecked",
+    checkedAt: checked ? progress.observedAt || null : null,
+    ...extra
+  };
+}
+
 function buildMilestoneProgress({ child, progressItems = [], now = new Date() }) {
   const ageMonths = effectiveAgeMonths(child, now);
   const currentWindow = currentWindowForAge(ageMonths);
   const progressByMilestone = latestProgressByMilestone(progressItems);
+  const progressByWatchFor = latestProgressByWatchFor(progressItems);
   const notTrackedWindows = library.windows
     .filter((window) => window.windowEndMonths < currentWindow.windowEndMonths && !isWindowTracked(child, window, now))
     .map((window) => window.ageKey);
+
+  const watchFor = library.windows
+    .filter((window) => window.windowEndMonths <= currentWindow.windowEndMonths && isWindowTracked(child, window, now))
+    .flatMap((window) => (window.actEarly || []).map((actEarly) => serializeWatchFor(
+      actEarly,
+      progressByWatchFor.get(actEarly.actEarlyId),
+      {
+        originWindow: window.ageKey,
+        originLabel: window.label
+      }
+    )));
 
   const rolledOver = library.windows
     .filter((window) => window.windowEndMonths < currentWindow.windowEndMonths && isWindowTracked(child, window, now))
@@ -141,6 +193,7 @@ function buildMilestoneProgress({ child, progressItems = [], now = new Date() })
       )),
       actEarly: currentWindow.actEarly || []
     },
+    watchFor,
     rolledOver,
     notTrackedWindows,
     backfillOffered: Boolean(child.backfillOffered),
@@ -153,7 +206,10 @@ module.exports = {
   buildMilestoneProgress,
   currentWindowForAge,
   effectiveAgeMonths,
+  findActEarly,
   findMilestone,
+  isCelebratoryProgress,
   isWindowTracked,
-  latestProgressByMilestone
+  latestProgressByMilestone,
+  latestProgressByWatchFor
 };

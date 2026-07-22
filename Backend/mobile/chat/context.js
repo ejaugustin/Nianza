@@ -1,5 +1,5 @@
 const ALLOWED_LOCAL_TIMES = new Set(["morning", "afternoon", "witching-hour", "night"]);
-const ALLOWED_SEED_TYPES = new Set(["milestone-checked", "sick-encounter-active", "visit-upcoming", "capsule-invite", "custom-first"]);
+const ALLOWED_SEED_TYPES = new Set(["milestone-checked", "watch-for-noticed", "sick-encounter-active", "visit-upcoming", "capsule-invite", "custom-first"]);
 
 function truncate(value, maxLength) {
   if (typeof value !== "string") return null;
@@ -50,6 +50,10 @@ function generatePatriciaReply(message, bundle) {
 
   if (bundle.contextSeed?.eventType === "milestone-checked") {
     return "That is worth noticing. Tell me what you saw first, not the polished version. The small details are usually where the useful part is.";
+  }
+
+  if (bundle.contextSeed?.eventType === "watch-for-noticed") {
+    return "You did the right thing by setting this aside for the visit. Tell me what you have noticed in real life, and I will help you turn it into a clear question for the pediatrician.";
   }
 
   if (bundle.contextSeed?.eventType === "sick-encounter-active") {

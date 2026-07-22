@@ -96,6 +96,10 @@ function generatePatriciaReply(message, bundle) {
     return "That note is a good place to start. What part felt true in your house today?";
   }
 
+  if (/\b(developing|development|milestone|right way|normal|on track|look for)\b/i.test(normalized)) {
+    return `For ${childName}, I would watch for a few everyday things: how they move, how they look toward voices and faces, how they use their hands, and how they respond to you. You do not need to grade every moment. If something feels missing, changing, or worrying, write down what you saw and when, and bring that to the pediatrician.`;
+  }
+
   return "I am here with you. Say the messy version first, and we will sort it into something useful.";
 }
 

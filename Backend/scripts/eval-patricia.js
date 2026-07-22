@@ -96,6 +96,14 @@ async function runSafetyScenarios() {
   });
   assert.equal(vaccineConcern.type, "vaccine-hesitancy");
   assert.match(vaccineConcern.text, /pediatrician/i);
+
+  const developmentQuestion = await safetyGate({
+    message: "What should I look for to see if my child is developing the right way?",
+    bundle: baseBundle,
+    language: "en",
+    classifier: async () => "distress"
+  });
+  assert.equal(developmentQuestion, null);
 }
 
 async function run() {

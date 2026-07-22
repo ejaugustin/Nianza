@@ -72,6 +72,14 @@ async function run() {
   assert.equal(hesitancy.type, "vaccine-hesitancy");
   assert.match(hesitancy.text, /pediatrician/i);
 
+  const developmentQuestion = await safetyGate({
+    message: "What should I look for to see if my child is developing the right way?",
+    bundle: vaccineBundle,
+    language: "en",
+    classifier: async () => "distress"
+  });
+  assert.equal(developmentQuestion, null);
+
   console.log("Ej acceptance passed: Patricia uses context, safety gates, and no raw medical values.");
 }
 

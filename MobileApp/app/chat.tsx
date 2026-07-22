@@ -301,24 +301,24 @@ export default function ChatScreen() {
 
       <View style={{ position: "absolute", left: 16, right: 16, bottom: Math.max(insets.bottom, 12) + 10, gap: 9 }}>
         {isVoiceActive ? (
-          <View style={{ minHeight: 74, borderRadius: 30, backgroundColor: theme.colors.voicePanel, flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 10, boxShadow: "0 8px 24px rgba(10, 20, 28, 0.24)" }}>
-            <Pressable disabled={voiceMode === "transcribing"} onPress={discardVoiceMessage} style={{ width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", opacity: voiceMode === "transcribing" ? 0.4 : 1 }}>
-              <SfIcon name="trash" color="white" size={24} />
+          <View style={{ minHeight: 66, borderRadius: 28, backgroundColor: theme.colors.voicePanel, flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 12, paddingVertical: 9, boxShadow: "0 8px 24px rgba(10, 20, 28, 0.24)" }}>
+            <Pressable disabled={voiceMode === "transcribing"} onPress={discardVoiceMessage} style={{ width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", opacity: voiceMode === "transcribing" ? 0.4 : 1 }}>
+              <SfIcon name="trash" color="white" size={22} />
             </Pressable>
-            <View style={{ flex: 1, gap: 7 }}>
-              <Text selectable style={{ color: "white", fontSize: 18, fontWeight: "700", fontVariant: ["tabular-nums"] }}>
+            <View style={{ flex: 1, minWidth: 72, gap: 6 }}>
+              <Text selectable numberOfLines={1} style={{ color: "white", fontSize: 15, lineHeight: 18, fontWeight: "700", fontVariant: ["tabular-nums"] }}>
                 {voiceMode === "transcribing" ? "Sending" : formatDuration(recorderState.durationMillis)}
               </Text>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                {Array.from({ length: 32 }).map((_, index) => {
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                {Array.from({ length: 18 }).map((_, index) => {
                   const height = 3 + ((index * 7 + Math.floor(recorderState.durationMillis / 180)) % 14);
                   const active = voiceMode === "recording" && index % 3 !== 0;
                   return <View key={index} style={{ flex: 1, height, borderRadius: 3, backgroundColor: active ? theme.colors.bluePrimary : "rgba(255, 255, 255, 0.42)" }} />;
                 })}
               </View>
             </View>
-            <Pressable disabled={voiceMode === "transcribing"} onPress={toggleVoicePause} style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: voiceMode === "paused" ? "white" : "#F05A73", alignItems: "center", justifyContent: "center", opacity: voiceMode === "transcribing" ? 0.4 : 1 }}>
-              <SfIcon name={voiceMode === "paused" ? "mic.fill" : "pause.fill"} color={voiceMode === "paused" ? theme.colors.bluePrimary : "white"} size={22} />
+            <Pressable disabled={voiceMode === "transcribing"} onPress={toggleVoicePause} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: voiceMode === "paused" ? "white" : "#F05A73", alignItems: "center", justifyContent: "center", opacity: voiceMode === "transcribing" ? 0.4 : 1 }}>
+              <SfIcon name={voiceMode === "paused" ? "mic.fill" : "pause.fill"} color={voiceMode === "paused" ? theme.colors.bluePrimary : "white"} size={20} />
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -326,20 +326,20 @@ export default function ChatScreen() {
               disabled={voiceMode === "transcribing"}
               onPress={sendVoiceMessage}
               style={{
-                minWidth: 82,
-                height: 52,
-                borderRadius: 26,
+                minWidth: 72,
+                height: 44,
+                borderRadius: 22,
                 backgroundColor: theme.colors.bluePrimary,
                 alignItems: "center",
                 justifyContent: "center",
                 flexDirection: "row",
-                gap: 7,
-                paddingHorizontal: 14,
+                gap: 5,
+                paddingHorizontal: 11,
                 opacity: voiceMode === "transcribing" ? 0.55 : 1
               }}
             >
-              <SfIcon name="paperplane.fill" color="white" size={18} />
-              <Text selectable={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={{ color: "white", fontSize: 14, fontWeight: "800" }}>
+              <SfIcon name="paperplane.fill" color="white" size={15} />
+              <Text selectable={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={{ color: "white", fontSize: 13, fontWeight: "800" }}>
                 {voiceMode === "transcribing" ? "Sending" : "Send"}
               </Text>
             </Pressable>

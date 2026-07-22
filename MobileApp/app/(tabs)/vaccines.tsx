@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { getVaccineProgress, markVaccineBackfillOffered, recordVaccineDose, removeVaccineDose } from "@/api/vaccines";
+import { ApiError } from "@/api/client";
 import { useAuth } from "@/auth/auth-context";
 import { openPatricia, TalkToPatriciaButton } from "@/components/talk-to-patricia-button";
 import { EmptyCircle, ScreenTitle, SectionLabel, SfIcon, SpecCard } from "@/components/screen-spec";
@@ -184,6 +185,7 @@ export default function VaccinesScreen() {
   });
 
   const groups = vaccinesQuery.data?.groups || [];
+  const vaccineError = vaccinesQuery.error instanceof ApiError ? vaccinesQuery.error : null;
   const visibleGroups = useMemo(
     () => groups.map((group) => ({ ...group, doses: group.doses.filter((dose) => dose.status !== "future") })).filter((group) => group.doses.length),
     [groups]
@@ -239,11 +241,21 @@ export default function VaccinesScreen() {
         {vaccinesQuery.error ? (
           <SpecCard style={{ gap: 8 }}>
             <Text selectable style={{ color: theme.colors.text, fontSize: 15, fontWeight: "800" }}>
-              Vaccine notes need a connection.
+              {vaccineError?.code === "CHILD_NOT_FOUND" ? `${childName}'s profile needs to sync.` : "Vaccine notes need a connection."}
             </Text>
             <Text selectable style={{ color: theme.colors.muted, fontSize: 12, lineHeight: 17 }}>
-              Try again when the app can reach Nianza.
+              {vaccineError?.code === "CHILD_NOT_FOUND"
+                ? "Go to Settings, sign out, then sign back in once so Nianza can create the child record."
+                : "Try again when the app can reach Nianza."}
             </Text>
+            <Pressable
+              onPress={() => vaccinesQuery.refetch()}
+              style={{ alignSelf: "flex-start", borderRadius: 14, backgroundColor: theme.colors.bluePrimary, paddingHorizontal: 14, paddingVertical: 10 }}
+            >
+              <Text selectable={false} style={{ color: "white", fontSize: 13, fontWeight: "800" }}>
+                Try again
+              </Text>
+            </Pressable>
           </SpecCard>
         ) : null}
 

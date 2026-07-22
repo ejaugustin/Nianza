@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { Redirect } from "expo-router";
 import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { upsertPrimaryChild } from "@/api/children";
 import { setAuthToken } from "@/api/client";
 import {
   AuthSession,
@@ -69,6 +70,11 @@ async function readProfile(email: string) {
   return parsedProfile && isProfileComplete(parsedProfile) ? parsedProfile : null;
 }
 
+async function syncProfileToBackend(profile: ChildProfile | null) {
+  if (!profile) return;
+  await upsertPrimaryChild(profile);
+}
+
 function isProfileComplete(profile: ChildProfile) {
   return Boolean(
     profile.parentFirstName?.trim() &&
@@ -99,10 +105,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
 
       if (parsedSession && isSessionFresh(parsedSession)) {
+        setAuthToken(parsedSession.idToken);
         const parsedProfile = await readProfile(parsedSession.email);
+        await syncProfileToBackend(parsedProfile).catch(() => undefined);
         if (!mounted) return;
         setSession(parsedSession);
-        setAuthToken(parsedSession?.idToken || null);
         setProfile(parsedProfile);
         setStatus("authenticated");
       } else {
@@ -125,10 +132,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const persistSession = useCallback(async (nextSession: AuthSession) => {
+    setAuthToken(nextSession.idToken);
     const nextProfile = await readProfile(nextSession.email);
+    await syncProfileToBackend(nextProfile).catch(() => undefined);
     setSession(nextSession);
     setProfile(nextProfile);
-    setAuthToken(nextSession.idToken);
     setStatus("authenticated");
     await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(nextSession));
     await SecureStore.deleteItemAsync(PROFILE_KEY);
@@ -149,6 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       confirmReset: confirmPasswordReset,
       completeOnboarding: async (nextProfile) => {
         if (!session?.email) throw new Error("Sign in before completing onboarding.");
+        await upsertPrimaryChild(nextProfile);
         setProfile(nextProfile);
         await SecureStore.setItemAsync(profileKey(session.email), JSON.stringify(nextProfile));
         await SecureStore.deleteItemAsync(PROFILE_KEY);

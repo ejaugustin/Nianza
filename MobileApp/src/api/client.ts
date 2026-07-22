@@ -72,6 +72,30 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   }
 }
 
+export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
+  try {
+    const response = await fetch(buildUrl(path), {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+      },
+      body: JSON.stringify(body || {})
+    });
+
+    if (!response.ok) {
+      const responseBody = await response.json().catch(() => ({}));
+      throw new ApiError(responseBody.message || responseBody.error || `Request failed with status ${response.status}`, response.status, responseBody.code);
+    }
+
+    return response.json();
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError("Network error. Please check your connection.", 0, "NETWORK_ERROR");
+  }
+}
+
 export async function apiDelete<T>(path: string): Promise<T> {
   try {
     const response = await fetch(buildUrl(path), {

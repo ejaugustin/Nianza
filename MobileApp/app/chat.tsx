@@ -320,8 +320,28 @@ export default function ChatScreen() {
             <Pressable disabled={voiceMode === "transcribing"} onPress={toggleVoicePause} style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: voiceMode === "paused" ? "white" : "#F05A73", alignItems: "center", justifyContent: "center", opacity: voiceMode === "transcribing" ? 0.4 : 1 }}>
               <SfIcon name={voiceMode === "paused" ? "mic.fill" : "pause.fill"} color={voiceMode === "paused" ? theme.colors.bluePrimary : "white"} size={22} />
             </Pressable>
-            <Pressable disabled={voiceMode === "transcribing"} onPress={sendVoiceMessage} style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center", opacity: voiceMode === "transcribing" ? 0.55 : 1 }}>
-              <SfIcon name="paperplane.fill" color="white" size={24} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Send voice message"
+              disabled={voiceMode === "transcribing"}
+              onPress={sendVoiceMessage}
+              style={{
+                minWidth: 104,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor: theme.colors.bluePrimary,
+                alignItems: "center",
+                justifyContent: "center",
+                flexDirection: "row",
+                gap: 7,
+                paddingHorizontal: 14,
+                opacity: voiceMode === "transcribing" ? 0.55 : 1
+              }}
+            >
+              <SfIcon name="paperplane.fill" color="white" size={18} />
+              <Text selectable={false} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={{ color: "white", fontSize: 14, fontWeight: "800" }}>
+                {voiceMode === "transcribing" ? "Sending" : "Send voice"}
+              </Text>
             </Pressable>
           </View>
         ) : (

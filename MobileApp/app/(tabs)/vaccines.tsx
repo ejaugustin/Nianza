@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { upsertPrimaryChild } from "@/api/children";
 import { getVaccineProgress, markVaccineBackfillOffered, recordVaccineDose, removeVaccineDose } from "@/api/vaccines";
 import { ApiError } from "@/api/client";
 import { useAuth } from "@/auth/auth-context";
@@ -181,7 +182,11 @@ export default function VaccinesScreen() {
 
   const vaccinesQuery = useQuery({
     queryKey: ["vaccine-progress", "primary-child"],
-    queryFn: () => getVaccineProgress("primary-child")
+    enabled: Boolean(profile),
+    queryFn: async () => {
+      if (profile) await upsertPrimaryChild(profile);
+      return getVaccineProgress("primary-child");
+    }
   });
 
   const groups = vaccinesQuery.data?.groups || [];
@@ -195,6 +200,35 @@ export default function VaccinesScreen() {
     setNotice(message);
     await queryClient.invalidateQueries({ queryKey: ["vaccine-progress", "primary-child"] });
   }
+
+  async function retryVaccines() {
+    setNotice(`Syncing ${childName}'s profile with Nianza...`);
+    try {
+      if (profile) await upsertPrimaryChild(profile);
+      await vaccinesQuery.refetch();
+    } catch {
+      await vaccinesQuery.refetch();
+    }
+  }
+
+  const vaccineErrorCopy = useMemo(() => {
+    if (vaccineError?.status === 401 || vaccineError?.status === 403) {
+      return {
+        title: "Please sign in again.",
+        body: "Your secure session needs a refresh before Nianza can load vaccine notes."
+      };
+    }
+    if (vaccineError?.code === "CHILD_NOT_FOUND") {
+      return {
+        title: `${childName}'s profile needs to sync.`,
+        body: "Tap Try again so Nianza can create the child record, then load vaccine notes."
+      };
+    }
+    return {
+      title: "Vaccine notes need a connection.",
+      body: "Try again when the app can reach Nianza."
+    };
+  }, [childName, vaccineError?.code, vaccineError?.status]);
 
   async function dismissBackfill() {
     await markVaccineBackfillOffered("primary-child");
@@ -241,15 +275,13 @@ export default function VaccinesScreen() {
         {vaccinesQuery.error ? (
           <SpecCard style={{ gap: 8 }}>
             <Text selectable style={{ color: theme.colors.text, fontSize: 15, fontWeight: "800" }}>
-              {vaccineError?.code === "CHILD_NOT_FOUND" ? `${childName}'s profile needs to sync.` : "Vaccine notes need a connection."}
+              {vaccineErrorCopy.title}
             </Text>
             <Text selectable style={{ color: theme.colors.muted, fontSize: 12, lineHeight: 17 }}>
-              {vaccineError?.code === "CHILD_NOT_FOUND"
-                ? "Go to Settings, sign out, then sign back in once so Nianza can create the child record."
-                : "Try again when the app can reach Nianza."}
+              {vaccineErrorCopy.body}
             </Text>
             <Pressable
-              onPress={() => vaccinesQuery.refetch()}
+              onPress={retryVaccines}
               style={{ alignSelf: "flex-start", borderRadius: 14, backgroundColor: theme.colors.bluePrimary, paddingHorizontal: 14, paddingVertical: 10 }}
             >
               <Text selectable={false} style={{ color: "white", fontSize: 13, fontWeight: "800" }}>

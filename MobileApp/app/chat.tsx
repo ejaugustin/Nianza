@@ -1,8 +1,8 @@
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus, useAudioRecorder, useAudioRecorderState } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Keyboard, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { sendChatMessage } from "@/api/chat";
 import { transcribeVoiceNote } from "@/api/voice";
@@ -66,7 +66,10 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>(() => [makeMessage("patricia", opening)]);
   const [notice, setNotice] = useState<string | null>(null);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
   const isVoiceActive = voiceMode !== "idle";
+  const composerBottom = Math.max(insets.bottom, 12) + 10 + keyboardHeight;
 
   function stopPatriciaPlayback() {
     pausePatriciaPlayer(patriciaPlayer);
@@ -119,6 +122,26 @@ export default function ChatScreen() {
       stopPatriciaPlayback();
     };
   }, []);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardWillShow", (event) => {
+      setKeyboardHeight(Math.max(0, event.endCoordinates.height - insets.bottom));
+      requestAnimationFrame(() => scrollViewRef.current?.scrollToEnd({ animated: true }));
+    });
+    const changeSubscription = Keyboard.addListener("keyboardWillChangeFrame", (event) => {
+      setKeyboardHeight(Math.max(0, event.endCoordinates.height - insets.bottom));
+      requestAnimationFrame(() => scrollViewRef.current?.scrollToEnd({ animated: true }));
+    });
+    const hideSubscription = Keyboard.addListener("keyboardWillHide", () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      changeSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, [insets.bottom]);
 
   useEffect(() => {
     if (speakingMessageId && !patriciaPlayerStatus.playing && patriciaPlayerStatus.currentTime > 0) {
@@ -274,7 +297,12 @@ export default function ChatScreen() {
         </View>
       </View>
 
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 20, paddingTop: 24, paddingBottom: 138 + insets.bottom, gap: 14 }}>
+      <ScrollView
+        ref={scrollViewRef}
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ padding: 20, paddingTop: 24, paddingBottom: 138 + insets.bottom + keyboardHeight, gap: 14 }}
+      >
         {messages.map((message, index) => {
           const fromParent = message.sender === "parent";
           const isSpeaking = speakingMessageId === message.id;
@@ -309,7 +337,7 @@ export default function ChatScreen() {
         ) : null}
       </ScrollView>
 
-      <View style={{ position: "absolute", left: 16, right: 16, bottom: Math.max(insets.bottom, 12) + 10, gap: 9 }}>
+      <View style={{ position: "absolute", left: 16, right: 16, bottom: composerBottom, gap: 9 }}>
         {isVoiceActive ? (
           <View style={{ minHeight: 66, borderRadius: 28, backgroundColor: theme.colors.voicePanel, flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 12, paddingVertical: 9, boxShadow: "0 8px 24px rgba(10, 20, 28, 0.24)" }}>
             <Pressable disabled={voiceMode === "transcribing"} onPress={discardVoiceMessage} style={{ width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", opacity: voiceMode === "transcribing" ? 0.4 : 1 }}>

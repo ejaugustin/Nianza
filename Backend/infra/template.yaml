@@ -515,6 +515,55 @@ Resources:
             Path: /mobile/v1/content/daily-note
             Method: GET
 
+  MobileMilestonesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-milestones-${Environment}
+      CodeUri: ../
+      Handler: mobile/milestones/handler.handler
+      Environment:
+        Variables:
+          CHILDREN_TABLE: !Ref MobileChildrenTable
+          MILESTONES_TABLE: !Ref MilestoneProgressTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MilestoneProgressTable
+      Events:
+        ChildProfileUpsert:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/children/{childId}
+            Method: PUT
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        MilestonesGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/milestones/{childId}
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        MilestoneObserve:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/milestones/{childId}/observations
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        MilestoneBackfillOffered:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/milestones/{childId}/backfill-offered
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+
   MobileVoiceFunction:
     Type: AWS::Serverless::Function
     Properties:

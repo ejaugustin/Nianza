@@ -1,0 +1,1941 @@
+{
+ "version": "1.0",
+ "source": "CDC Learn the Signs. Act Early. — Milestone Moments booklet",
+ "language": "en",
+ "windows": [
+  {
+   "ageKey": "2_months",
+   "label": "2 Months",
+   "windowEndMonths": 2,
+   "milestones": [
+    {
+     "milestoneId": "MS-2m-SOC-01",
+     "text": "Can briefly calm himself (may bring hands to mouth and suck on hand)",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-2m-SOC-02",
+     "text": "Begins to smile at people",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-2m-SOC-03",
+     "text": "Tries to look at parent",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-2m-LAN-01",
+     "text": "Coos, makes gurgling sounds",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-2m-LAN-02",
+     "text": "Turns head toward sounds",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-2m-COG-01",
+     "text": "Pays attention to faces",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-2m-COG-02",
+     "text": "Begins to follow things with eyes and recognize people at a distance",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-2m-COG-03",
+     "text": "Begins to act bored (cries, fussy) if activity doesn’t change",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-2m-MOV-01",
+     "text": "Can hold head up and begins to push up when lying on tummy",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-2m-MOV-02",
+     "text": "Makes smoother movements with arms and legs",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    }
+   ],
+   "actEarly": [
+    {
+     "actEarlyId": "AE-2m-01",
+     "text": "Doesn’t respond to loud sounds"
+    },
+    {
+     "actEarlyId": "AE-2m-02",
+     "text": "Doesn’t bring hands to mouth"
+    },
+    {
+     "actEarlyId": "AE-2m-03",
+     "text": "Doesn’t watch things as they move"
+    },
+    {
+     "actEarlyId": "AE-2m-04",
+     "text": "Can’t hold head up when pushing up when on tummy"
+    },
+    {
+     "actEarlyId": "AE-2m-05",
+     "text": "Doesn’t smile at people"
+    }
+   ]
+  },
+  {
+   "ageKey": "4_months",
+   "label": "4 Months",
+   "windowEndMonths": 4,
+   "milestones": [
+    {
+     "milestoneId": "MS-4m-SOC-01",
+     "text": "Smiles spontaneously, especially at people",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-SOC-02",
+     "text": "Likes to play with people and might cry when playing stops",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-SOC-03",
+     "text": "Copies some movements and facial expressions, like smiling or frowning",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-LAN-01",
+     "text": "Begins to babble",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-LAN-02",
+     "text": "Babbles with expression and copies sounds he hears",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-LAN-03",
+     "text": "Cries in different ways to show hunger, pain, or being tired",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-COG-01",
+     "text": "Lets you know if she is happy or sad",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-COG-02",
+     "text": "Follows moving things with eyes from side to side",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-COG-03",
+     "text": "Responds to affection",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-COG-04",
+     "text": "Watches faces closely",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-COG-05",
+     "text": "Reaches for toy with one hand",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-COG-06",
+     "text": "Recognizes familiar people and things at a distance",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-COG-07",
+     "text": "Uses hands and eyes together, such as seeing a toy and reaching for it",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-MOV-01",
+     "text": "Holds head steady, unsupported",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-MOV-02",
+     "text": "Pushes down on legs when feet are on a hard surface",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-MOV-03",
+     "text": "May be able to roll over from tummy to back",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-MOV-04",
+     "text": "Can hold a toy and shake it and swing at dangling toys",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-MOV-05",
+     "text": "Brings hands to mouth",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4m-MOV-06",
+     "text": "When lying on stomach, pushes up to elbows",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    }
+   ],
+   "actEarly": [
+    {
+     "actEarlyId": "AE-4m-01",
+     "text": "Doesn’t watch things as they move"
+    },
+    {
+     "actEarlyId": "AE-4m-02",
+     "text": "Doesn’t smile at people"
+    },
+    {
+     "actEarlyId": "AE-4m-03",
+     "text": "Can’t hold head steady"
+    },
+    {
+     "actEarlyId": "AE-4m-04",
+     "text": "Doesn’t coo or make sounds"
+    },
+    {
+     "actEarlyId": "AE-4m-05",
+     "text": "Doesn’t push down with legs when feet are placed on a hard surface"
+    },
+    {
+     "actEarlyId": "AE-4m-06",
+     "text": "Has trouble moving one or both eyes in all directions"
+    },
+    {
+     "actEarlyId": "AE-4m-07",
+     "text": "Doesn’t bring things to mouth"
+    }
+   ]
+  },
+  {
+   "ageKey": "6_months",
+   "label": "6 Months",
+   "windowEndMonths": 6,
+   "milestones": [
+    {
+     "milestoneId": "MS-6m-SOC-01",
+     "text": "Knows familiar faces and begins to know if someone is a stranger",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-SOC-02",
+     "text": "Responds to other people’s emotions and often seems happy",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-SOC-03",
+     "text": "Likes to play with others, especially parents",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-SOC-04",
+     "text": "Likes to look at self in a mirror",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-SOC-05",
+     "text": "Strings vowels together when babbling (“ah,” “eh,” “oh”) and likes taking turns with parent while making sounds",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-LAN-01",
+     "text": "Responds to sounds by making sounds",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-LAN-02",
+     "text": "Responds to own name",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-LAN-03",
+     "text": "Makes sounds to show joy and displeasure",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-LAN-04",
+     "text": "Begins to say consonant sounds (jabbering with “m,” “b”)",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-COG-01",
+     "text": "Looks around at things nearby",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-COG-02",
+     "text": "Brings things to mouth",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-COG-03",
+     "text": "Shows curiosity about things and tries to get things that are out of reach",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-COG-04",
+     "text": "Begins to pass things from one hand to the other",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-MOV-01",
+     "text": "Rolls over in both directions (front to back, back to front)",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-MOV-02",
+     "text": "When standing, supports weight on legs and might bounce",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-MOV-03",
+     "text": "Begins to sit without support",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-6m-MOV-04",
+     "text": "Rocks back and forth, sometimes crawling backward before moving forward",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    }
+   ],
+   "actEarly": [
+    {
+     "actEarlyId": "AE-6m-01",
+     "text": "Doesn’t try to get things that are in reach"
+    },
+    {
+     "actEarlyId": "AE-6m-02",
+     "text": "Doesn’t make vowel sounds (“ah”, “eh”, “oh”)"
+    },
+    {
+     "actEarlyId": "AE-6m-03",
+     "text": "Shows no affection for caregivers"
+    },
+    {
+     "actEarlyId": "AE-6m-04",
+     "text": "Doesn’t roll over in either direction"
+    },
+    {
+     "actEarlyId": "AE-6m-05",
+     "text": "Doesn’t respond to sounds around him"
+    },
+    {
+     "actEarlyId": "AE-6m-06",
+     "text": "Has difficulty getting things to mouth"
+    },
+    {
+     "actEarlyId": "AE-6m-07",
+     "text": "Seems very floppy, like a rag doll"
+    },
+    {
+     "actEarlyId": "AE-6m-08",
+     "text": "Doesn’t laugh or make squealing sounds"
+    },
+    {
+     "actEarlyId": "AE-6m-09",
+     "text": "Seems very stiff, with tight muscles"
+    }
+   ]
+  },
+  {
+   "ageKey": "9_months",
+   "label": "9 Months",
+   "windowEndMonths": 9,
+   "milestones": [
+    {
+     "milestoneId": "MS-9m-SOC-01",
+     "text": "May be afraid of strangers",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-SOC-02",
+     "text": "Has favorite toys",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-SOC-03",
+     "text": "May be clingy with familiar adults",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-LAN-01",
+     "text": "Understands “no”",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-LAN-02",
+     "text": "Makes a lot of different sounds like “mamamama” and “bababababa”",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-LAN-03",
+     "text": "Copies sounds and gestures of others",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-LAN-04",
+     "text": "Uses fingers to point at things",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-COG-01",
+     "text": "Watches the path of something as it falls",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-COG-02",
+     "text": "Moves things smoothly from one hand to the other",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-COG-03",
+     "text": "Looks for things he sees you hide",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-COG-04",
+     "text": "Picks up things like cereal o’s between thumb and index finger",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-COG-05",
+     "text": "Plays peek-a-boo",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-COG-06",
+     "text": "Puts things in her mouth",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-MOV-01",
+     "text": "Stands, holding on",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-MOV-02",
+     "text": "Can get into sitting position",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-MOV-03",
+     "text": "Sits without support",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-MOV-04",
+     "text": "Pulls to stand",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-9m-MOV-05",
+     "text": "Crawls",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    }
+   ],
+   "actEarly": [
+    {
+     "actEarlyId": "AE-9m-01",
+     "text": "Doesn’t bear weight on legs with support"
+    },
+    {
+     "actEarlyId": "AE-9m-02",
+     "text": "Doesn’t sit with help"
+    },
+    {
+     "actEarlyId": "AE-9m-03",
+     "text": "Doesn’t babble (“mama”, “baba”, “dada”)"
+    },
+    {
+     "actEarlyId": "AE-9m-04",
+     "text": "Doesn’t play any games involving back-and-forth play"
+    },
+    {
+     "actEarlyId": "AE-9m-05",
+     "text": "Doesn’t respond to own name"
+    },
+    {
+     "actEarlyId": "AE-9m-06",
+     "text": "Doesn’t seem to recognize familiar people"
+    },
+    {
+     "actEarlyId": "AE-9m-07",
+     "text": "Doesn’t look where you point"
+    },
+    {
+     "actEarlyId": "AE-9m-08",
+     "text": "Doesn’t transfer toys from one hand to the other"
+    }
+   ]
+  },
+  {
+   "ageKey": "12_months",
+   "label": "1 Year",
+   "windowEndMonths": 12,
+   "milestones": [
+    {
+     "milestoneId": "MS-12m-SOC-01",
+     "text": "Is shy or nervous with strangers",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-SOC-02",
+     "text": "Cries when mom or dad leaves",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-SOC-03",
+     "text": "Has favorite things and people",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-SOC-04",
+     "text": "Shows fear in some situations",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-SOC-05",
+     "text": "Hands you a book when he wants to hear a story",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-SOC-06",
+     "text": "Repeats sounds or actions to get attention",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-SOC-07",
+     "text": "Puts out arm or leg to help with dressing",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": true
+    },
+    {
+     "milestoneId": "MS-12m-SOC-08",
+     "text": "Plays games such as “peek-a-boo” and “pat-a-cake”",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-LAN-01",
+     "text": "Responds to simple spoken requests",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-LAN-02",
+     "text": "Says “mama” and “dada” and exclamations like “uh-oh!”",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-LAN-03",
+     "text": "Uses simple gestures, like shaking head “no” or waving “bye-bye”",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-LAN-04",
+     "text": "Tries to say words you say",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-LAN-05",
+     "text": "Makes sounds with changes in tone (sounds more like speech)",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-COG-01",
+     "text": "Explores things in different ways, like shaking, banging, throwing",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-COG-02",
+     "text": "Finds hidden things easily",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-COG-03",
+     "text": "Bangs two things together",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-COG-04",
+     "text": "Starts to use things correctly; for example, drinks from a cup, brushes hair",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": true
+    },
+    {
+     "milestoneId": "MS-12m-COG-05",
+     "text": "Lets things go without help",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-COG-06",
+     "text": "Copies gestures",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-COG-07",
+     "text": "Pokes with index (pointer) finger",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-COG-08",
+     "text": "Puts things in a container, takes things out of a container",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-COG-09",
+     "text": "Follows simple directions like “pick up the toy”",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-COG-10",
+     "text": "Looks at the right picture or thing when it’s named",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-MOV-01",
+     "text": "Gets to a sitting position without help",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-MOV-02",
+     "text": "May take a few steps without holding on",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-MOV-03",
+     "text": "Pulls up to stand, walks holding on to furniture (“cruising”)",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-12m-MOV-04",
+     "text": "May stand alone",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    }
+   ],
+   "actEarly": [
+    {
+     "actEarlyId": "AE-12m-01",
+     "text": "Doesn’t crawl"
+    },
+    {
+     "actEarlyId": "AE-12m-02",
+     "text": "Can’t stand when supported"
+    },
+    {
+     "actEarlyId": "AE-12m-03",
+     "text": "Doesn’t learn gestures like waving or shaking head"
+    },
+    {
+     "actEarlyId": "AE-12m-04",
+     "text": "Doesn’t search for things that she sees you hide"
+    },
+    {
+     "actEarlyId": "AE-12m-05",
+     "text": "Doesn’t say single words like “mama” or “dada”"
+    },
+    {
+     "actEarlyId": "AE-12m-06",
+     "text": "Doesn’t point to things"
+    },
+    {
+     "actEarlyId": "AE-12m-07",
+     "text": "Loses skills he once had"
+    }
+   ]
+  },
+  {
+   "ageKey": "18_months",
+   "label": "18 Months",
+   "windowEndMonths": 18,
+   "milestones": [
+    {
+     "milestoneId": "MS-18m-SOC-01",
+     "text": "Likes to hand things to others as play",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-SOC-02",
+     "text": "May cling to caregivers in new situations",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-SOC-03",
+     "text": "May have temper tantrums",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-SOC-04",
+     "text": "Points to show others something interesting",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-SOC-05",
+     "text": "Explores alone but with parent close by",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-SOC-06",
+     "text": "May be afraid of strangers",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-SOC-07",
+     "text": "Shows affection to familiar people",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-SOC-08",
+     "text": "Plays simple pretend, such as feeding a doll",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-LAN-01",
+     "text": "Says several single words",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-LAN-02",
+     "text": "Says and shakes head “no”",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-LAN-03",
+     "text": "Points to show someone what he wants",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-COG-01",
+     "text": "Knows what ordinary things are for; for example, telephone, brush, spoon",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": true
+    },
+    {
+     "milestoneId": "MS-18m-COG-02",
+     "text": "Points to get the attention of others",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-COG-03",
+     "text": "Scribbles on his own",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-COG-04",
+     "text": "Points to one body part",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-COG-05",
+     "text": "Shows interest in a doll or stuffed animal by pretending to feed",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-COG-06",
+     "text": "Can follow 1-step verbal commands without any gestures; for example, sits when you say “sit down”",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-MOV-01",
+     "text": "Walks alone",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-MOV-02",
+     "text": "Can help undress herself",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": true
+    },
+    {
+     "milestoneId": "MS-18m-MOV-03",
+     "text": "May walk up steps and run",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-MOV-04",
+     "text": "Drinks from a cup",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": true
+    },
+    {
+     "milestoneId": "MS-18m-MOV-05",
+     "text": "Pulls toys while walking",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-18m-MOV-06",
+     "text": "Eats with a spoon",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": true
+    }
+   ],
+   "actEarly": [
+    {
+     "actEarlyId": "AE-18m-01",
+     "text": "Doesn’t point to show things to others"
+    },
+    {
+     "actEarlyId": "AE-18m-02",
+     "text": "Doesn’t gain new words"
+    },
+    {
+     "actEarlyId": "AE-18m-03",
+     "text": "Can’t walk"
+    },
+    {
+     "actEarlyId": "AE-18m-04",
+     "text": "Doesn’t notice or mind when a caregiver leaves or returns"
+    },
+    {
+     "actEarlyId": "AE-18m-05",
+     "text": "Doesn’t know what familiar things are for"
+    },
+    {
+     "actEarlyId": "AE-18m-06",
+     "text": "Doesn’t have at least 6 words"
+    },
+    {
+     "actEarlyId": "AE-18m-07",
+     "text": "Loses skills he once had"
+    },
+    {
+     "actEarlyId": "AE-18m-08",
+     "text": "Doesn’t copy others"
+    }
+   ]
+  },
+  {
+   "ageKey": "24_months",
+   "label": "2 Years",
+   "windowEndMonths": 24,
+   "milestones": [
+    {
+     "milestoneId": "MS-24m-SOC-01",
+     "text": "Copies others, especially adults and older children",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-SOC-02",
+     "text": "Shows defiant behavior (doing what he has been told not to)",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-SOC-03",
+     "text": "Gets excited when with other children",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-SOC-04",
+     "text": "Plays mainly beside other children, but is beginning to include other children, such as in chase games",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-SOC-05",
+     "text": "Shows more and more independence",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-LAN-01",
+     "text": "Points to things or pictures when they are named",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-LAN-02",
+     "text": "Knows names of familiar people and body parts",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-LAN-03",
+     "text": "Follows simple instructions",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-LAN-04",
+     "text": "Repeats words overheard in conversation",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-LAN-05",
+     "text": "Points to things in a book",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-LAN-06",
+     "text": "Says sentences with 2 to 4 words",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-COG-01",
+     "text": "Finds things even when hidden under two or three covers",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-COG-02",
+     "text": "Might use one hand more than the other",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-COG-03",
+     "text": "Begins to sort shapes and colors",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-COG-04",
+     "text": "Follows two-step instructions such as “Pick up your shoes and put them in the closet.”",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-COG-05",
+     "text": "Completes sentences and rhymes in familiar books",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-COG-06",
+     "text": "Plays simple make-believe games",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-COG-07",
+     "text": "Builds towers of 4 or more blocks",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-COG-08",
+     "text": "Names items in a picture book such as a cat, bird, or dog",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-MOV-01",
+     "text": "Stands on tiptoe",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-MOV-02",
+     "text": "Kicks a ball",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-MOV-03",
+     "text": "Climbs onto and down from furniture without help",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-MOV-04",
+     "text": "Begins to run",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-MOV-05",
+     "text": "Throws ball overhand",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-MOV-06",
+     "text": "Walks up and down stairs holding on",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-24m-MOV-07",
+     "text": "Makes or copies straight lines and circles",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    }
+   ],
+   "actEarly": [
+    {
+     "actEarlyId": "AE-24m-01",
+     "text": "Doesn’t know what to do with common things, like a brush, phone, fork, spoon"
+    },
+    {
+     "actEarlyId": "AE-24m-02",
+     "text": "Doesn’t use 2-word phrases (for example, “drink milk”)"
+    },
+    {
+     "actEarlyId": "AE-24m-03",
+     "text": "Doesn’t copy actions and words"
+    },
+    {
+     "actEarlyId": "AE-24m-04",
+     "text": "Loses skills she once had"
+    },
+    {
+     "actEarlyId": "AE-24m-05",
+     "text": "Doesn’t walk steadily"
+    },
+    {
+     "actEarlyId": "AE-24m-06",
+     "text": "Doesn’t follow simple instructions"
+    }
+   ]
+  },
+  {
+   "ageKey": "3_years",
+   "label": "3 Years",
+   "windowEndMonths": 36,
+   "milestones": [
+    {
+     "milestoneId": "MS-3y-SOC-01",
+     "text": "Understands the idea of “mine” and “his” or “hers”",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-SOC-02",
+     "text": "Shows a wide range of emotions",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-SOC-03",
+     "text": "Takes turns in games",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-SOC-04",
+     "text": "Separates easily from mom and dad",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-SOC-05",
+     "text": "Shows concern for a crying friend",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-SOC-06",
+     "text": "May get upset with major changes in routine",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-SOC-07",
+     "text": "Copies adults and friends",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-SOC-08",
+     "text": "Shows affection for friends without prompting",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-SOC-09",
+     "text": "Dresses and undresses self",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": true
+    },
+    {
+     "milestoneId": "MS-3y-LAN-01",
+     "text": "Follows instructions with 2 or 3 steps",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-LAN-02",
+     "text": "Can name most familiar things",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-LAN-03",
+     "text": "Understands words like “in,” “on,” and “under”",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-LAN-04",
+     "text": "Says first name, age, and sex",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-LAN-05",
+     "text": "Names a friend",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-LAN-06",
+     "text": "Talks well enough for strangers to understand most of the time",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-LAN-07",
+     "text": "Says words like “I,” “me,” “we,” and “you” and some plurals (cars, dogs, cats)",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-LAN-08",
+     "text": "Carries on a conversation using",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-COG-01",
+     "text": "Can work toys with buttons, levers, and moving parts",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-COG-02",
+     "text": "Copies a circle with pencil or crayon",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-COG-03",
+     "text": "Turns book pages one at a time",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-COG-04",
+     "text": "Plays make-believe with dolls, animals, and people",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-COG-05",
+     "text": "Builds towers of more than",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-COG-06",
+     "text": "Does puzzles with 3 or 4 pieces",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-COG-07",
+     "text": "Screws and unscrews jar lids or turns door handle",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-COG-08",
+     "text": "Understands what “two” means",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-MOV-01",
+     "text": "Climbs well",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-MOV-02",
+     "text": "Runs easily",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-MOV-03",
+     "text": "Walks up and down stairs, one foot on each step",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-3y-MOV-04",
+     "text": "Pedals a tricycle (3-wheel bike)",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    }
+   ],
+   "actEarly": [
+    {
+     "actEarlyId": "AE-3y-01",
+     "text": "Falls down a lot or has trouble with stairs"
+    },
+    {
+     "actEarlyId": "AE-3y-02",
+     "text": "Doesn’t speak in sentences"
+    },
+    {
+     "actEarlyId": "AE-3y-03",
+     "text": "Drools or has very unclear speech"
+    },
+    {
+     "actEarlyId": "AE-3y-04",
+     "text": "Doesn’t play pretend or make-believe"
+    },
+    {
+     "actEarlyId": "AE-3y-05",
+     "text": "Can’t work simple toys (such as peg boards, simple puzzles, turning a handle)"
+    },
+    {
+     "actEarlyId": "AE-3y-06",
+     "text": "Doesn’t understand simple instructions"
+    },
+    {
+     "actEarlyId": "AE-3y-07",
+     "text": "Doesn’t make eye contact"
+    },
+    {
+     "actEarlyId": "AE-3y-08",
+     "text": "Doesn’t want to play with other children or with toys"
+    },
+    {
+     "actEarlyId": "AE-3y-09",
+     "text": "Loses skills he once had"
+    }
+   ]
+  },
+  {
+   "ageKey": "4_years",
+   "label": "4 Years",
+   "windowEndMonths": 48,
+   "milestones": [
+    {
+     "milestoneId": "MS-4y-SOC-01",
+     "text": "Enjoys doing new things",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-SOC-02",
+     "text": "Plays “Mom” or “Dad”",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-SOC-03",
+     "text": "Is more and more creative with make-believe play",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-SOC-04",
+     "text": "Often can’t tell what’s real and what’s make-believe",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-SOC-05",
+     "text": "Would rather play with other children than by himself",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-SOC-06",
+     "text": "Talks about what she likes and what she is interested in",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-SOC-07",
+     "text": "Cooperates with other children",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-LAN-01",
+     "text": "Tells stories",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-LAN-02",
+     "text": "Sings a song or says a poem from memory such as the “Itsy Bitsy Spider” or the “Wheels on the Bus”",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-LAN-03",
+     "text": "Knows some basic rules of grammar, such as correctly using “he” and “she”",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-LAN-04",
+     "text": "Can say first and last name",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-COG-01",
+     "text": "Names some colors and some numbers",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-COG-02",
+     "text": "Draws a person with 2 to 4 body parts",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-COG-03",
+     "text": "Understands the idea of counting",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-COG-04",
+     "text": "Uses scissors",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-COG-05",
+     "text": "Starts to understand time",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-COG-06",
+     "text": "Starts to copy some capital letters",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-COG-07",
+     "text": "Remembers parts of a story",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-COG-08",
+     "text": "Plays board or card games",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-COG-09",
+     "text": "Understands the idea of “same” and “different”",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-COG-10",
+     "text": "Tells you what he thinks is going to happen next in a book",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-MOV-01",
+     "text": "Hops and stands on one foot up to 2 seconds",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-MOV-02",
+     "text": "Catches a bounced ball most of the time",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-4y-MOV-03",
+     "text": "Pours, cuts with supervision, and mashes own food",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": true
+    }
+   ],
+   "actEarly": [
+    {
+     "actEarlyId": "AE-4y-01",
+     "text": "Can’t jump in place"
+    },
+    {
+     "actEarlyId": "AE-4y-02",
+     "text": "Has trouble scribbling"
+    },
+    {
+     "actEarlyId": "AE-4y-03",
+     "text": "Resists dressing, sleeping, and using the toilet"
+    },
+    {
+     "actEarlyId": "AE-4y-04",
+     "text": "Shows no interest in interactive games or make-believe"
+    },
+    {
+     "actEarlyId": "AE-4y-05",
+     "text": "Doesn’t understand “same” and “different”"
+    },
+    {
+     "actEarlyId": "AE-4y-06",
+     "text": "Ignores other children or doesn’t respond to people outside the family"
+    },
+    {
+     "actEarlyId": "AE-4y-07",
+     "text": "Doesn’t use “me” and “you” correctly"
+    },
+    {
+     "actEarlyId": "AE-4y-08",
+     "text": "Doesn’t follow 3-part commands"
+    },
+    {
+     "actEarlyId": "AE-4y-09",
+     "text": "Can’t retell a favorite story"
+    },
+    {
+     "actEarlyId": "AE-4y-10",
+     "text": "Loses skills he once had"
+    },
+    {
+     "actEarlyId": "AE-4y-11",
+     "text": "Speaks unclearly"
+    }
+   ]
+  },
+  {
+   "ageKey": "5_years",
+   "label": "5 Years",
+   "windowEndMonths": 60,
+   "milestones": [
+    {
+     "milestoneId": "MS-5y-SOC-01",
+     "text": "Wants to please friends",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-SOC-02",
+     "text": "Wants to be like friends",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-SOC-03",
+     "text": "More likely to agree with rules",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-SOC-04",
+     "text": "Likes to sing, dance, and act",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-SOC-05",
+     "text": "Is aware of gender",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-SOC-06",
+     "text": "Shows more independence (for example, may visit a next-door neighbor by himself [adult supervision is still needed])",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-SOC-07",
+     "text": "Is sometimes demanding and sometimes very cooperative",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-SOC-08",
+     "text": "Can tell what’s real and what’s make-believe",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-SOC-09",
+     "text": "Tells a simple story using full sentences",
+     "domain": "Social/Emotional",
+     "tab": "Social",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-LAN-01",
+     "text": "Speaks very clearly",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-LAN-02",
+     "text": "Uses future tense; for example, “Grandma will be here.”",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-LAN-03",
+     "text": "Says name and address",
+     "domain": "Language/Communication",
+     "tab": "Language",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-COG-01",
+     "text": "Counts 10 or more things",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-COG-02",
+     "text": "Can print some letters or numbers",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-COG-03",
+     "text": "Can draw a person with at least",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-COG-04",
+     "text": "Knows about things used every day, like money and food",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-COG-05",
+     "text": "Copies a triangle and other shapes",
+     "domain": "Cognitive",
+     "tab": "Cognitive",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-MOV-01",
+     "text": "Stands on one foot for 10 seconds or longer",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-MOV-02",
+     "text": "Uses a fork and spoon and sometimes a table knife",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": true
+    },
+    {
+     "milestoneId": "MS-5y-MOV-03",
+     "text": "Hops; may be able to skip",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-MOV-04",
+     "text": "Can use the toilet on her own",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": true
+    },
+    {
+     "milestoneId": "MS-5y-MOV-05",
+     "text": "Can do a somersault",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    },
+    {
+     "milestoneId": "MS-5y-MOV-06",
+     "text": "Swings and climbs",
+     "domain": "Movement/Physical Development",
+     "tab": "Movement",
+     "selfCare": false
+    }
+   ],
+   "actEarly": [
+    {
+     "actEarlyId": "AE-5y-01",
+     "text": "Doesn’t show a wide range of emotions"
+    },
+    {
+     "actEarlyId": "AE-5y-02",
+     "text": "Doesn’t respond to people, or responds only superficially"
+    },
+    {
+     "actEarlyId": "AE-5y-03",
+     "text": "Doesn’t talk about daily activities or experiences"
+    },
+    {
+     "actEarlyId": "AE-5y-04",
+     "text": "Shows extreme behavior (unusually fearful, aggressive, shy, or sad)"
+    },
+    {
+     "actEarlyId": "AE-5y-05",
+     "text": "Can’t tell what’s real and what’s make-believe"
+    },
+    {
+     "actEarlyId": "AE-5y-06",
+     "text": "Doesn’t use plurals or past tense properly"
+    },
+    {
+     "actEarlyId": "AE-5y-07",
+     "text": "Doesn’t play a variety of games and activities"
+    },
+    {
+     "actEarlyId": "AE-5y-08",
+     "text": "Unusually withdrawn and not active"
+    },
+    {
+     "actEarlyId": "AE-5y-09",
+     "text": "Is easily distracted, has trouble focusing on one activity for more than 5 minutes"
+    },
+    {
+     "actEarlyId": "AE-5y-10",
+     "text": "Can’t give first and last name"
+    },
+    {
+     "actEarlyId": "AE-5y-11",
+     "text": "Doesn’t draw pictures"
+    },
+    {
+     "actEarlyId": "AE-5y-12",
+     "text": "Can’t brush teeth, wash and dry hands, or get undressed without help"
+    },
+    {
+     "actEarlyId": "AE-5y-13",
+     "text": "Loses skills he once had"
+    }
+   ]
+  }
+ ]
+}

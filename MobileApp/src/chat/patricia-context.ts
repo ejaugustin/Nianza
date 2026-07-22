@@ -2,6 +2,7 @@ export type PatriciaContextEvent =
   | "general"
   | "home"
   | "milestone-checked"
+  | "watch-for-noticed"
   | "visit-upcoming"
   | "sick-encounter-active"
   | "vaccines"
@@ -17,13 +18,13 @@ export type AmbientContext = {
 };
 
 export type BackendContextSeed = {
-  sourceScreen: "D2" | "F2" | "C1-visit" | "D6" | "D7";
+  sourceScreen: "D1" | "D2" | "F2" | "C1-visit" | "D6" | "D7";
   eventType: BackendContextSeedEvent;
   detail: string;
   occurredAt: string;
 };
 
-type BackendContextSeedEvent = "milestone-checked" | "sick-encounter-active" | "visit-upcoming" | "capsule-invite" | "custom-first";
+type BackendContextSeedEvent = "milestone-checked" | "watch-for-noticed" | "sick-encounter-active" | "visit-upcoming" | "capsule-invite" | "custom-first";
 
 export type ChatContextSeed = {
   source: string;
@@ -88,6 +89,7 @@ export function ambientContextFromSeed(seed: ChatContextSeed): AmbientContext {
 }
 
 function backendSourceScreen(seed: ChatContextSeed): BackendContextSeed["sourceScreen"] | null {
+  if (seed.eventType === "watch-for-noticed") return "D1";
   if (seed.eventType === "milestone-checked") return "D2";
   if (seed.eventType === "sick-encounter-active") return "F2";
   if (seed.eventType === "visit-upcoming") return "C1-visit";
@@ -95,6 +97,7 @@ function backendSourceScreen(seed: ChatContextSeed): BackendContextSeed["sourceS
 }
 
 function backendEventType(seed: ChatContextSeed): BackendContextSeedEvent | null {
+  if (seed.eventType === "watch-for-noticed") return "watch-for-noticed";
   if (seed.eventType === "milestone-checked") return "milestone-checked";
   if (seed.eventType === "sick-encounter-active") return "sick-encounter-active";
   if (seed.eventType === "visit-upcoming") return "visit-upcoming";
@@ -118,6 +121,10 @@ export function patriciaOpening(seed: ChatContextSeed) {
 
   if (seed.eventType === "milestone-checked") {
     return `${childName} ${seed.detail?.toLowerCase() || "did something new"}? Oh, I love hearing that. Tell me what you noticed first.`;
+  }
+
+  if (seed.eventType === "watch-for-noticed") {
+    return `You set this aside for ${childName}'s visit. Tell me what you have noticed, and we will turn it into a clear question for the pediatrician.`;
   }
 
   if (seed.eventType === "visit-upcoming") {
@@ -152,6 +159,10 @@ export function mockTranscriptFromSeed(seed: ChatContextSeed) {
 
   if (seed.eventType === "milestone-checked") {
     return `I noticed ${childName} ${seed.detail?.toLowerCase() || "doing something new"}, and I want to understand what to watch for next.`;
+  }
+
+  if (seed.eventType === "watch-for-noticed") {
+    return `I noticed something from the watch-for list for ${childName}, and I want help turning it into a question for the visit.`;
   }
 
   if (seed.eventType === "visit-upcoming") {

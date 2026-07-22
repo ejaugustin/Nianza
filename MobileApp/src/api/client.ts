@@ -30,7 +30,10 @@ function buildUrl(path: string, params?: Record<string, string | number | null |
 export async function apiGet<T>(path: string, params?: Record<string, string | number | null | undefined>): Promise<T> {
   try {
     const response = await fetch(buildUrl(path, params), {
-      headers: { Accept: "application/json" }
+      headers: {
+        Accept: "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+      }
     });
 
     if (!response.ok) {

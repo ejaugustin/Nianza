@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { Pressable, ScrollView, Share, Text, View } from "react-native";
+import { useQuery } from "@tanstack/react-query";
+import { getMilestoneProgress, recordMilestoneObservation, type WatchForProgressItem } from "@/api/milestones";
 import { useAuth } from "@/auth/auth-context";
 import { CategoryChip, EmptyCircle, ScreenTitle, SectionLabel, SfIcon } from "@/components/screen-spec";
 import { TalkToPatriciaButton, openPatricia } from "@/components/talk-to-patricia-button";
@@ -70,6 +72,7 @@ export default function MilestonesScreen() {
   const [activeDomain, setActiveDomain] = useState<MilestoneTab>("Movement");
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [photos, setPhotos] = useState<Record<string, string[]>>({});
+  const [watchChecked, setWatchChecked] = useState<Record<string, boolean>>({});
   const [watchOpen, setWatchOpen] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState<MilestoneDefinition | null>(null);
   const [notice, setNotice] = useState("");
@@ -81,6 +84,29 @@ export default function MilestonesScreen() {
   const visibleMilestones = useMemo(() => getMilestonesForTab(currentWindow, activeDomain), [activeDomain, currentWindow]);
   const observedThisMonth = Object.values(checked).filter(Boolean).length;
   const activeWatchText = watchText(currentWindow.actEarly, childName);
+  const milestoneProgressQuery = useQuery({
+    queryKey: ["milestone-progress", "primary-child"],
+    queryFn: () => getMilestoneProgress("primary-child"),
+    staleTime: 1000 * 30,
+    retry: 1
+  });
+  const watchForItems = useMemo<WatchForProgressItem[]>(() => {
+    if (milestoneProgressQuery.data?.watchFor?.length) return milestoneProgressQuery.data.watchFor;
+    return currentWindow.actEarly.map((item) => ({
+      ...item,
+      status: watchChecked[item.actEarlyId] ? "checked" : "unchecked",
+      originWindow: currentWindow.ageKey,
+      originLabel: currentWindow.label
+    }));
+  }, [currentWindow, milestoneProgressQuery.data?.watchFor, watchChecked]);
+
+  useEffect(() => {
+    const nextChecked: Record<string, boolean> = {};
+    milestoneProgressQuery.data?.watchFor?.forEach((item) => {
+      nextChecked[item.actEarlyId] = item.status === "checked";
+    });
+    if (Object.keys(nextChecked).length) setWatchChecked(nextChecked);
+  }, [milestoneProgressQuery.data?.watchFor]);
 
   async function shareMilestone(milestone: MilestoneDefinition) {
     await Share.share({
@@ -113,6 +139,23 @@ export default function MilestonesScreen() {
       }
     } catch {
       setNotice("I could not open photos just now. Try again in a moment.");
+    }
+  }
+
+  async function toggleWatchFor(item: WatchForProgressItem) {
+    const nextChecked = !watchChecked[item.actEarlyId];
+    setWatchChecked((current) => ({ ...current, [item.actEarlyId]: nextChecked }));
+    setNotice(nextChecked ? "Added to your visit discussion list." : "Removed from your visit discussion list.");
+
+    try {
+      await recordMilestoneObservation({
+        childId: "primary-child",
+        milestoneId: item.actEarlyId,
+        checked: nextChecked
+      });
+      milestoneProgressQuery.refetch();
+    } catch {
+      setNotice(nextChecked ? "Saved here for now. Patricia will sync this when the connection is ready." : "Updated here for now. Patricia will sync this when the connection is ready.");
     }
   }
 
@@ -232,13 +275,79 @@ export default function MilestonesScreen() {
           <SfIcon name="chevron.down" color={theme.colors.greyIcon} size={20} />
         </Pressable>
         {watchOpen ? (
-          <View style={{ borderRadius: 16, backgroundColor: theme.colors.card, padding: 16, borderLeftWidth: 3, borderLeftColor: theme.colors.bluePrimary, gap: 8 }}>
-            <View style={{ alignSelf: "flex-end", width: 28, height: 28, borderRadius: 14, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center" }}>
-              <Text selectable={false} style={{ color: "white", fontSize: 13, fontWeight: "800" }}>P</Text>
+          <View style={{ gap: 10 }}>
+            <View style={{ borderRadius: 16, backgroundColor: theme.colors.card, padding: 16, borderLeftWidth: 3, borderLeftColor: theme.colors.bluePrimary, gap: 8 }}>
+              <View style={{ alignSelf: "flex-end", width: 28, height: 28, borderRadius: 14, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center" }}>
+                <Text selectable={false} style={{ color: "white", fontSize: 13, fontWeight: "800" }}>P</Text>
+              </View>
+              <Text selectable style={{ color: theme.colors.text, fontSize: 15, lineHeight: 23, fontStyle: "italic" }}>
+                {activeWatchText}
+              </Text>
             </View>
-            <Text selectable style={{ color: theme.colors.text, fontSize: 15, lineHeight: 23, fontStyle: "italic" }}>
-              {activeWatchText}
-            </Text>
+            <View style={{ borderRadius: 16, backgroundColor: "white", borderWidth: 1, borderColor: theme.colors.border, overflow: "hidden" }}>
+              {watchForItems.map((item, index) => {
+                const isChecked = Object.prototype.hasOwnProperty.call(watchChecked, item.actEarlyId)
+                  ? Boolean(watchChecked[item.actEarlyId])
+                  : item.status === "checked";
+                const text = normalizePatriciaText(item.text, childName);
+                return (
+                  <View key={item.actEarlyId}>
+                    <Pressable
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isChecked }}
+                      onPress={() => toggleWatchFor(item)}
+                      style={{ flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 14, backgroundColor: isChecked ? "#F4F7F8" : "white" }}
+                    >
+                      <View
+                        style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 8,
+                          borderWidth: 2,
+                          borderColor: isChecked ? theme.colors.blueDeep : theme.colors.border,
+                          backgroundColor: isChecked ? theme.colors.blueLight : "white",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginTop: 1
+                        }}
+                      >
+                        {isChecked ? <SfIcon name="checkmark" color={theme.colors.blueDeep} size={17} /> : null}
+                      </View>
+                      <View style={{ flex: 1, gap: 8 }}>
+                        <Text selectable style={{ color: theme.colors.text, fontSize: 14, lineHeight: 20, fontWeight: "600" }}>{text}</Text>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+                          <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>{item.originLabel || currentWindow.label}</Text>
+                          {isChecked ? (
+                            <View style={{ borderRadius: 12, backgroundColor: "#ECEFF1", paddingHorizontal: 9, paddingVertical: 4 }}>
+                              <Text selectable={false} style={{ color: theme.colors.muted, fontSize: 10, fontWeight: "800" }}>For the visit</Text>
+                            </View>
+                          ) : null}
+                        </View>
+                        {isChecked ? (
+                          <Pressable
+                            onPress={() =>
+                              openPatricia({
+                                source: "D1-watch-for",
+                                eventType: "watch-for-noticed",
+                                childName,
+                                childId: "primary-child",
+                                entityId: item.actEarlyId,
+                                title: "Watch-for item noticed",
+                                detail: text,
+                                occurredAt: new Date().toISOString()
+                              })
+                            }
+                          >
+                            <Text selectable style={{ color: theme.colors.bluePrimary, fontSize: 13, fontWeight: "800" }}>Tell Patricia</Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    </Pressable>
+                    {index < watchForItems.length - 1 ? <View style={{ height: 1, backgroundColor: theme.colors.border }} /> : null}
+                  </View>
+                );
+              })}
+            </View>
           </View>
         ) : null}
 

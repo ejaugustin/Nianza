@@ -29,6 +29,30 @@ Parameters:
     Type: String
     Default: nova-2
     Description: Deepgram speech-to-text model for parent voice notes.
+  AnthropicApiKeyParameterName:
+    Type: String
+    Default: /nianza/prod/anthropic/api-key
+    Description: SSM SecureString parameter name that stores the Anthropic API key for Patricia chat.
+  AnthropicModelParameterName:
+    Type: String
+    Default: /nianza/prod/anthropic/model
+    Description: SSM String parameter name that stores the Patricia chat model id.
+  PatriciaPromptBucket:
+    Type: String
+    Default: ""
+    Description: Optional S3 bucket that stores the Patricia system prompt.
+  PatriciaPromptKey:
+    Type: String
+    Default: en/grandmother-chat.txt
+    Description: S3 object key for the Patricia system prompt.
+  PatriciaTemperature:
+    Type: String
+    Default: "0.7"
+    Description: Model temperature for Patricia chat.
+  PatriciaMaxTokens:
+    Type: String
+    Default: "450"
+    Description: Maximum tokens for a Patricia response.
 
 Globals:
   Function:
@@ -799,8 +823,16 @@ Resources:
           CHILDREN_TABLE: !Ref MobileChildrenTable
           MILESTONES_TABLE: !Ref MilestoneProgressTable
           SICK_ENCOUNTERS_TABLE: !Ref SickEncountersTable
+          VACCINES_TABLE: !Ref ImmunizationStatusTable
+          VITALS_TABLE: !Ref VitalsLogTable
           CONTENT_TABLE: !Ref ContentLibraryTable
           CONVERSATIONS_TABLE: !Ref MobileConversationsTable
+          ANTHROPIC_API_KEY_PARAMETER: !Ref AnthropicApiKeyParameterName
+          ANTHROPIC_MODEL_PARAMETER: !Ref AnthropicModelParameterName
+          PATRICIA_PROMPT_BUCKET: !Ref PatriciaPromptBucket
+          PATRICIA_PROMPT_KEY: !Ref PatriciaPromptKey
+          PATRICIA_TEMPERATURE: !Ref PatriciaTemperature
+          PATRICIA_MAX_TOKENS: !Ref PatriciaMaxTokens
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref MobileUsersTable
@@ -811,9 +843,23 @@ Resources:
         - DynamoDBReadPolicy:
             TableName: !Ref SickEncountersTable
         - DynamoDBReadPolicy:
+            TableName: !Ref ImmunizationStatusTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref VitalsLogTable
+        - DynamoDBReadPolicy:
             TableName: !Ref ContentLibraryTable
         - DynamoDBCrudPolicy:
             TableName: !Ref MobileConversationsTable
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource: "*"
       Events:
         Chat:
           Type: Api

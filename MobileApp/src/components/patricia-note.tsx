@@ -3,6 +3,7 @@ import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { Pressable, Text, View } from "react-native";
 import { configurePatriciaPlayback, fetchPatriciaSpeechAudio, pausePatriciaPlayer } from "@/audio/patricia-voice";
 import { SfIcon } from "@/components/screen-spec";
+import { normalizePatriciaDisplayText } from "@/text/patricia-text";
 import { theme } from "@/theme/theme";
 
 export function PatriciaNote({ children }: { children: ReactNode }) {
@@ -11,7 +12,7 @@ export function PatriciaNote({ children }: { children: ReactNode }) {
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const noteText = useMemo(() => (typeof children === "string" ? children : ""), [children]);
+  const noteText = useMemo(() => (typeof children === "string" ? normalizePatriciaDisplayText(children) : ""), [children]);
   const isPlaying = status.playing;
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export function PatriciaNote({ children }: { children: ReactNode }) {
       <View style={{ position: "absolute", top: 14, right: 14, width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center", backgroundColor: theme.colors.bluePrimary }}>
         <Text style={{ color: "white", fontWeight: "700", fontSize: 12 }}>P</Text>
       </View>
-      <Text selectable style={{ color: theme.colors.text, fontSize: 16, lineHeight: 23, paddingRight: 30, fontStyle: "italic" }}>{children}</Text>
+      <Text selectable style={{ color: theme.colors.text, fontSize: 16, lineHeight: 23, paddingRight: 30, fontStyle: "italic" }}>{noteText || children}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Pressable onPress={togglePlay} disabled={isLoading || !noteText} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center", opacity: isLoading || !noteText ? 0.65 : 1 }}>
           {isPlaying ? (

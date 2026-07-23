@@ -8,7 +8,8 @@ import { sendChatMessage } from "@/api/chat";
 import { transcribeVoiceNote } from "@/api/voice";
 import { configurePatriciaPlayback, fetchPatriciaSpeechAudio, pausePatriciaPlayer } from "@/audio/patricia-voice";
 import { RequireAuth, useAuth } from "@/auth/auth-context";
-import { ambientContextFromSeed, backendContextSeedFromSeed, mockTranscriptFromSeed, patriciaOpening, seedFromParams } from "@/chat/patricia-context";
+import { ambientContextFromSeed, backendContextSeedFromSeed, mockTranscriptFromSeed, one, patriciaOpening, seedFromParams } from "@/chat/patricia-context";
+import { saveLastPatriciaMemory } from "@/chat/patricia-memory";
 import { SfIcon } from "@/components/screen-spec";
 import { normalizePatriciaDisplayText } from "@/text/patricia-text";
 import { theme } from "@/theme/theme";
@@ -96,9 +97,15 @@ export default function ChatScreen() {
   const params = useLocalSearchParams();
   const { profile } = useAuth();
   const insets = useSafeAreaInsets();
-  const seed = useMemo(() => seedFromParams(params, profile?.childName || "your child"), [params, profile?.childName]);
+  const parentFirstName = profile?.parentFirstName || profile?.parentName?.split(" ")[0];
+  const seed = useMemo(
+    () => seedFromParams(params, profile?.childName || "your child", parentFirstName),
+    [params, profile?.childName, parentFirstName]
+  );
   const childName = seed.childName || "your child";
-  const sessionId = useMemo(() => `mobile-${Date.now()}-${Math.random().toString(16).slice(2)}`, []);
+  const routeSessionId = one(params.sessionId);
+  const sessionId = useMemo(() => routeSessionId || `mobile-${Date.now()}-${Math.random().toString(16).slice(2)}`, [routeSessionId]);
+  const seedKey = useMemo(() => JSON.stringify(seed), [seed]);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 250);
   const patriciaPlayer = useAudioPlayer();
@@ -114,6 +121,7 @@ export default function ChatScreen() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
   const autoPlayedMessageIds = useRef<Set<string>>(new Set());
+  const seedKeyRef = useRef(seedKey);
   const isVoiceActive = voiceMode !== "idle";
   const composerBottom = Math.max(insets.bottom, 12) + 10 + keyboardHeight;
 
@@ -121,6 +129,18 @@ export default function ChatScreen() {
     pausePatriciaPlayer(patriciaPlayer);
     setSpeakingMessageId(null);
   }
+
+  useEffect(() => {
+    saveLastPatriciaMemory({ sessionId, seed, updatedAt: new Date().toISOString() });
+  }, [sessionId, seed, seedKey]);
+
+  useEffect(() => {
+    if (seedKeyRef.current === seedKey) return;
+    seedKeyRef.current = seedKey;
+    stopPatriciaPlayback();
+    autoPlayedMessageIds.current.clear();
+    setMessages([makeMessage("patricia", opening)]);
+  }, [seedKey, opening]);
 
   async function playAudioUri(uri: string, messageId: string) {
     await configurePatriciaPlayback();

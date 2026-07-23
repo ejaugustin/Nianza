@@ -31,6 +31,45 @@ function patriciaReply() {
   return "Thank you for saying it out loud. I can work with that. What changed first, and what feels most important right now?";
 }
 
+function isExplicitEmergencyOrDistress(message: string) {
+  const text = message.toLowerCase();
+  return [
+    /not breathing/,
+    /stopped breathing/,
+    /can't breathe/,
+    /cannot breathe/,
+    /unresponsive/,
+    /won't wake/,
+    /will not wake/,
+    /turning blue/,
+    /\bblue\b.*\b(lips|face|baby|skin|child)\b/,
+    /\bseizure\b/,
+    /\bconvulsion\b/,
+    /hurt myself/,
+    /hurt my baby/,
+    /hurt my child/,
+    /harm myself/,
+    /harm my baby/,
+    /harm my child/,
+    /can't go on/,
+    /cannot go on/,
+    /i want to die/,
+    /kill myself/
+  ].some((pattern) => pattern.test(text));
+}
+
+function isCrisisTemplate(reply: string) {
+  return /hurt yourself or your baby|put the baby somewhere safe|call emergency services now|i need help right now/i.test(reply);
+}
+
+function developmentReply(childName: string) {
+  return `For ${childName}, I would watch ordinary everyday patterns: how they move, look toward voices and faces, use their hands, and respond to you. You do not have to grade every moment. If something feels missing or worrying, write down what you saw and when, and bring that to the pediatrician.`;
+}
+
+function vaccineReply(childName: string) {
+  return `For ${childName}, it is reasonable to want plain words. Ask the pediatrician what the vaccine protects against, what reactions are normal that day, and what would make them want a call. I can help you turn your questions into a short list before the visit.`;
+}
+
 function makeMessage(sender: ChatMessage["sender"], text: string): ChatMessage {
   return {
     id: `${sender}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -158,7 +197,18 @@ export default function ChatScreen() {
       ambientContext: ambientContextFromSeed(seed),
       contextSeed: backendContextSeedFromSeed(seed)
     });
-    return response.message.text;
+    const reply = response.message.text;
+    if (isCrisisTemplate(reply) && !isExplicitEmergencyOrDistress(parentMessage)) {
+      const normalized = parentMessage.toLowerCase();
+      if (/\b(developing|development|milestone|right way|normal|on track|look for)\b/.test(normalized)) {
+        return developmentReply(childName);
+      }
+      if (/\b(vaccine|shot|immunization|dtap|hepatitis|hib|pcv|polio|rotavirus)\b/.test(normalized)) {
+        return vaccineReply(childName);
+      }
+      return "I hear the question. Let's stay with what you are actually asking. Tell me what you noticed, when it happened, and what feels most unclear right now.";
+    }
+    return reply;
   }
 
   async function sendMessage() {

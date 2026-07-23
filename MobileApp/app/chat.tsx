@@ -10,6 +10,7 @@ import { configurePatriciaPlayback, fetchPatriciaSpeechAudio, pausePatriciaPlaye
 import { RequireAuth, useAuth } from "@/auth/auth-context";
 import { ambientContextFromSeed, backendContextSeedFromSeed, mockTranscriptFromSeed, patriciaOpening, seedFromParams } from "@/chat/patricia-context";
 import { SfIcon } from "@/components/screen-spec";
+import { normalizePatriciaDisplayText } from "@/text/patricia-text";
 import { theme } from "@/theme/theme";
 
 type ChatMessage = {
@@ -74,8 +75,12 @@ function makeMessage(sender: ChatMessage["sender"], text: string): ChatMessage {
   return {
     id: `${sender}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     sender,
-    text
+    text: sender === "patricia" ? normalizePatriciaDisplayText(text) : text
   };
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function contentTypeFromUri(uri?: string | null) {
@@ -104,9 +109,11 @@ export default function ChatScreen() {
   const opening = useMemo(() => patriciaOpening(seed), [seed]);
   const [messages, setMessages] = useState<ChatMessage[]>(() => [makeMessage("patricia", opening)]);
   const [notice, setNotice] = useState<string | null>(null);
+  const [patriciaThinking, setPatriciaThinking] = useState(false);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
+  const autoPlayedMessageIds = useRef<Set<string>>(new Set());
   const isVoiceActive = voiceMode !== "idle";
   const composerBottom = Math.max(insets.bottom, 12) + 10 + keyboardHeight;
 
@@ -124,7 +131,7 @@ export default function ChatScreen() {
   }
 
   async function speakPatriciaMessage(message: ChatMessage) {
-    if (message.sender !== "patricia") return;
+    if (message.sender !== "patricia" || message.audioLoading) return;
     setNotice(null);
 
     if (message.audioUri) {
@@ -151,7 +158,8 @@ export default function ChatScreen() {
 
   useEffect(() => {
     const latest = messages[messages.length - 1];
-    if (latest?.sender === "patricia") {
+    if (latest?.sender === "patricia" && !latest.audioLoading && !autoPlayedMessageIds.current.has(latest.id)) {
+      autoPlayedMessageIds.current.add(latest.id);
       speakPatriciaMessage(latest);
     }
   }, [messages.length]);
@@ -211,19 +219,48 @@ export default function ChatScreen() {
     return reply;
   }
 
+  async function appendPatriciaReply(reply: string) {
+    const message = makeMessage("patricia", reply);
+    const audioPromise = fetchPatriciaSpeechAudio(message.text, `chat-${message.id}`);
+
+    const prepared = await Promise.race([
+      audioPromise.then((audioUri) => ({ audioUri })),
+      wait(1800).then(() => null)
+    ]);
+
+    if (prepared?.audioUri) {
+      autoPlayedMessageIds.current.add(message.id);
+      setMessages((current) => [...current, { ...message, audioUri: prepared.audioUri }]);
+      await playAudioUri(prepared.audioUri, message.id);
+      return;
+    }
+
+    setMessages((current) => [...current, { ...message, audioLoading: true }]);
+    audioPromise
+      .then(async (audioUri) => {
+        setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioUri, audioLoading: false } : item)));
+        autoPlayedMessageIds.current.add(message.id);
+        await playAudioUri(audioUri, message.id);
+      })
+      .catch(() => {
+        setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioLoading: false } : item)));
+        setNotice("Patricia could not play audio just now. You can tap replay to try again.");
+      });
+  }
+
   async function sendMessage() {
     const message = draft.trim();
     if (!message) return;
     setDraft("");
     setMessages((current) => [...current, makeMessage("parent", message)]);
+    setPatriciaThinking(true);
     try {
       const reply = await getPatriciaReply(message);
-      setMessages((current) => [...current, makeMessage("patricia", reply)]);
+      setPatriciaThinking(false);
+      await appendPatriciaReply(reply);
     } catch {
-      setMessages((current) => [
-        ...current,
-        makeMessage("patricia", "I hear you. Start with the part that feels heaviest, and we can make it smaller together.")
-      ]);
+      setPatriciaThinking(false);
+      await appendPatriciaReply("I hear you. Start with the part that feels heaviest, and we can make it smaller together.");
     }
   }
 
@@ -315,20 +352,20 @@ export default function ChatScreen() {
         : null;
       const transcript = response?.transcript || mockTranscriptFromSeed(seed);
       setMessages((current) => [...current, makeMessage("parent", transcript)]);
+      setPatriciaThinking(true);
       try {
         const reply = await getPatriciaReply(transcript);
-        setMessages((current) => [...current, makeMessage("patricia", reply)]);
+        setPatriciaThinking(false);
+        await appendPatriciaReply(reply);
       } catch {
-        setMessages((current) => [...current, makeMessage("patricia", patriciaReply())]);
+        setPatriciaThinking(false);
+        await appendPatriciaReply(patriciaReply());
       }
       setVoiceMode("idle");
     } catch {
       const transcript = mockTranscriptFromSeed(seed);
-      setMessages((current) => [
-        ...current,
-        makeMessage("parent", transcript),
-        makeMessage("patricia", "I had trouble hearing the recording clearly, so I saved a placeholder for now. Tell me the part you most want help sorting out.")
-      ]);
+      setMessages((current) => [...current, makeMessage("parent", transcript)]);
+      await appendPatriciaReply("I had trouble hearing the recording clearly, so I saved a placeholder for now. Tell me the part you most want help sorting out.");
       setVoiceMode("idle");
       setNotice("Patricia could not transcribe that voice note yet. Check the Deepgram backend configuration and try again.");
     }
@@ -379,6 +416,16 @@ export default function ChatScreen() {
           <Text selectable style={{ color: theme.colors.muted, fontSize: 12, textAlign: "center" }}>
             {notice}
           </Text>
+        ) : null}
+        {patriciaThinking ? (
+          <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "flex-start", gap: 8 }}>
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ color: "white", fontSize: 13, fontWeight: "700" }}>P</Text>
+            </View>
+            <View style={{ maxWidth: 248, borderRadius: 16, backgroundColor: theme.colors.card, paddingHorizontal: 14, paddingVertical: 15 }}>
+              <Text selectable style={{ color: theme.colors.muted, fontSize: 14, lineHeight: 20, fontStyle: "italic" }}>Patricia is thinking...</Text>
+            </View>
+          </View>
         ) : null}
         {mode !== "idle" ? (
           <Text selectable style={{ color: theme.colors.muted, fontSize: 12, textAlign: "center" }}>

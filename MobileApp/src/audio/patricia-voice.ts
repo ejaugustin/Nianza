@@ -1,6 +1,7 @@
 import { setAudioModeAsync } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 import { speakPatriciaText } from "@/api/voice";
+import { normalizePatriciaSpeechText } from "@/text/patricia-text";
 
 export async function configurePatriciaPlayback() {
   await setAudioModeAsync({
@@ -30,6 +31,6 @@ export async function writePatriciaSpeechAudio(cacheKey: string, audioBase64: st
 }
 
 export async function fetchPatriciaSpeechAudio(text: string, cacheKey: string) {
-  const response = await speakPatriciaText(text);
+  const response = await speakPatriciaText(normalizePatriciaSpeechText(text));
   return writePatriciaSpeechAudio(cacheKey, response.audioBase64);
 }

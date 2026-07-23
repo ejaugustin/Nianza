@@ -46,7 +46,7 @@ async function safetyGate({ message, bundle, language, documentClient, contentTa
   if (!type && chatContext.isDistressText(text)) type = "distress";
   if (!type) {
     const label = await classifier(text);
-    if (label === "distress" || label === "vaccine-hesitancy") type = label;
+    if (label === "vaccine-hesitancy") type = label;
   }
 
   if (!type) return null;

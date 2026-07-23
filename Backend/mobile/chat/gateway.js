@@ -167,7 +167,7 @@ async function classifyMessage(message) {
       model,
       maxTokens: 8,
       temperature: 0,
-      system: "Classify the parent message as exactly one label: distress, vaccine-hesitancy, clear. Emergency phrases should be distress here because hard emergency matching already ran. Output only the label.",
+      system: "Classify the parent message as exactly one label: vaccine-hesitancy or clear. Use vaccine-hesitancy only when the parent is worried a vaccine may be unsafe, dangerous, or should be skipped or delayed. Ordinary development, milestone, crying, sleep, feeding, or parenting questions are clear. Output only the label.",
       messages: [{ role: "user", content: String(message || "").slice(0, 1000) }]
     }))
   });
@@ -175,7 +175,7 @@ async function classifyMessage(message) {
   if (!response.ok) return "clear";
   const payload = await response.json().catch(() => ({}));
   const label = (payload.content || []).map((part) => part.text || "").join("").trim().toLowerCase();
-  return ["distress", "vaccine-hesitancy", "clear"].includes(label) ? label : "clear";
+  return ["vaccine-hesitancy", "clear"].includes(label) ? label : "clear";
 }
 
 module.exports = {

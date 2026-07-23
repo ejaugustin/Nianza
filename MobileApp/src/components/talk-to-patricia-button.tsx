@@ -3,13 +3,17 @@ import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/auth/auth-context";
 import { seedToParams, type ChatContextSeed, type PatriciaContextEvent } from "@/chat/patricia-context";
+import { getLastPatriciaMemory } from "@/chat/patricia-memory";
 import { SfIcon } from "@/components/screen-spec";
 import { theme } from "@/theme/theme";
 
-export function openPatricia(seed: ChatContextSeed) {
+export function openPatricia(seed: ChatContextSeed, sessionId?: string) {
   router.push({
     pathname: "/chat",
-    params: seedToParams(seed)
+    params: {
+      ...seedToParams(seed),
+      ...(sessionId ? { sessionId } : {})
+    }
   });
 }
 
@@ -27,22 +31,47 @@ export function TalkToPatriciaButton({
   const { profile } = useAuth();
   const insets = useSafeAreaInsets();
   const childName = profile?.childName || "your child";
+  const parentFirstName = profile?.parentFirstName || profile?.parentName?.split(" ")[0];
+
+  async function handleOpenPatricia() {
+    const baseSeed: ChatContextSeed = {
+      source,
+      eventType,
+      childName,
+      childId: "primary-child",
+      parentFirstName,
+      entityId,
+      detail,
+      occurredAt: new Date().toISOString()
+    };
+
+    const shouldResume = eventType === "general" && !detail && !entityId;
+    if (shouldResume) {
+      const memory = await getLastPatriciaMemory();
+      if (memory) {
+        openPatricia(
+          {
+            ...memory.seed,
+            childName: memory.seed.childName || childName,
+            childId: memory.seed.childId || "primary-child",
+            parentFirstName: memory.seed.parentFirstName || parentFirstName,
+            resumeConversation: "true",
+            occurredAt: new Date().toISOString()
+          },
+          memory.sessionId
+        );
+        return;
+      }
+    }
+
+    openPatricia(baseSeed);
+  }
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Talk to Patricia"
-      onPress={() =>
-        openPatricia({
-          source,
-          eventType,
-          childName,
-          childId: "primary-child",
-          entityId,
-          detail,
-          occurredAt: new Date().toISOString()
-        })
-      }
+      onPress={handleOpenPatricia}
       style={{
         position: "absolute",
         top: Math.max(insets.top + 8, 18),

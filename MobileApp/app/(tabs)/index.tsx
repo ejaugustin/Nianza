@@ -37,7 +37,8 @@ export default function HomeScreen() {
     retry: 1
   });
   const dailyNote = dailyNoteQuery.data?.bodyText || mockHome.dailyNote;
-  const parentName = profile.parentFirstName || profile.parentName;
+  const parentFirstName = profile.parentFirstName || profile.parentName?.split(" ")[0];
+  const parentName = parentFirstName || profile.parentName;
   const childName = profile.childName;
   const childAge = `${profile.ageWindowMonths} months`;
   const personalizedDailyNote = useMemo(() => {
@@ -68,7 +69,24 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      <PatriciaNote>{personalizedDailyNote}</PatriciaNote>
+      <PatriciaNote
+        actionLabel="Discuss with Patricia"
+        onAction={() =>
+          openPatricia({
+            source: "C1-home-note",
+            eventType: "home-note",
+            childName,
+            childId: "primary-child",
+            parentFirstName,
+            entityId: dailyNoteQuery.data?.contentId || "daily-note",
+            title: "Today's Patricia note",
+            detail: personalizedDailyNote,
+            occurredAt: new Date().toISOString()
+          })
+        }
+      >
+        {personalizedDailyNote}
+      </PatriciaNote>
       {dailyNoteQuery.isError ? <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>Showing Patricia's saved note.</Text> : null}
       <Text selectable style={{ color: theme.colors.greyIcon, fontSize: 11 }}>{mockHome.dateLabel}</Text>
 
@@ -115,6 +133,7 @@ export default function HomeScreen() {
                   eventType: "visit-upcoming",
                   childName,
                   childId: "primary-child",
+                  parentFirstName,
                   entityId: "four-month-visit",
                   title: "Four-month visit",
                   detail: "Four-month visit this week",
@@ -127,7 +146,7 @@ export default function HomeScreen() {
         </View>
       </SpecCard>
     </ScrollView>
-    <TalkToPatriciaButton source="C1-home" eventType="home" detail={personalizedDailyNote} />
+    <TalkToPatriciaButton source="C1-home" />
     </View>
   );
 }

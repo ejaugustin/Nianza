@@ -6,7 +6,13 @@ import { SfIcon } from "@/components/screen-spec";
 import { normalizePatriciaDisplayText } from "@/text/patricia-text";
 import { theme } from "@/theme/theme";
 
-export function PatriciaNote({ children }: { children: ReactNode }) {
+type PatriciaNoteProps = {
+  children: ReactNode;
+  actionLabel?: string;
+  onAction?: () => void;
+};
+
+export function PatriciaNote({ children, actionLabel, onAction }: PatriciaNoteProps) {
   const player = useAudioPlayer();
   const status = useAudioPlayerStatus(player);
   const [audioUri, setAudioUri] = useState<string | null>(null);
@@ -73,6 +79,27 @@ export function PatriciaNote({ children }: { children: ReactNode }) {
         </Pressable>
         <Text selectable style={{ color: theme.colors.muted, fontSize: 12 }}>{isLoading ? "Preparing Patricia's note" : isPlaying ? "Playing Patricia's note" : "Listen to Patricia's note"}</Text>
       </View>
+      {actionLabel && onAction ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={onAction}
+          style={{
+            alignSelf: "flex-start",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            borderRadius: 18,
+            backgroundColor: "white",
+            paddingHorizontal: 13,
+            paddingVertical: 9
+          }}
+        >
+          <SfIcon name="bubble.left.and.bubble.right.fill" size={16} color={theme.colors.bluePrimary} />
+          <Text selectable={false} style={{ color: theme.colors.blueDeep, fontSize: 12, fontWeight: "900" }}>
+            {actionLabel}
+          </Text>
+        </Pressable>
+      ) : null}
       {isPlaying ? <View style={{ height: 2, borderRadius: 1, backgroundColor: theme.colors.bluePrimary }} /> : null}
       {notice ? <Text selectable style={{ color: theme.colors.muted, fontSize: 11, lineHeight: 15 }}>{notice}</Text> : null}
     </View>

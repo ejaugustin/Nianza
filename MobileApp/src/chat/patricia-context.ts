@@ -1,6 +1,7 @@
 export type PatriciaContextEvent =
   | "general"
   | "home"
+  | "home-note"
   | "milestone-checked"
   | "watch-for-noticed"
   | "visit-upcoming"
@@ -34,6 +35,8 @@ export type ChatContextSeed = {
   entityId?: string;
   title?: string;
   detail?: string;
+  parentFirstName?: string;
+  resumeConversation?: string;
   occurredAt?: string;
 };
 
@@ -49,6 +52,8 @@ export function seedToParams(seed: ChatContextSeed): ChatRouteParams {
       entityId: seed.entityId,
       title: seed.title,
       detail: seed.detail,
+      parentFirstName: seed.parentFirstName,
+      resumeConversation: seed.resumeConversation,
       occurredAt: seed.occurredAt
     }).filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].length > 0)
   );
@@ -58,7 +63,11 @@ export function one(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export function seedFromParams(params: Record<string, string | string[] | undefined>, fallbackChildName: string): ChatContextSeed {
+export function seedFromParams(
+  params: Record<string, string | string[] | undefined>,
+  fallbackChildName: string,
+  fallbackParentFirstName?: string
+): ChatContextSeed {
   return {
     source: one(params.source) || "floating-patricia",
     childId: one(params.childId),
@@ -67,6 +76,8 @@ export function seedFromParams(params: Record<string, string | string[] | undefi
     entityId: one(params.entityId),
     title: one(params.title),
     detail: one(params.detail),
+    parentFirstName: one(params.parentFirstName) || fallbackParentFirstName,
+    resumeConversation: one(params.resumeConversation),
     occurredAt: one(params.occurredAt)
   };
 }
@@ -118,6 +129,11 @@ export function backendContextSeedFromSeed(seed: ChatContextSeed): BackendContex
 
 export function patriciaOpening(seed: ChatContextSeed) {
   const childName = seed.childName || "your child";
+  const parentFirstName = seed.parentFirstName;
+
+  if (seed.resumeConversation === "true") {
+    return `Welcome back${parentFirstName ? `, ${parentFirstName}` : ""}. We can keep going from where we left off. What's most useful right now for ${childName}?`;
+  }
 
   if (seed.eventType === "milestone-checked") {
     return `${childName} ${seed.detail?.toLowerCase() || "did something new"}? Oh, I love hearing that. Tell me what you noticed first.`;
@@ -147,11 +163,11 @@ export function patriciaOpening(seed: ChatContextSeed) {
     return `I have this week's letter open with you. ${seed.title ? `It's about ${seed.title.toLowerCase()}. ` : ""}What part do you want to sit with for a minute?`;
   }
 
-  if (seed.eventType === "home" && seed.detail) {
+  if (seed.eventType === "home-note" || (seed.eventType === "home" && seed.detail)) {
     return `I saw the note you were reading about ${childName}. What part do you want to talk through?`;
   }
 
-  return "Hello. I'm Patricia. I've been with a lot of new parents over the years, and I'm glad you're here. What's on your mind?";
+  return `Hello${parentFirstName ? `, ${parentFirstName}` : ""}. What's on your mind? I'm here to help. How is ${childName}?`;
 }
 
 export function mockTranscriptFromSeed(seed: ChatContextSeed) {
@@ -175,6 +191,10 @@ export function mockTranscriptFromSeed(seed: ChatContextSeed) {
 
   if (seed.eventType === "weekly-letter") {
     return `I want to talk about Patricia's letter for ${childName} this week.`;
+  }
+
+  if (seed.eventType === "home-note") {
+    return `I want to talk about Patricia's note for ${childName} today.`;
   }
 
   return `I want to talk through something I noticed with ${childName} today.`;

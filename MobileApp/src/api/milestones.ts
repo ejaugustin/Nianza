@@ -40,17 +40,53 @@ export async function recordMilestoneObservation({
   childId = "primary-child",
   milestoneId,
   checked = true,
-  photoUrls = []
+  photoUrls = [],
+  milestoneName,
+  observedAt
 }: {
   childId?: string;
   milestoneId: string;
   checked?: boolean;
   photoUrls?: string[];
+  milestoneName?: string;
+  observedAt?: string;
 }) {
   return apiPost<{ observation: unknown }>(`/milestones/${encodeURIComponent(childId)}/observations`, {
     milestoneId,
     checked,
-    observedAt: new Date().toISOString(),
-    photoUrls
+    observedAt: observedAt || new Date().toISOString(),
+    photoUrls,
+    ...(milestoneName ? { milestoneName } : {})
   });
+}
+
+export type CustomFirst = {
+  milestoneId: string;
+  customName: string;
+  observedAt: string;
+  photoUrls: string[];
+};
+
+/** D7 (Custom "firsts"): pure memory, zero clinical surface -- these never
+ * appear in getMilestoneProgress() at all (buildMilestoneProgress only
+ * surfaces items that match a real library milestoneId), so they need this
+ * separate read path. */
+export async function listCustomFirsts(childId = "primary-child") {
+  const result = await apiGet<{ firsts: CustomFirst[] }>(`/milestones/${encodeURIComponent(childId)}/firsts`);
+  return result.firsts || [];
+}
+
+export async function recordCustomFirst({
+  childId = "primary-child",
+  name,
+  observedAt,
+  photoUrls = []
+}: {
+  childId?: string;
+  name: string;
+  observedAt?: string;
+  photoUrls?: string[];
+}) {
+  const milestoneId = `custom#${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return recordMilestoneObservation({ childId, milestoneId, checked: true, milestoneName: name, observedAt, photoUrls });
 }

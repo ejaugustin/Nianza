@@ -6,6 +6,10 @@ const {
   QueryCommand
 } = require("@aws-sdk/lib-dynamodb");
 const { json, noContent, error } = require("../../shared/response");
+const vaccinesLibrary = require("../vaccines/library");
+const periods = require("./periods");
+const reportData = require("./data");
+const assemble = require("./assemble");
 
 const rawClient = new DynamoDBClient({});
 const documentClient = DynamoDBDocumentClient.from(rawClient, {
@@ -15,6 +19,12 @@ const documentClient = DynamoDBDocumentClient.from(rawClient, {
 const CHILDREN_TABLE = process.env.CHILDREN_TABLE;
 const REPORTS_TABLE = process.env.REPORTS_TABLE;
 const VITALS_TABLE = process.env.VITALS_TABLE;
+const MILESTONES_TABLE = process.env.MILESTONES_TABLE;
+const SICK_ENCOUNTERS_TABLE = process.env.SICK_ENCOUNTERS_TABLE;
+const VACCINES_TABLE = process.env.VACCINES_TABLE;
+const VISIT_DEBRIEFS_TABLE = process.env.VISIT_DEBRIEFS_TABLE;
+
+const PERIODS = new Set(["month", "halfyear", "year", "visit"]);
 
 function parseBody(event) {
   if (!event.body) return {};
@@ -38,13 +48,11 @@ function pathPart(event, name) {
   return null;
 }
 
-function reportTitle(reportType) {
-  return reportType === "visit-pack" ? "Doctor Visit Pack" : "Monthly Progress Report";
-}
-
-function periodLabel(reportType, options = {}, now = new Date()) {
-  if (reportType === "visit-pack") return options.nextVisitDate ? `Visit ${options.nextVisitDate}` : "Next visit";
-  return options.periodMonth || now.toISOString().slice(0, 7);
+function reportTitle(reportType, period) {
+  if (reportType === "visit-pack") return "Doctor Visit Pack";
+  if (period === "halfyear") return "6-Month Digest";
+  if (period === "year") return "Yearly Report";
+  return "Monthly Progress Report";
 }
 
 async function getChild(userId, childId) {
@@ -53,48 +61,6 @@ async function getChild(userId, childId) {
     Key: { userId, childId }
   }));
   return result.Item || null;
-}
-
-function titleForVitals(entryType) {
-  return {
-    temperature: "Temperature",
-    medication: "Medication",
-    symptom: "Symptom",
-    weight: "Weight",
-    height: "Length / height",
-    head_circumference: "Head circumference",
-    feeding: "Feeding",
-    diaper: "Diaper",
-    sleep: "Sleep",
-    note: "Note"
-  }[entryType] || "Vitals";
-}
-
-function labelForVitals(entry) {
-  if (entry.entryType === "temperature") return entry.valueText;
-  if (entry.entryType === "medication") return [entry.medName, entry.doseText].filter(Boolean).join(" - ");
-  if (entry.entryType === "symptom") return entry.symptomType === "other" ? entry.otherText : entry.symptomType;
-  if (["weight", "height", "head_circumference"].includes(entry.entryType)) return `${entry.value} ${entry.unit}`;
-  if (entry.entryType === "feeding") return [entry.feedingType, entry.amount].filter(Boolean).join(" - ");
-  if (entry.entryType === "diaper") return entry.diaperType;
-  return entry.note;
-}
-
-async function recentHealthLog(childId) {
-  if (!VITALS_TABLE) return [];
-  const result = await documentClient.send(new QueryCommand({
-    TableName: VITALS_TABLE,
-    KeyConditionExpression: "childId = :childId",
-    ExpressionAttributeValues: { ":childId": childId },
-    ScanIndexForward: false,
-    Limit: 20
-  }));
-  return (result.Items || []).map((entry) => ({
-    recordedAt: entry.recordedAt,
-    title: titleForVitals(entry.entryType),
-    label: labelForVitals(entry),
-    encounterName: entry.encounterName || null
-  }));
 }
 
 async function handleListReports(event) {
@@ -125,24 +91,56 @@ async function handleCreateReport(event) {
 
   const body = parseBody(event);
   const reportType = body.reportType === "visit-pack" ? "visit-pack" : "monthly";
+  const options = body.options || {};
+  const period = reportType === "visit-pack" ? "visit" : (PERIODS.has(options.period) && options.period !== "visit" ? options.period : "month");
   const now = new Date();
-  const reportId = `${reportType}#${now.toISOString()}`;
+  const window = periods.resolvePeriodWindow(period, options, now);
+  const childName = child.childName || child.name || "your child";
+
+  const [vitalsEntries, milestoneObservations, encounters, doses] = await Promise.all([
+    reportData.fetchVitalsInRange(documentClient, VITALS_TABLE, childId, window.startDate, window.endDate),
+    reportData.fetchMilestonesInRange(documentClient, MILESTONES_TABLE, childId, window.startDate, window.endDate),
+    reportData.fetchAllEncounters(documentClient, SICK_ENCOUNTERS_TABLE, childId),
+    reportData.fetchAllVaccineDoses(documentClient, VACCINES_TABLE, childId)
+  ]);
+
+  const dosesInWindow = doses.filter((d) => d.givenOn && d.givenOn >= window.startDate.slice(0, 10) && d.givenOn <= window.endDate.slice(0, 10));
+  const vaccineProgress = vaccinesLibrary.buildVaccineProgress({ child, records: doses, now });
+
+  let sectionKey;
+  let sectionContent;
+  if (period === "halfyear") {
+    sectionKey = "halfyear";
+    sectionContent = await assemble.buildHalfYearSection({ childName, window, vitalsEntries, milestoneObservations, encounters, doses: dosesInWindow, allDoses: doses });
+  } else if (period === "year") {
+    sectionKey = "year";
+    sectionContent = await assemble.buildYearSection({ child, childName, window, vitalsEntries, milestoneObservations, encounters, allDoses: doses, childSummary: options.childSummary });
+  } else if (period === "visit") {
+    sectionKey = "visit";
+    const latestDebrief = await reportData.fetchLatestDebrief(documentClient, VISIT_DEBRIEFS_TABLE, childId);
+    sectionContent = await assemble.buildVisitPackSection({ childName, window, vitalsEntries, milestoneObservations, encounters, doses: dosesInWindow, allDoses: doses, vaccineProgress, parentConcerns: options.parentConcerns, latestDebrief });
+  } else {
+    sectionKey = "month";
+    sectionContent = await assemble.buildMonthSection({ child, childName, window, vitalsEntries, milestoneObservations, encounters, doses: dosesInWindow, vaccineProgress });
+  }
+
+  const reportId = `${reportType}#${period}#${now.toISOString()}`;
   const report = {
     childId,
     reportId,
     userId,
     reportType,
-    title: reportTitle(reportType),
-    periodLabel: periodLabel(reportType, body.options, now),
+    period,
+    title: reportTitle(reportType, period),
+    periodLabel: window.windowLabel,
+    isFallbackWindow: Boolean(window.isFallbackWindow),
     status: "ready",
     distribution: reportType === "visit-pack" ? ["share", "email-to-doctor"] : ["share"],
     pdfStatus: "contract-ready",
     url: null,
     expiresIn: 0,
-    options: body.options || {},
-    sections: {
-      healthLog: body.options?.includeVitals ? await recentHealthLog(childId) : []
-    },
+    options,
+    sections: { [sectionKey]: sectionContent },
     generatedAt: now.toISOString(),
     updatedAt: now.toISOString()
   };
@@ -191,3 +189,5 @@ exports.handler = async (event) => {
     return error(500, "INTERNAL_ERROR", "Something went wrong in the mobile reports service.");
   }
 };
+
+exports._private = { periods, reportData, assemble };

@@ -1,0 +1,159 @@
+# Static hosting for the Nianza AdminPortal (admin.nianza.com). Deployed into
+# nianza-prod (672061768724) -- the SAME account as the Nianza backend
+# (Backend/infra/template.yaml), so one set of credentials covers both the
+# API and this hosting stack. This is a deliberate change from an earlier
+# plan to host it in the banxito account (839001574339, where Claricito's
+# admin portal lives) -- there's no shared data or Cognito pool between
+# Nianza and Claricito, so co-locating with the backend it actually serves
+# is the cleaner boundary.
+#
+# This is a separate CloudFormation stack from nianza-backend-prod, and
+# deliberately lives in a different region within the same account:
+# nianza-backend-prod runs in us-east-2, but this stack must be us-east-1
+# regardless -- CloudFront only accepts ACM certificates issued in
+# us-east-1, no matter where the distribution itself serves traffic from
+# (CloudFront is a global service). Two stacks, two regions, one account.
+#
+# nianza.com's DNS lives at an external registrar, not Route 53, so this
+# template cannot auto-create the DNS validation or final alias records --
+# both require a manual step at the registrar. See the deploy walkthrough.
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Static hosting (S3 + CloudFront + ACM) for the Nianza AdminPortal at admin.nianza.com, in nianza-prod.
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: admin.nianza.com
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, prod]
+
+Resources:
+  # DNS-validated ACM cert. Because nianza.com is at an external registrar,
+  # this resource will sit in CREATE_IN_PROGRESS until you manually add the
+  # CNAME validation record ACM gives you (see walkthrough) -- this is
+  # expected, not a stuck deploy. CloudFormation polls ACM and continues
+  # automatically once the record is visible and validation completes.
+  AdminPortalCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      ValidationMethod: DNS
+      Tags:
+        - Key: App
+          Value: nianza-admin-portal
+        - Key: Env
+          Value: !Ref Environment
+
+  AdminPortalBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub nianza-admin-portal-${Environment}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: App
+          Value: nianza-admin-portal
+        - Key: Env
+          Value: !Ref Environment
+
+  # Origin Access Control lets CloudFront read the (otherwise fully private)
+  # S3 bucket directly -- no public bucket, no legacy OAI.
+  AdminPortalOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub nianza-admin-portal-oac-${Environment}
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  AdminPortalBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AdminPortalBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipalReadOnly
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${AdminPortalBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${AdminPortalDistribution}
+
+  AdminPortalDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Aliases:
+          - !Ref DomainName
+        PriceClass: PriceClass_100
+        HttpVersion: http2
+        ViewerCertificate:
+          AcmCertificateArn: !Ref AdminPortalCertificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        Origins:
+          - Id: admin-portal-s3-origin
+            DomainName: !GetAtt AdminPortalBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt AdminPortalOriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: admin-portal-s3-origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          # Managed-CachingOptimized -- long cache on hashed Vite build
+          # assets; index.html itself is short-lived because Vite fingerprints
+          # its JS/CSS bundle names, so a stale cached index.html would just
+          # point at 404'd old bundle names after a deploy.
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        # react-router's BrowserRouter needs every unknown path (e.g.
+        # /settings on a hard refresh) to still serve index.html so client-
+        # side routing can take over, instead of a raw S3 403/404.
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+      Tags:
+        - Key: App
+          Value: nianza-admin-portal
+        - Key: Env
+          Value: !Ref Environment
+
+Outputs:
+  BucketName:
+    Value: !Ref AdminPortalBucket
+    Description: Sync `npm run build`'s dist/ folder here.
+  DistributionId:
+    Value: !Ref AdminPortalDistribution
+    Description: Use for `aws cloudfront create-invalidation` after each deploy.
+  DistributionDomainName:
+    Value: !GetAtt AdminPortalDistribution.DomainName
+    Description: >
+      Point admin.nianza.com at this via a CNAME record at your registrar
+      (external DNS -- this template cannot create that record for you).
+  CertificateArn:
+    Value: !Ref AdminPortalCertificate

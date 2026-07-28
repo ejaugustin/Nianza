@@ -140,16 +140,50 @@ async function getActiveEncounter(childId) {
   }));
   const item = (result.Items || [])[0];
   if (!item) return null;
-  const entryTypes = await tryRead("encounterEntryTypes", () => getEncounterEntryTypeCounts(childId, item.encounterId));
+  const details = await tryRead("encounterDetails", () => getEncounterDetails(childId, item.encounterId));
   return {
     name: item.name || item.encounterName || null,
     startDate: item.startDate || item.startedAt || null,
-    entryTypeCounts: entryTypes || {}
+    entryTypeCounts: details?.counts || {},
+    // The actual substance of what a parent logged during this sick-day
+    // window -- readings, symptoms, medications given -- not just how many
+    // of each. Without this, Patricia only knew "2 temperature entries
+    // exist," never what they were, which made "Ask Patricia about it"
+    // feel hollow.
+    recentEntries: details?.recentEntries || []
   };
 }
 
-async function getEncounterEntryTypeCounts(childId, encounterId) {
-  if (!VITALS_TABLE || !childId || !encounterId) return {};
+// Turns one raw vitals entry into a short, human-readable line Patricia can
+// actually use, e.g. "temperature: 101.2°F (2h ago)" or
+// "medication: Acetaminophen, 5mL (40m ago)".
+function summarizeVitalsEntry(item, now) {
+  const type = item.entryType || item.type || "note";
+  const recordedAt = item.recordedAt || item.createdAt || null;
+  const minutesAgo = recordedAt ? Math.max(0, Math.round((now - new Date(recordedAt).getTime()) / 60000)) : null;
+  const when = minutesAgo == null ? "" : minutesAgo < 60 ? ` (${minutesAgo}m ago)` : ` (${Math.round(minutesAgo / 60)}h ago)`;
+
+  let detail = "";
+  if (type === "temperature" || type === "weight" || type === "height" || type === "head_circumference") {
+    detail = [item.valueText || item.value, item.unit].filter(Boolean).join(" ");
+  } else if (type === "medication") {
+    detail = [item.medName, item.doseText].filter(Boolean).join(", ");
+  } else if (type === "symptom") {
+    detail = item.symptomType === "other" ? item.otherText : item.symptomType;
+  } else if (type === "feeding") {
+    detail = [item.feedingType, item.amount].filter(Boolean).join(", ");
+  } else if (type === "diaper") {
+    detail = item.diaperType;
+  } else {
+    detail = item.note || item.valueText || "";
+  }
+
+  const label = `${type}${detail ? `: ${detail}` : ""}`;
+  return `${label}${when}`.trim();
+}
+
+async function getEncounterDetails(childId, encounterId) {
+  if (!VITALS_TABLE || !childId || !encounterId) return { counts: {}, recentEntries: [] };
   const result = await documentClient.send(new QueryCommand({
     TableName: VITALS_TABLE,
     KeyConditionExpression: "childId = :childId",
@@ -157,13 +191,16 @@ async function getEncounterEntryTypeCounts(childId, encounterId) {
     Limit: 80,
     ScanIndexForward: false
   }));
+  const now = Date.now();
   const counts = {};
+  const recentEntries = [];
   for (const item of result.Items || []) {
     if (item.encounterId !== encounterId) continue;
-    const type = item.type || item.entryType || "note";
+    const type = item.entryType || item.type || "note";
     counts[type] = (counts[type] || 0) + 1;
+    if (recentEntries.length < 8) recentEntries.push(summarizeVitalsEntry(item, now));
   }
-  return counts;
+  return { counts, recentEntries };
 }
 
 async function getVaccinePosition(childId, child) {
@@ -377,4 +414,4 @@ exports.handler = async (event) => {
   }
 };
 
-exports._private = chatContext;
+exports._private = { ...chatContext, getActiveEncounter, getEncounterDetails, summarizeVitalsEntry };

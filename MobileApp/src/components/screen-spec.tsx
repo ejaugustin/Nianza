@@ -1,6 +1,30 @@
 import { ReactNode } from "react";
-import { Text, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { theme } from "@/theme/theme";
+
+// Shared header for settings sub-screens (J2-J8, delete-account flow): back
+// chevron top-left + title, matching the design brief's Section J layout.
+// `alignItems: "flex-start"` on the Pressable is deliberate -- without it the
+// button stretches to the row's full width and the arrow renders centered
+// instead of flush left (a bug fixed elsewhere in the app; baking the fix in
+// here keeps every settings screen from repeating it).
+export function SettingsHeader({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <View style={{ gap: 18 }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Back to previous screen"
+        onPress={onBack}
+        style={{ minWidth: 44, minHeight: 44, alignItems: "flex-start", justifyContent: "center" }}
+      >
+        <SfIcon name="chevron.left" color={theme.colors.text} size={22} />
+      </Pressable>
+      <Text selectable style={{ color: theme.colors.text, fontSize: 22, fontWeight: "600" }}>
+        {title}
+      </Text>
+    </View>
+  );
+}
 
 export function ScreenTitle({ title, subtitle, note }: { title: string; subtitle?: string; note?: string }) {
   return (
@@ -48,6 +72,105 @@ export function CategoryChip({ label, active }: { label: string; active?: boolea
     <View style={{ borderRadius: 15, paddingHorizontal: active ? 16 : 4, paddingVertical: 8, backgroundColor: active ? theme.colors.blueLight : "transparent" }}>
       <Text selectable style={{ color: active ? theme.colors.blueDeep : theme.colors.greyIcon, fontSize: 12, fontWeight: active ? "600" : "400" }}>{label}</Text>
     </View>
+  );
+}
+
+// Small note card in Patricia's voice -- left accent bar, P avatar, italic
+// text. Same visual pattern already used on the Vaccines and Milestones
+// screens, reused here for J3/J8 rather than introducing a new style.
+export function PatriciaNoteCard({ text }: { text: string }) {
+  return (
+    <View style={{ borderRadius: 16, backgroundColor: theme.colors.card, padding: 16, borderLeftWidth: 3, borderLeftColor: theme.colors.bluePrimary, gap: 8 }}>
+      <View style={{ alignSelf: "flex-end", width: 28, height: 28, borderRadius: 14, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center" }}>
+        <Text selectable={false} style={{ color: "white", fontSize: 13, fontWeight: "800" }}>
+          P
+        </Text>
+      </View>
+      <Text selectable style={{ color: theme.colors.text, fontSize: 15, lineHeight: 23, fontStyle: "italic" }}>
+        {text}
+      </Text>
+    </View>
+  );
+}
+
+// Labeled text input box matching the J2/J6/J8 field style: 13px muted label
+// above a 52px white rounded bordered input.
+export function SettingsField({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  editable = true,
+  keyboardType,
+  autoCapitalize,
+  multiline
+}: {
+  label: string;
+  value: string;
+  onChangeText?: (text: string) => void;
+  placeholder?: string;
+  editable?: boolean;
+  keyboardType?: "default" | "email-address" | "phone-pad" | "number-pad";
+  autoCapitalize?: "none" | "words" | "sentences" | "characters";
+  multiline?: boolean;
+}) {
+  return (
+    <View style={{ gap: 8 }}>
+      <Text selectable style={{ color: theme.colors.muted, fontSize: 13 }}>
+        {label}
+      </Text>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={theme.colors.greyIcon}
+        editable={editable}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        multiline={multiline}
+        style={{
+          minHeight: multiline ? 90 : 52,
+          borderRadius: 12,
+          borderWidth: 1.5,
+          borderColor: theme.colors.border,
+          backgroundColor: editable ? "white" : theme.colors.card,
+          paddingHorizontal: 16,
+          paddingVertical: multiline ? 14 : 0,
+          color: theme.colors.text,
+          fontSize: 15,
+          textAlignVertical: multiline ? "top" : "center"
+        }}
+      />
+    </View>
+  );
+}
+
+// Selectable option card matching J3 (notification cadence) / J4 (language):
+// selected = tinted background + blue border + checkmark, unselected = plain
+// white bordered card.
+export function SettingsChoiceCard({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={{
+        minHeight: 64,
+        borderRadius: 16,
+        borderWidth: selected ? 2 : 1.5,
+        borderColor: selected ? theme.colors.bluePrimary : theme.colors.border,
+        backgroundColor: selected ? theme.colors.blueLight : "white",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 18
+      }}
+    >
+      <Text selectable style={{ color: theme.colors.text, fontSize: 15, fontWeight: "600" }}>
+        {label}
+      </Text>
+      {selected ? <SfIcon name="checkmark" color={theme.colors.bluePrimary} size={20} /> : null}
+    </Pressable>
   );
 }
 
@@ -282,6 +405,17 @@ export function SfIcon({ name, color = theme.colors.bluePrimary, size = 22 }: { 
       <View style={box}>
         <View style={{ position: "absolute", left: size * 0.2, top: size * 0.12, width: size * 0.58, height: size * 0.74, borderRadius: size * 0.34, borderWidth: 2, borderColor: color }} />
         <View style={{ position: "absolute", left: size * 0.38, top: size * 0.02, width: size * 0.52, height: size * 0.76, borderRadius: size * 0.34, backgroundColor: theme.colors.background }} />
+      </View>
+    );
+  }
+
+  if (name === "square.and.arrow.up") {
+    return (
+      <View style={box}>
+        <IconLine color={color} style={{ width: size * 0.32, left: size * 0.34, top: size * 0.2, transform: [{ rotate: "-45deg" }] }} />
+        <IconLine color={color} style={{ width: size * 0.32, left: size * 0.34, top: size * 0.32, transform: [{ rotate: "45deg" }] }} />
+        <View style={{ position: "absolute", left: size * 0.48, top: size * 0.1, width: 2, height: size * 0.42, backgroundColor: color, borderRadius: 1 }} />
+        <View style={{ position: "absolute", left: size * 0.16, top: size * 0.58, width: size * 0.68, height: size * 0.32, borderWidth: 2, borderColor: color, borderRadius: 3 }} />
       </View>
     );
   }

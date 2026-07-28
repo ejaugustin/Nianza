@@ -14,6 +14,7 @@ export type VaccineDose = {
   windowStartMonths: number;
   windowEndMonths: number;
   note?: string | null;
+  description?: string | null;
   status: VaccineDoseStatus;
   givenOn?: string | null;
   backfilled?: boolean;
@@ -37,6 +38,7 @@ export type VaccineProgressResponse = {
   shouldOfferBackfill: boolean;
   groups: VaccineGroup[];
   informationalRows: Array<{ infoId: string; name?: string; title?: string; text?: string; row?: string }>;
+  safetyNote?: { title: string | null; text: string } | null;
 };
 
 export const vaccineLibrary = rawVaccines as {

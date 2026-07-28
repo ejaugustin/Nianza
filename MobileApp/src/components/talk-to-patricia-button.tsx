@@ -28,17 +28,18 @@ export function TalkToPatriciaButton({
   detail?: string;
   entityId?: string;
 }) {
-  const { profile } = useAuth();
+  const { profile, activeChildId } = useAuth();
   const insets = useSafeAreaInsets();
   const childName = profile?.childName || "your child";
   const parentFirstName = profile?.parentFirstName || profile?.parentName?.split(" ")[0];
+  const childId = activeChildId || "primary-child";
 
   async function handleOpenPatricia() {
     const baseSeed: ChatContextSeed = {
       source,
       eventType,
       childName,
-      childId: "primary-child",
+      childId,
       parentFirstName,
       entityId,
       detail,
@@ -53,7 +54,7 @@ export function TalkToPatriciaButton({
           {
             ...memory.seed,
             childName: memory.seed.childName || childName,
-            childId: memory.seed.childId || "primary-child",
+            childId: memory.seed.childId || childId,
             parentFirstName: memory.seed.parentFirstName || parentFirstName,
             resumeConversation: "true",
             occurredAt: new Date().toISOString()

@@ -88,3 +88,35 @@ export async function approveContent(item: ContentItem): Promise<ContentItem> {
   );
   return response.data.item;
 }
+
+export type UpdateContentInput = {
+  contentId: string;
+  version: string;
+  bodyText?: string;
+  ttsEnabled?: boolean;
+  sourceRef?: string;
+  versionBump?: "patch" | "minor";
+};
+
+/** PUT /content/{contentId} -- creates a new version, resets review flags. */
+export async function updateContent(input: UpdateContentInput): Promise<ContentItem> {
+  const { contentId, ...body } = input;
+  if (isLocalFallbackAllowed()) {
+    return { contentId, version: "1.0.1", contentType: "daily-note", language: "en", ageWindowMonths: null, domain: null, bodyText: body.bodyText || "", sourceRef: body.sourceRef || "", ttsEnabled: Boolean(body.ttsEnabled), clinicallyReviewed: false, ejApproved: false, status: "draft" };
+  }
+  const response = await adminApiClient.put<{ item: ContentItem }>(`/content/${encodeURIComponent(contentId)}`, body);
+  return response.data.item;
+}
+
+export type DeleteContentInput = { contentId: string; version: string; reason: string };
+
+/** DELETE /content/{contentId} -- soft delete, SUPER_ADMIN only. */
+export async function deleteContent(input: DeleteContentInput): Promise<ContentItem> {
+  if (isLocalFallbackAllowed()) {
+    return { contentId: input.contentId, version: input.version, contentType: "daily-note", language: "en", ageWindowMonths: null, domain: null, bodyText: "", sourceRef: "", ttsEnabled: false, clinicallyReviewed: false, ejApproved: false, status: "deleted" };
+  }
+  const response = await adminApiClient.delete<{ item: ContentItem }>(`/content/${encodeURIComponent(input.contentId)}`, {
+    data: { version: input.version, reason: input.reason }
+  });
+  return response.data.item;
+}

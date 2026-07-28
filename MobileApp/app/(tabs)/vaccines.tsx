@@ -1,14 +1,18 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { upsertPrimaryChild } from "@/api/children";
+import { upsertChild } from "@/api/children";
 import { getVaccineProgress, markVaccineBackfillOffered, recordVaccineDose, removeVaccineDose } from "@/api/vaccines";
 import { ApiError, apiUrl } from "@/api/client";
+import { usePatriciaChunkedSpeech } from "@/audio/use-patricia-chunked-speech";
 import { useAuth } from "@/auth/auth-context";
 import { openPatricia, TalkToPatriciaButton } from "@/components/talk-to-patricia-button";
 import { EmptyCircle, ScreenTitle, SectionLabel, SfIcon, SpecCard } from "@/components/screen-spec";
+import { possessivePronoun } from "@/text/patricia-text";
 import { theme } from "@/theme/theme";
 import { VaccineDose, vaccineStatusLabel, vaccineStatusTone, vaccineWindowLabel } from "@/data/vaccines";
+
+const SAFETY_NOTE_KEY = "vaccines-safety-note";
 
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
@@ -173,19 +177,124 @@ function VaccineRecordPanel({
   );
 }
 
+function applyPatriciaTemplate(template: string | null | undefined, parentFirstName: string, childName: string, sexAtBirth?: "girl" | "boy" | null) {
+  if (!template) return "";
+  const greeting = parentFirstName ? `Hi ${parentFirstName}, ` : "";
+  return template
+    .replace(/\{greeting\}/g, greeting)
+    .replace(/\{childName\}/g, childName)
+    .replace(/\{pronoun\}/g, possessivePronoun(sexAtBirth));
+}
+
+/** Normalizes safetyNote to the current {title, text} shape whether the API
+ * response is already in that shape or (briefly, until the backend is
+ * redeployed) still the older plain-string shape. Without this, a
+ * not-yet-deployed backend crashes the screen instead of just showing
+ * slightly-less-personalized copy. */
+function normalizeSafetyNote(raw: unknown): { title: string | null; text: string } | null {
+  if (!raw) return null;
+  if (typeof raw === "string") return { title: null, text: raw };
+  if (typeof raw === "object" && "text" in raw) {
+    const note = raw as { title?: string | null; text?: string };
+    return note.text ? { title: note.title ?? null, text: note.text } : null;
+  }
+  return null;
+}
+
+function SafetyNoteCard({
+  title,
+  text,
+  parentFirstName,
+  childName,
+  sexAtBirth
+}: {
+  title: string | null;
+  text: string;
+  parentFirstName: string;
+  childName: string;
+  sexAtBirth?: "girl" | "boy" | null;
+}) {
+  const patriciaSpeech = usePatriciaChunkedSpeech();
+  const [notice, setNotice] = useState<string | null>(null);
+  const autoPlayedRef = useRef(false);
+  const resolvedTitle = applyPatriciaTemplate(title || "Before we look at the schedule", parentFirstName, childName, sexAtBirth);
+  const resolvedText = applyPatriciaTemplate(text, parentFirstName, childName, sexAtBirth);
+  const isSpeaking = patriciaSpeech.isSpeaking(SAFETY_NOTE_KEY);
+  const isLoading = patriciaSpeech.isLoading(SAFETY_NOTE_KEY);
+
+  async function speak() {
+    setNotice(null);
+    try {
+      await patriciaSpeech.play(SAFETY_NOTE_KEY, resolvedText);
+    } catch {
+      setNotice("Patricia could not play this just now. Tap Replay to try again.");
+    }
+  }
+
+  useEffect(() => {
+    if (autoPlayedRef.current) return;
+    autoPlayedRef.current = true;
+    speak();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedText]);
+
+  return (
+    <SpecCard style={{ gap: 10, backgroundColor: theme.colors.card }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center" }}>
+          <Text selectable={false} style={{ color: "white", fontSize: 13, fontWeight: "700" }}>
+            P
+          </Text>
+        </View>
+        <Text selectable style={{ flex: 1, color: theme.colors.text, fontSize: 13, fontWeight: "800" }}>
+          {resolvedTitle}
+        </Text>
+      </View>
+      <Text selectable style={{ color: theme.colors.text, fontSize: 13, lineHeight: 19 }}>
+        {resolvedText}
+      </Text>
+      <Pressable
+        onPress={speak}
+        style={{
+          alignSelf: "flex-start",
+          minHeight: 32,
+          borderRadius: 16,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 7,
+          paddingHorizontal: 10,
+          backgroundColor: isSpeaking ? theme.colors.blueLight : "white"
+        }}
+      >
+        <SfIcon name="speaker.wave.2.fill" color={theme.colors.bluePrimary} size={17} />
+        <Text selectable style={{ color: theme.colors.blueDeep, fontSize: 12, fontWeight: "700" }}>
+          {isLoading ? "Loading" : isSpeaking ? "Playing" : "Replay"}
+        </Text>
+      </Pressable>
+      {notice ? (
+        <Text selectable style={{ color: theme.colors.muted, fontSize: 11 }}>
+          {notice}
+        </Text>
+      ) : null}
+    </SpecCard>
+  );
+}
+
 export default function VaccinesScreen() {
-  const { profile } = useAuth();
+  const { profile, activeChildId } = useAuth();
   const queryClient = useQueryClient();
   const [selectedDoseId, setSelectedDoseId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const childName = profile?.childName || "your child";
+  const parentFirstName = profile?.parentFirstName || profile?.parentName?.split(/\s+/)[0] || "";
+  const childId = activeChildId || "primary-child";
 
   const vaccinesQuery = useQuery({
-    queryKey: ["vaccine-progress", "primary-child"],
+    queryKey: ["vaccine-progress", childId],
     enabled: Boolean(profile),
     queryFn: async () => {
-      if (profile) await upsertPrimaryChild(profile);
-      return getVaccineProgress("primary-child");
+      if (profile) await upsertChild(childId, profile);
+      return getVaccineProgress(childId);
     }
   });
 
@@ -198,13 +307,13 @@ export default function VaccinesScreen() {
 
   async function refreshWith(message: string) {
     setNotice(message);
-    await queryClient.invalidateQueries({ queryKey: ["vaccine-progress", "primary-child"] });
+    await queryClient.invalidateQueries({ queryKey: ["vaccine-progress", childId] });
   }
 
   async function retryVaccines() {
     setNotice(`Syncing ${childName}'s profile with Nianza...`);
     try {
-      if (profile) await upsertPrimaryChild(profile);
+      if (profile) await upsertChild(childId, profile);
       await vaccinesQuery.refetch();
     } catch {
       await vaccinesQuery.refetch();
@@ -238,7 +347,7 @@ export default function VaccinesScreen() {
   }, [childName, vaccineError?.code, vaccineError?.status]);
 
   async function dismissBackfill() {
-    await markVaccineBackfillOffered("primary-child");
+    await markVaccineBackfillOffered(childId);
     await refreshWith("You can still mark earlier vaccines from the card anytime.");
   }
 
@@ -262,6 +371,20 @@ export default function VaccinesScreen() {
           subtitle={`${childName}'s immunization notes`}
           note={"Parent-recorded information only. Your doctor's plan and your child's official card win."}
         />
+
+        {(() => {
+          const safetyNote = normalizeSafetyNote(vaccinesQuery.data?.safetyNote);
+          if (!safetyNote) return null;
+          return (
+            <SafetyNoteCard
+              title={safetyNote.title}
+              text={safetyNote.text}
+              parentFirstName={parentFirstName}
+              childName={childName}
+              sexAtBirth={profile?.sexAtBirth}
+            />
+          );
+        })()}
 
         {notice ? (
           <View style={{ borderRadius: 14, backgroundColor: theme.colors.blueLight, padding: 12 }}>
@@ -349,6 +472,11 @@ export default function VaccinesScreen() {
                         <Text selectable style={{ color: theme.colors.muted, fontSize: 11, lineHeight: 16 }}>
                           {formatDoseSubtitle(dose)}
                         </Text>
+                        {dose.description ? (
+                          <Text selectable style={{ color: theme.colors.text, fontSize: 12, lineHeight: 17 }}>
+                            {dose.description}
+                          </Text>
+                        ) : null}
                         {dose.note ? (
                           <Text selectable style={{ color: theme.colors.muted, fontSize: 11, lineHeight: 16 }}>
                             {dose.note}
@@ -368,7 +496,7 @@ export default function VaccinesScreen() {
                           openPatricia({
                             source: "E1-vaccines",
                             eventType: "vaccines",
-                            childId: "primary-child",
+                            childId,
                             childName,
                             entityId: dose.doseId,
                             title: `${dose.name} vaccine`,

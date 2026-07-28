@@ -9,6 +9,7 @@
    "vaccineId": "HEPB",
    "name": "HepB",
    "fullName": "Hepatitis B",
+   "description": "Protects against hepatitis B, a liver infection that can become chronic if caught in infancy.",
    "doses": [
     {
      "doseId": "VX-HEPB-1",
@@ -37,6 +38,7 @@
    "vaccineId": "RV",
    "name": "RV",
    "fullName": "Rotavirus",
+   "description": "Protects against rotavirus, the most common cause of severe diarrhea in infants. Given orally rather than by injection.",
    "doses": [
     {
      "doseId": "VX-RV-1",
@@ -66,6 +68,7 @@
    "vaccineId": "DTAP",
    "name": "DTaP",
    "fullName": "Diphtheria, Tetanus, & acellular Pertussis",
+   "description": "Protects against diphtheria, tetanus, and whooping cough (pertussis).",
    "doses": [
     {
      "doseId": "VX-DTAP-1",
@@ -108,6 +111,7 @@
    "vaccineId": "HIB",
    "name": "Hib",
    "fullName": "Haemophilus influenzae type b",
+   "description": "Protects against Haemophilus influenzae type b infections, including meningitis.",
    "doses": [
     {
      "doseId": "VX-HIB-1",
@@ -144,6 +148,7 @@
    "vaccineId": "PCV",
    "name": "PCV",
    "fullName": "Pneumococcal conjugate",
+   "description": "Protects against serious pneumococcal infections, including some causes of meningitis, bloodstream infections, and pneumonia.",
    "doses": [
     {
      "doseId": "VX-PCV-1",
@@ -179,6 +184,7 @@
    "vaccineId": "IPV",
    "name": "IPV",
    "fullName": "Inactivated Poliovirus",
+   "description": "Protects against polio, a virus that can cause paralysis.",
    "doses": [
     {
      "doseId": "VX-IPV-1",
@@ -214,6 +220,7 @@
    "vaccineId": "FLU",
    "name": "Flu",
    "fullName": "Influenza (every year)",
+   "description": "Protects against seasonal influenza. Given as a yearly shot.",
    "seasonal": true,
    "doses": [
     {
@@ -230,6 +237,7 @@
    "vaccineId": "MMR",
    "name": "MMR",
    "fullName": "Measles, Mumps, & Rubella",
+   "description": "Protects against measles, mumps, and rubella.",
    "doses": [
     {
      "doseId": "VX-MMR-1",
@@ -251,6 +259,7 @@
    "vaccineId": "VAR",
    "name": "Varicella",
    "fullName": "Varicella (chickenpox)",
+   "description": "Protects against chickenpox.",
    "doses": [
     {
      "doseId": "VX-VAR-1",
@@ -272,6 +281,7 @@
    "vaccineId": "HEPA",
    "name": "HepA",
    "fullName": "Hepatitis A",
+   "description": "Protects against hepatitis A, a liver infection usually spread through contaminated food or water.",
    "doses": [
     {
      "doseId": "VX-HEPA-1",
@@ -291,6 +301,10 @@
    ]
   }
  ],
+ "safetyNote": {
+  "title": "Before we look at {childName}'s schedule",
+  "text": "{greeting}I've walked so many families through this, so let's take it gently together. A little fussiness, sleepiness, or soreness afterward is common and nothing to worry over. Just keep an eye out for trouble breathing, swelling in the face, or sudden weakness — if you notice any of those, get medical help right away. Your pediatrician will always confirm the exact schedule for {childName} based on {pronoun} birth vaccines, health history, and where you live."
+ },
  "informational": [
   {
    "infoId": "VX-INFO-RSV",

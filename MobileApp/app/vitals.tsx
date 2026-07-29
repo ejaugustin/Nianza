@@ -42,7 +42,7 @@ function BackButton() {
       accessibilityRole="button"
       accessibilityLabel="Back to previous screen"
       onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))}
-      style={{ minWidth: 44, minHeight: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" }}
+      style={{ minWidth: 44, minHeight: 44, borderRadius: 22, alignItems: "flex-start", justifyContent: "center" }}
     >
       <SfIcon name="chevron.left" color={theme.colors.text} size={24} />
     </Pressable>
@@ -150,10 +150,10 @@ function EntryCard({ entry, onDelete }: { entry: VitalsEntry; onDelete: () => vo
 }
 
 export default function VitalsScreen() {
-  const { profile } = useAuth();
+  const { profile, activeChildId } = useAuth();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const childId = "primary-child";
+  const childId = activeChildId || "primary-child";
   const childName = profile?.childName || "your child";
   const [selectedType, setSelectedType] = useState<VitalsEntryType>("temperature");
   const [notice, setNotice] = useState<string | null>(null);

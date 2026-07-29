@@ -120,7 +120,15 @@ async function run() {
   console.log(`Patricia golden checks passed (${scenarios.length + 2} scenarios).`);
 }
 
-run().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (require.main === module) {
+  run().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+// Exported so scripts/record-harness-run.js (NZA-ADMIN-v1.1 SS2.2) can reuse
+// the exact same deterministic scenario/assertion logic when writing a
+// structured run record for the admin portal's Harness Runs panel, instead
+// of re-implementing scenario definitions in two places.
+module.exports = { scenarios, baseBundle, chatContext };

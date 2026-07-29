@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { useAuth } from "../auth/auth-context";
+import nianzaLogo from "../assets/nianza-logo-reversed.svg";
 
 export function LoginPage() {
   const { challenge, completeNewPassword, signIn } = useAuth();
@@ -31,7 +32,7 @@ export function LoginPage() {
     <main className="login-page">
       <form className="login-panel" onSubmit={handleSubmit}>
         <div>
-          <div className="brand login-brand">Nianza Admin</div>
+          <div className="login-brand"><img src={nianzaLogo} alt="Nianza Admin" className="brand-logo" /></div>
           <h1 className="page-title">{challenge ? "Set Password" : "Sign In"}</h1>
           <p className="page-subtitle">
             {challenge ? "Create your permanent admin password." : "Use your Nianza admin account."}

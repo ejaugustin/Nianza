@@ -45,6 +45,16 @@ function latestVersion(items) {
   return [...items].sort((a, b) => String(b.version).localeCompare(String(a.version), undefined, { numeric: true })).at(0);
 }
 
+// version increment per NZA-ADMIN-v1.0 SS4.1: patch for minor text edits,
+// minor for structural changes -- caller specifies via body.versionBump.
+function bumpVersion(version, bump) {
+  const parts = String(version || "1.0.0").split(".").map((part) => Number(part) || 0);
+  while (parts.length < 3) parts.push(0);
+  const [major, minor, patch] = parts;
+  if (bump === "minor") return `${major}.${minor + 1}.0`;
+  return `${major}.${minor}.${patch + 1}`;
+}
+
 function requireFields(body, fields) {
   const missing = fields.filter((field) => body[field] == null || body[field] === "");
   if (missing.length) {
@@ -187,6 +197,116 @@ async function handleCreate(event, actor) {
   return json(201, { item: serialize(item) });
 }
 
+// PUT /admin/v1/content/{contentId} -- versioned update, never an overwrite.
+// contentType/language/ageWindowMonths/domain are structural and would
+// require a new contentId, so those fields are rejected here rather than
+// silently ignored. Updating always resets clinicallyReviewed/ejApproved to
+// false on the new version -- an edit requires re-review, even if only the
+// wording changed. The previous approved version stays queryable/active
+// (still returned by getContentVersion when no explicit version is asked
+// for, since it remains the highest ejApproved version) until the new one
+// is approved in turn.
+async function handleUpdate(event, actor, contentId) {
+  if (!hasRole(actor, [ROLE_CONTENT_EDITOR, ROLE_SUPER_ADMIN])) {
+    return error(403, "FORBIDDEN", "You do not have permission to update content.");
+  }
+
+  const body = parseBody(event);
+  const structuralFields = ["contentType", "language", "ageWindowMonths", "domain"];
+  const attemptedStructural = structuralFields.filter((field) => field in body);
+  if (attemptedStructural.length) {
+    return error(400, "STRUCTURAL_FIELD_IMMUTABLE", `Cannot update structural field(s): ${attemptedStructural.join(", ")}. Create a new content item instead.`);
+  }
+
+  const current = await getContentVersion(contentId, body.version);
+  if (!current || current.deleted) return error(404, "NOT_FOUND", "Content item not found.");
+
+  const timestamp = nowIso();
+  const nextVersion = bumpVersion(current.version, body.versionBump === "minor" ? "minor" : "patch");
+  const nextItem = {
+    ...current,
+    version: nextVersion,
+    bodyText: body.bodyText ?? current.bodyText,
+    ttsEnabled: body.ttsEnabled != null ? Boolean(body.ttsEnabled) : current.ttsEnabled,
+    sourceRef: body.sourceRef ?? current.sourceRef,
+    clinicallyReviewed: false,
+    ejApproved: false,
+    clinicalReviewer: null,
+    clinicalReviewedAt: null,
+    reviewerNote: null,
+    approvedBy: null,
+    approvedAt: null,
+    supersedes: current.version,
+    updatedBy: actor.email,
+    updatedAt: timestamp
+  };
+
+  await documentClient.send(new PutCommand({
+    TableName: CONTENT_TABLE,
+    Item: nextItem,
+    ConditionExpression: "attribute_not_exists(contentId) OR attribute_not_exists(version)"
+  }));
+
+  await writeAuditLog({
+    tableName: AUDIT_TABLE,
+    actor,
+    action: "content.update",
+    targetType: "content",
+    targetId: contentId,
+    previousValue: current,
+    newValue: nextItem,
+    event
+  });
+
+  return json(200, { item: serialize(nextItem) });
+}
+
+// DELETE /admin/v1/content/{contentId} -- soft delete only (deleted=true),
+// SUPER_ADMIN ONLY. Never a physical DynamoDB delete. reason is required and
+// stored both in the audit log and on the item itself so it's visible from
+// the Content Item screen without needing to open the audit log.
+async function handleDelete(event, actor, contentId) {
+  if (!hasRole(actor, [ROLE_SUPER_ADMIN])) {
+    return error(403, "FORBIDDEN", "Only super_admin can delete content.");
+  }
+
+  const body = parseBody(event);
+  const query = event.queryStringParameters || {};
+  const version = body.version || query.version;
+  const reason = body.reason || query.reason;
+  if (!reason) return error(400, "MISSING_FIELD", "reason is required to delete content.");
+
+  const item = await getContentVersion(contentId, version);
+  if (!item || item.deleted) return error(404, "NOT_FOUND", "Content item not found.");
+
+  const deletedAt = nowIso();
+  const result = await documentClient.send(new UpdateCommand({
+    TableName: CONTENT_TABLE,
+    Key: { contentId: item.contentId, version: item.version },
+    UpdateExpression: "SET deleted = :trueValue, deletedBy = :deletedBy, deletedAt = :deletedAt, deleteReason = :reason, updatedAt = :deletedAt",
+    ExpressionAttributeValues: {
+      ":trueValue": true,
+      ":deletedBy": actor.email,
+      ":deletedAt": deletedAt,
+      ":reason": reason
+    },
+    ReturnValues: "ALL_NEW"
+  }));
+
+  await writeAuditLog({
+    tableName: AUDIT_TABLE,
+    actor,
+    action: "content.delete",
+    targetType: "content",
+    targetId: item.contentId,
+    previousValue: item,
+    newValue: { ...result.Attributes, reason },
+    event
+  });
+
+  return json(200, { item: serialize(result.Attributes) });
+}
+
 async function handleReview(event, actor, contentId) {
   if (!hasRole(actor, [ROLE_CONTENT_EDITOR, ROLE_SUPER_ADMIN])) {
     return error(403, "FORBIDDEN", "You do not have permission to clinically review content.");
@@ -278,6 +398,8 @@ exports.handler = async (event) => {
     if (event.httpMethod === "POST" && path.endsWith("/content")) return handleCreate(event, actor);
     if (event.httpMethod === "POST" && path.endsWith("/review")) return handleReview(event, actor, contentId);
     if (event.httpMethod === "POST" && path.endsWith("/approve")) return handleApprove(event, actor, contentId);
+    if (event.httpMethod === "PUT" && contentId && !path.endsWith("/review") && !path.endsWith("/approve")) return handleUpdate(event, actor, contentId);
+    if (event.httpMethod === "DELETE" && contentId) return handleDelete(event, actor, contentId);
 
     return error(404, "NOT_FOUND", "Admin content route not found.");
   } catch (err) {

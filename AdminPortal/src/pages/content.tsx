@@ -6,9 +6,12 @@ import {
   ContentItem,
   createContent,
   CreateContentInput,
+  deleteContent,
   listContent,
-  reviewContent
+  reviewContent,
+  updateContent
 } from "../api/content";
+import { useAuth } from "../auth/auth-context";
 
 const emptyForm: CreateContentInput = {
   contentType: "daily-note",
@@ -33,10 +36,15 @@ function actionErrorMessage(err: unknown) {
 }
 
 export function ContentPage() {
+  const { session } = useAuth();
+  const isSuperAdmin = session?.user.role === "super_admin";
   const queryClient = useQueryClient();
   const [form, setForm] = useState<CreateContentInput>(emptyForm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+  const [editText, setEditText] = useState<string | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const contentQuery = useQuery({
     queryKey: ["content"],
@@ -91,6 +99,29 @@ export function ContentPage() {
     }
   });
 
+  const updateMutation = useMutation({
+    mutationFn: updateContent,
+    onMutate: () => setNotice(null),
+    onSuccess: (item) => {
+      queryClient.setQueryData<ContentItem[]>(["content"], (current = []) => current.map((row) => (row.contentId === item.contentId ? item : row)));
+      setEditText(null);
+      setNotice({ kind: "success", text: `Saved as v${item.version}. Review flags were reset -- this edit needs re-approval.` });
+    },
+    onError: (err) => setNotice({ kind: "error", text: actionErrorMessage(err) })
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteContent,
+    onMutate: () => setNotice(null),
+    onSuccess: (item) => {
+      queryClient.setQueryData<ContentItem[]>(["content"], (current = []) => current.map((row) => (row.contentId === item.contentId ? item : row)));
+      setConfirmingDelete(false);
+      setDeleteReason("");
+      setNotice({ kind: "success", text: "Content item soft-deleted." });
+    },
+    onError: (err) => setNotice({ kind: "error", text: actionErrorMessage(err) })
+  });
+
   function updateForm<K extends keyof CreateContentInput>(field: K, value: CreateContentInput[K]) {
     setForm((current) => ({ ...current, [field]: value }));
   }
@@ -140,8 +171,26 @@ export function ContentPage() {
               </div>
               <div>
                 <div className="card-label">Patricia text</div>
-                <div className="content-body">{selected.bodyText}</div>
+                {editText != null ? (
+                  <textarea value={editText} onChange={(event) => setEditText(event.target.value)} />
+                ) : (
+                  <div className="content-body">{selected.bodyText}</div>
+                )}
               </div>
+              {editText != null ? (
+                <span style={{ display: "flex", gap: 8 }}>
+                  <button
+                    className="button-primary"
+                    disabled={updateMutation.isPending || !editText.trim()}
+                    onClick={() => updateMutation.mutate({ contentId: selected.contentId, version: selected.version, bodyText: editText, versionBump: "patch" })}
+                  >
+                    {updateMutation.isPending ? "Saving..." : "Save as new version"}
+                  </button>
+                  <button className="button-secondary" onClick={() => setEditText(null)} type="button">Cancel</button>
+                </span>
+              ) : (
+                <button className="button-secondary" onClick={() => setEditText(selected.bodyText)} type="button">Edit text</button>
+              )}
               <button className="button-secondary" disabled={selected.clinicallyReviewed || reviewMutation.isPending} onClick={() => reviewMutation.mutate(selected)}>
                 {reviewMutation.isPending ? "Submitting..." : "Submit clinical review"}
               </button>
@@ -149,6 +198,26 @@ export function ContentPage() {
                 {approveMutation.isPending ? "Approving..." : "Approve for users"}
               </button>
               {!selected.clinicallyReviewed ? <p className="muted">Ej approval stays locked until clinical review is complete.</p> : null}
+
+              {isSuperAdmin && selected.status !== "deleted" ? (
+                confirmingDelete ? (
+                  <div className="content-form" style={{ marginTop: 0 }}>
+                    <label>Reason for deletion<input required value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} /></label>
+                    <span style={{ display: "flex", gap: 8 }}>
+                      <button
+                        className="button-secondary"
+                        disabled={!deleteReason.trim() || deleteMutation.isPending}
+                        onClick={() => deleteMutation.mutate({ contentId: selected.contentId, version: selected.version, reason: deleteReason })}
+                      >
+                        {deleteMutation.isPending ? "Deleting..." : "Confirm delete"}
+                      </button>
+                      <button className="button-secondary" onClick={() => setConfirmingDelete(false)} type="button">Cancel</button>
+                    </span>
+                  </div>
+                ) : (
+                  <button className="button-secondary" onClick={() => setConfirmingDelete(true)} type="button">Delete item</button>
+                )
+              ) : null}
             </div>
           ) : <p className="muted">No content selected.</p>}
         </aside>

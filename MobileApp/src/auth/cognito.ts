@@ -1,5 +1,6 @@
 import {
   AuthenticationDetails,
+  CognitoRefreshToken,
   CognitoUser,
   CognitoUserAttribute,
   CognitoUserPool,
@@ -117,6 +118,20 @@ export function signInParent(email: string, password: string) {
     user.authenticateUser(details, {
       onSuccess: (session) => resolve(toSession(normalizedEmail, session)),
       onFailure: reject
+    });
+  });
+}
+
+// Cognito ID tokens are short-lived (about an hour). Rather than force the
+// parent to re-enter their password every time it lapses mid-session, use
+// the long-lived refresh token issued at sign-in to silently mint a new one.
+export function refreshParentSession(email: string, refreshToken: string) {
+  return new Promise<AuthSession>((resolve, reject) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = new CognitoUser({ Username: normalizedEmail, Pool: getPool(), Storage: storage });
+    user.refreshSession(new CognitoRefreshToken({ RefreshToken: refreshToken }), (error: Error | null, session: CognitoUserSession) => {
+      if (error) reject(error);
+      else resolve(toSession(normalizedEmail, session));
     });
   });
 }

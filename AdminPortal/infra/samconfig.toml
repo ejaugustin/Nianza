@@ -1,0 +1,37 @@
+# SAM CLI configuration for the Nianza AdminPortal's static hosting stack.
+# Target account: nianza-prod (672061768724) -- the SAME account as the
+# Nianza backend (Backend/infra/template.yaml). Originally planned for the
+# banxito account (839001574339, Claricito's account) but moved here since
+# there's no shared data between Nianza and Claricito, and co-locating with
+# the backend this portal actually talks to means one set of credentials
+# covers both.
+#
+# This is a separate stack from nianza-backend-prod and deliberately
+# deploys to a different region: nianza-backend-prod is us-east-2, but this
+# stack must be us-east-1 -- CloudFront only accepts ACM certs from
+# us-east-1, regardless of where the site itself serves from.
+#
+# Run `sam build && sam deploy --config-env prod` from this /infra directory.
+# Credentials: same nianza-prod CloudShell/export-credentials flow already
+# used for Backend/infra/template.yaml deploys.
+
+version = 0.1
+
+[prod.deploy.parameters]
+stack_name          = "nianza-admin-portal-hosting"
+s3_prefix           = "nianza-admin-portal-hosting"
+region              = "us-east-1"
+confirm_changeset   = true
+capabilities        = "CAPABILITY_IAM"
+parameter_overrides = "Environment=\"prod\" DomainName=\"admin.nianza.com\""
+image_repositories  = []
+tags                = "App=\"nianza-admin-portal\" Env=\"prod\" Owner=\"eja\""
+
+[prod.build.parameters]
+cached   = true
+parallel = false
+
+[prod.global.parameters]
+region = "us-east-1"
+
+resolve_s3 = true

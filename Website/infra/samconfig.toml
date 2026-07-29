@@ -1,0 +1,31 @@
+# SAM CLI configuration for the Nianza marketing site's static hosting stack
+# (nianza.com / www.nianza.com). Target account: nianza-prod (672061768724),
+# us-east-1 -- same account/region as AdminPortal/infra/template.yaml, but a
+# fully separate stack (different S3 bucket, different CloudFront
+# distribution). Must be us-east-1: CloudFront only accepts ACM certs issued
+# there, regardless of where the site itself serves from.
+#
+# Run `sam build && sam deploy --config-env prod` from this /infra directory.
+# Credentials: same nianza-prod CloudShell/export-credentials flow already
+# used for the backend and AdminPortal hosting deploys.
+
+version = 0.1
+
+[prod.deploy.parameters]
+stack_name          = "nianza-web-hosting"
+s3_prefix           = "nianza-web-hosting"
+region              = "us-east-1"
+confirm_changeset   = true
+capabilities        = "CAPABILITY_IAM"
+parameter_overrides = "Environment=\"prod\" ApexDomainName=\"nianza.com\" WwwDomainName=\"www.nianza.com\""
+image_repositories  = []
+tags                = "App=\"nianza-web\" Env=\"prod\" Owner=\"eja\""
+
+[prod.build.parameters]
+cached   = true
+parallel = false
+
+[prod.global.parameters]
+region = "us-east-1"
+
+resolve_s3 = true

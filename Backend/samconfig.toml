@@ -8,6 +8,7 @@ stack_name = "nianza-backend-dev"
 region = "us-east-2"
 capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 confirm_changeset = true
+resolve_s3 = true
 parameter_overrides = "Environment=\"dev\" AdminEmail=\"eja+nianza@banxito.com\" InitialAdminRole=\"super_admin\""
 
 [prod.deploy.parameters]
@@ -15,4 +16,5 @@ stack_name = "nianza-backend-prod"
 region = "us-east-2"
 capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 confirm_changeset = true
+resolve_s3 = true
 parameter_overrides = "Environment=\"prod\" AdminEmail=\"eja+nianza@banxito.com\" InitialAdminRole=\"super_admin\""

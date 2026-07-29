@@ -1,0 +1,155 @@
+# Static hosting (S3 + CloudFront + ACM) for the Nianza marketing site at
+# nianza.com / www.nianza.com. Deployed into nianza-prod (672061768724),
+# us-east-1 -- same account and region as the AdminPortal hosting stack
+# (AdminPortal/infra/template.yaml), but a completely separate S3 bucket +
+# CloudFront distribution: this site is fully public, no Cognito, no auth.
+#
+# Key difference from the admin portal's hosting stack: that one is a
+# single-page React app, so every 404 gets rewritten to index.html. This
+# site is genuinely multi-page -- /privacy.html must serve privacy.html, not
+# the homepage -- so there is deliberately NO CustomErrorResponses SPA
+# rewrite here. Real per-page URLs resolve to their own S3 objects.
+#
+# DNS (nianza.com) stays at GoDaddy (Path A from NZA-WEB-v1.0): this
+# template cannot create the ACM validation CNAMEs or the final www CNAME /
+# apex forward for you -- those are manual steps at the registrar, covered
+# in the deploy walkthrough.
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Static hosting (S3 + CloudFront + ACM) for the public Nianza marketing site at nianza.com.
+
+Parameters:
+  ApexDomainName:
+    Type: String
+    Default: nianza.com
+  WwwDomainName:
+    Type: String
+    Default: www.nianza.com
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, prod]
+
+Resources:
+  # DNS-validated ACM cert covering both the apex and www. Because
+  # nianza.com's DNS lives at GoDaddy (not Route 53), this resource sits in
+  # CREATE_IN_PROGRESS until you manually add the two CNAME validation
+  # records ACM gives you (one per name) -- expected, not a stuck deploy.
+  MarketingSiteCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref ApexDomainName
+      SubjectAlternativeNames:
+        - !Ref WwwDomainName
+      ValidationMethod: DNS
+      Tags:
+        - Key: App
+          Value: nianza-web
+        - Key: Env
+          Value: !Ref Environment
+
+  MarketingSiteBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub nianza-web-${Environment}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: App
+          Value: nianza-web
+        - Key: Env
+          Value: !Ref Environment
+
+  MarketingSiteOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub nianza-web-oac-${Environment}
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  MarketingSiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MarketingSiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipalReadOnly
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${MarketingSiteBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${MarketingSiteDistribution}
+
+  MarketingSiteDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Aliases:
+          - !Ref ApexDomainName
+          - !Ref WwwDomainName
+        PriceClass: PriceClass_100
+        HttpVersion: http2
+        ViewerCertificate:
+          AcmCertificateArn: !Ref MarketingSiteCertificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        Origins:
+          - Id: marketing-site-s3-origin
+            DomainName: !GetAtt MarketingSiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt MarketingSiteOriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: marketing-site-s3-origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          # Managed-CachingOptimized -- respects the Cache-Control header we
+          # set at upload time (public, max-age=300), so copy edits go live
+          # within 5 minutes even without a manual invalidation.
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        # Deliberately NO CustomErrorResponses here. Unlike the admin portal
+        # (a single-page app that rewrites every 404 to index.html), this is
+        # a genuinely multi-page static site -- /privacy.html must 404 as
+        # itself if missing, not silently serve the homepage.
+      Tags:
+        - Key: App
+          Value: nianza-web
+        - Key: Env
+          Value: !Ref Environment
+
+Outputs:
+  BucketName:
+    Value: !Ref MarketingSiteBucket
+    Description: Sync the 5 HTML files (+ any /assets) here.
+  DistributionId:
+    Value: !Ref MarketingSiteDistribution
+    Description: Use for `aws cloudfront create-invalidation` after each deploy.
+  DistributionDomainName:
+    Value: !GetAtt MarketingSiteDistribution.DomainName
+    Description: >
+      Point www.nianza.com at this via a CNAME record at GoDaddy, and set up
+      apex forwarding for nianza.com -- this template cannot create either
+      record for you (external DNS).
+  CertificateArn:
+    Value: !Ref MarketingSiteCertificate

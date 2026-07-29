@@ -281,6 +281,36 @@ Resources:
           Projection:
             ProjectionType: ALL
 
+  # NZA-ADMIN-v1.0 SS4.5: notification log. NOTE (Phase 0, July 2026): no
+  # push-delivery infrastructure (SNS/Pinpoint/Expo push tokens) exists in
+  # this backend yet, so this table currently logs broadcast ATTEMPTS (one
+  # row per admin broadcast action) rather than per-user delivery receipts.
+  # Real per-user delivery logging is a follow-on task once push is wired up.
+  NotificationLogTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-notification-log-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: notificationType
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: notificationType
+          KeyType: HASH
+        - AttributeName: createdAt
+          KeyType: RANGE
+
   AdminSessionsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -491,6 +521,199 @@ Resources:
         - AttributeName: entryId
           KeyType: RANGE
 
+  VisitDebriefsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-visit-debriefs-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: childId
+          AttributeType: S
+        - AttributeName: debriefId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: childId
+          KeyType: HASH
+        - AttributeName: debriefId
+          KeyType: RANGE
+
+  # N3 (child voice recordings) / N2 (parent voice capsules) -- one table for
+  # both, distinguished by the `type` attribute. childMemoryId is
+  # `${childId}#${memoryId}` so all of one child's voice memories are
+  # contiguous under a userId partition.
+  VoiceMemoriesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-voice-memories-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: childMemoryId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: childMemoryId
+          KeyType: RANGE
+
+  # No pre-existing bucket for mobile-uploaded media exists anywhere in this
+  # stack (milestone/first photos are only ever stored as local device
+  # URIs) -- this is a genuinely new bucket, not a reuse of something else.
+  # NZA-ADMIN-v1.1 SS2.1: staging + live copies of the versioned schedule
+  # files (vaccines/growth/milestones). NOTE: the three consuming Lambdas
+  # (mobile/vaccines, mobile/milestones, mobile/vitals) still load their
+  # data from a bundled JSON require() or a hardcoded constant, NOT from this
+  # bucket -- migrating them to fetch from here at runtime is a follow-on
+  # task. This bucket + the version-tracking table below give Ej a real place
+  # to publish new versions and set sourceVerifiedBy; wiring the app-side
+  # read path to actually honor it is tracked separately.
+  ReferenceDataBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub nianza-reference-data-${Environment}-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+
+  ReferenceDataVersionsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-reference-data-versions-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: referenceKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: referenceKey
+          KeyType: HASH
+
+  # NZA-ADMIN-v1.1 SS2.2 / NZA-CHAT-v1.0 SS5: golden-conversation harness
+  # sign-off. NOTE: scripts/eval-patricia.js is the only harness that exists
+  # today and covers 3 scenarios, not the 25 the spec calls for -- expanding
+  # it to the full set is a follow-on content task, tracked separately from
+  # this table/Lambda/UI, which are otherwise spec-complete.
+  HarnessRunsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-admin-harness-runs-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: runId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: runId
+          KeyType: HASH
+
+  # NZA-ADMIN-v2 SS1 (Engagement): nightly rollup only -- never raw
+  # per-parent event dumps. PK = date, SK = metric key (e.g. "dau",
+  # "chatSessions", "newUsers"). NOTE: there is no dedicated event-tracking
+  # pipeline in this app yet (no analytics SDK, no per-screen event
+  # instrumentation) -- these rollups are computed from what already exists
+  # (conversation sessions, user/child records), which gives a reasonable
+  # DAU/session-count proxy but NOT true feature-adoption-per-screen data.
+  # Building real event instrumentation is a separate, larger follow-on task.
+  UsageAggregatesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-usage-aggregates-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: aggregateDate
+          AttributeType: S
+        - AttributeName: metricKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: aggregateDate
+          KeyType: HASH
+        - AttributeName: metricKey
+          KeyType: RANGE
+
+  VoiceMemoriesBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub nianza-voice-memories-${Environment}-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+
   MobileConversationsTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
@@ -593,6 +816,442 @@ Resources:
             RestApiId: !Ref AdminApi
             Path: /admin/v1/content/{contentId}/approve
             Method: POST
+        ContentUpdate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/content/{contentId}
+            Method: PUT
+        ContentDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/content/{contentId}
+            Method: DELETE
+
+  AdminSsmFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-ssm-${Environment}
+      CodeUri: ../
+      Handler: admin/ssm/handler.handler
+      Environment:
+        Variables:
+          AUDIT_TABLE: !Ref AdminAuditLogTable
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref AdminAuditLogTable
+        - Statement:
+            # DescribeParameters is not resource-scopable in IAM (it filters
+            # via ParameterFilters at the API level, not per-ARN) -- Resource
+            # must be "*" here even though the handler only ever queries the
+            # /nianza/ prefix.
+            - Effect: Allow
+              Action:
+                - ssm:DescribeParameters
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:PutParameter
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/nianza/*
+      Events:
+        SsmList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/ssm
+            Method: GET
+        SsmWrite:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/ssm/{paramName+}
+            Method: PUT
+
+  AdminUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-users-${Environment}
+      CodeUri: ../
+      Handler: admin/users/handler.handler
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MobileUsersTable
+          CHILDREN_TABLE: !Ref MobileChildrenTable
+          AUDIT_TABLE: !Ref AdminAuditLogTable
+          MOBILE_USER_POOL_ID: !Ref MobileUserPool
+          MILESTONE_TABLE: !Ref MilestoneProgressTable
+          IMMUNIZATION_TABLE: !Ref ImmunizationStatusTable
+          SICK_ENCOUNTERS_TABLE: !Ref SickEncountersTable
+          VITALS_TABLE: !Ref VitalsLogTable
+          VISIT_DEBRIEFS_TABLE: !Ref VisitDebriefsTable
+          REPORTS_TABLE: !Ref MobileReportsTable
+          VOICE_MEMORIES_TABLE: !Ref VoiceMemoriesTable
+          VOICE_MEMORIES_BUCKET: !Ref VoiceMemoriesBucket
+          CONVERSATIONS_TABLE: !Ref MobileConversationsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileUsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MilestoneProgressTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ImmunizationStatusTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SickEncountersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref VitalsLogTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref VisitDebriefsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileReportsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref VoiceMemoriesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileConversationsTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref AdminAuditLogTable
+        - S3CrudPolicy:
+            BucketName: !Ref VoiceMemoriesBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:ListUsers
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminDisableUser
+                - cognito-idp:AdminDeleteUser
+              Resource: !GetAtt MobileUserPool.Arn
+      Events:
+        UsersList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/users
+            Method: GET
+        UserGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/users/{userId}
+            Method: GET
+        UserDisable:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/users/{userId}/disable
+            Method: POST
+        UserDeleteInitiate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/users/{userId}/delete
+            Method: POST
+
+  AdminSubscriptionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-subscriptions-${Environment}
+      CodeUri: ../
+      Handler: admin/subscriptions/handler.handler
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MobileUsersTable
+          AUDIT_TABLE: !Ref AdminAuditLogTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileUsersTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref AdminAuditLogTable
+      Events:
+        SubscriptionsList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/subscriptions
+            Method: GET
+        SubscriptionsExtendTrial:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/subscriptions/{userId}/extend-trial
+            Method: POST
+
+  AdminNotificationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-notifications-${Environment}
+      CodeUri: ../
+      Handler: admin/notifications/handler.handler
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MobileUsersTable
+          NOTIFICATION_LOG_TABLE: !Ref NotificationLogTable
+          AUDIT_TABLE: !Ref AdminAuditLogTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileUsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref NotificationLogTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref AdminAuditLogTable
+      Events:
+        NotificationsList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/notifications
+            Method: GET
+        NotificationsBroadcast:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/notifications/broadcast
+            Method: POST
+
+  AdminMetricsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-metrics-${Environment}
+      CodeUri: ../
+      Handler: admin/metrics/handler.handler
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MobileUsersTable
+          CHILDREN_TABLE: !Ref MobileChildrenTable
+          CONTENT_TABLE: !Ref ContentLibraryTable
+          NOTIFICATION_LOG_TABLE: !Ref NotificationLogTable
+          REPORTS_TABLE: !Ref MobileReportsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileUsersTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref ContentLibraryTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref NotificationLogTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileReportsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:PutParameter
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/nianza/admin/metrics-cache/*
+      Events:
+        MetricsGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/metrics
+            Method: GET
+
+  AdminPortalUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-portal-users-${Environment}
+      CodeUri: ../
+      Handler: admin/portal-users/handler.handler
+      Environment:
+        Variables:
+          AUDIT_TABLE: !Ref AdminAuditLogTable
+          ADMIN_SESSIONS_TABLE: !Ref AdminSessionsTable
+          ADMIN_USER_POOL_ID: !Ref AdminUserPool
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref AdminAuditLogTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AdminSessionsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:ListUsers
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminDisableUser
+              Resource: !GetAtt AdminUserPool.Arn
+      Events:
+        PortalUsersList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/portal-users
+            Method: GET
+        PortalUsersCreate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/portal-users
+            Method: POST
+        PortalUserDisable:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/portal-users/{adminUserId}/disable
+            Method: POST
+        SessionsList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/sessions
+            Method: GET
+        SessionTerminate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/sessions/{sessionId}/terminate
+            Method: POST
+
+  AdminAuditFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-audit-${Environment}
+      CodeUri: ../
+      Handler: admin/audit/handler.handler
+      Environment:
+        Variables:
+          AUDIT_TABLE: !Ref AdminAuditLogTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref AdminAuditLogTable
+      Events:
+        AuditList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/audit
+            Method: GET
+
+  AdminReferenceDataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-reference-data-${Environment}
+      CodeUri: ../
+      Handler: admin/reference-data/handler.handler
+      Environment:
+        Variables:
+          REFERENCE_DATA_BUCKET: !Ref ReferenceDataBucket
+          REFERENCE_DATA_VERSIONS_TABLE: !Ref ReferenceDataVersionsTable
+          AUDIT_TABLE: !Ref AdminAuditLogTable
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref ReferenceDataBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ReferenceDataVersionsTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref AdminAuditLogTable
+      Events:
+        ReferenceDataList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/reference-data
+            Method: GET
+        ReferenceDataUpload:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/reference-data/{key}/upload
+            Method: POST
+        ReferenceDataPublish:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/reference-data/{key}/publish
+            Method: POST
+
+  AdminHarnessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-harness-${Environment}
+      CodeUri: ../
+      Handler: admin/harness/handler.handler
+      Environment:
+        Variables:
+          HARNESS_RUNS_TABLE: !Ref HarnessRunsTable
+          AUDIT_TABLE: !Ref AdminAuditLogTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref HarnessRunsTable
+        - DynamoDBWritePolicy:
+            TableName: !Ref AdminAuditLogTable
+      Events:
+        HarnessRunsList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/harness-runs
+            Method: GET
+        HarnessRunGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/harness-runs/{runId}
+            Method: GET
+        HarnessRunSign:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/harness-runs/{runId}/sign
+            Method: POST
+
+  AdminEngagementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-engagement-${Environment}
+      CodeUri: ../
+      Handler: admin/engagement/handler.handler
+      Timeout: 60
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MobileUsersTable
+          CONVERSATIONS_TABLE: !Ref MobileConversationsTable
+          USAGE_AGGREGATES_TABLE: !Ref UsageAggregatesTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileUsersTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileConversationsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsageAggregatesTable
+      Events:
+        EngagementMetricsGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/engagement/metrics
+            Method: GET
+        NightlyRollup:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(15 7 * * ? *)" # 07:15 UTC daily -- rolls up "yesterday"
+            Description: Nightly usage-aggregates rollup for the Engagement page
+            Enabled: true
+
+  AdminSystemHealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-system-health-${Environment}
+      CodeUri: ../
+      Handler: admin/system-health/handler.handler
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cloudwatch:GetMetricData
+              Resource: "*"
+      Events:
+        SystemHealthGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/system-health
+            Method: GET
 
   MobileContentFunction:
     Type: AWS::Serverless::Function
@@ -613,6 +1272,18 @@ Resources:
             RestApiId: !Ref MobileApi
             Path: /mobile/v1/content/daily-note
             Method: GET
+        GenerationalShift:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/content/generational-shift
+            Method: GET
+        PostcardFrames:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/content/postcard-frames
+            Method: GET
 
   MobileMilestonesFunction:
     Type: AWS::Serverless::Function
@@ -630,12 +1301,36 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref MilestoneProgressTable
       Events:
+        ChildrenList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/children
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        ChildCreate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/children
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
         ChildProfileUpsert:
           Type: Api
           Properties:
             RestApiId: !Ref MobileApi
             Path: /mobile/v1/children/{childId}
             Method: PUT
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        ChildDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/children/{childId}
+            Method: DELETE
             Auth:
               Authorizer: MobileCognitoAuthorizer
         MilestonesGet:
@@ -652,6 +1347,14 @@ Resources:
             RestApiId: !Ref MobileApi
             Path: /mobile/v1/milestones/{childId}/observations
             Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        MilestoneFirstsList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/milestones/{childId}/firsts
+            Method: GET
             Auth:
               Authorizer: MobileCognitoAuthorizer
         MilestoneBackfillOffered:
@@ -782,6 +1485,114 @@ Resources:
             Auth:
               Authorizer: MobileCognitoAuthorizer
 
+  MobileVisitsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-visits-${Environment}
+      CodeUri: ../
+      Handler: mobile/visits/handler.handler
+      Environment:
+        Variables:
+          CHILDREN_TABLE: !Ref MobileChildrenTable
+          VISIT_DEBRIEFS_TABLE: !Ref VisitDebriefsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref VisitDebriefsTable
+      Events:
+        VisitConfirm:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/visits/{childId}/confirm
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        VisitDebriefCreate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/visits/{childId}/debrief
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        VisitDebriefLatest:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/visits/{childId}/debrief/latest
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+
+  MobileMemoriesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-memories-${Environment}
+      CodeUri: ../
+      Handler: mobile/memories/handler.handler
+      Timeout: 30
+      MemorySize: 512
+      Environment:
+        Variables:
+          CHILDREN_TABLE: !Ref MobileChildrenTable
+          MILESTONES_TABLE: !Ref MilestoneProgressTable
+          VOICE_MEMORIES_TABLE: !Ref VoiceMemoriesTable
+          VOICE_MEMORIES_BUCKET: !Ref VoiceMemoriesBucket
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MilestoneProgressTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref VoiceMemoriesTable
+        - S3CrudPolicy:
+            BucketName: !Ref VoiceMemoriesBucket
+      Events:
+        BirthdayLetter:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/memories/{childId}/birthday-letter
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        AnniversaryNote:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/memories/{childId}/anniversary-note
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        VoiceMemoryCreate:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/memories/{childId}/voice
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        VoiceMemoryList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/memories/{childId}/voice
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        VoiceMemoryDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/memories/{childId}/voice/{memoryId}
+            Method: DELETE
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+
   MobileVoiceFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -876,11 +1687,19 @@ Resources:
       FunctionName: !Sub nianza-mobile-reports-${Environment}
       CodeUri: ../
       Handler: mobile/reports/handler.handler
+      Timeout: 30
+      MemorySize: 512
       Environment:
         Variables:
           CHILDREN_TABLE: !Ref MobileChildrenTable
           REPORTS_TABLE: !Ref MobileReportsTable
           VITALS_TABLE: !Ref VitalsLogTable
+          MILESTONES_TABLE: !Ref MilestoneProgressTable
+          SICK_ENCOUNTERS_TABLE: !Ref SickEncountersTable
+          VACCINES_TABLE: !Ref ImmunizationStatusTable
+          VISIT_DEBRIEFS_TABLE: !Ref VisitDebriefsTable
+          ANTHROPIC_API_KEY_PARAMETER: !Ref AnthropicApiKeyParameterName
+          ANTHROPIC_MODEL_PARAMETER: !Ref AnthropicModelParameterName
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref MobileChildrenTable
@@ -888,6 +1707,20 @@ Resources:
             TableName: !Ref MobileReportsTable
         - DynamoDBReadPolicy:
             TableName: !Ref VitalsLogTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MilestoneProgressTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref SickEncountersTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref ImmunizationStatusTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref VisitDebriefsTable
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource: "*"
       Events:
         ReportsList:
           Type: Api
@@ -913,6 +1746,218 @@ Resources:
             Method: GET
             Auth:
               Authorizer: MobileCognitoAuthorizer
+
+  # ─── NZA-ADMIN-v1.1 P0.1: Real Billing (RevenueCat) ──────────────────────
+  # Secrets, storage, and three Lambdas: the public webhook receiver
+  # (nianza-billing-lambda), the nightly reconciliation job
+  # (nianza-billing-reconcile), and the admin-facing read endpoints
+  # (AdminBillingFunction). See Backend/billing/*/handler.js and
+  # Backend/admin/billing/handler.js for the code; see
+  # IMPLEMENTATION-NOTES.md for deviations from the spec's literal naming.
+
+  RevenueCatWebhookSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub nianza/revenuecat/webhook-secret-${Environment}
+      Description: Shared secret RevenueCat must send as the Authorization header on every webhook POST. We generate it; paste this value into RevenueCat's webhook config (Project Settings > Integrations > Webhooks > Authorization header value).
+      GenerateSecretString:
+        SecretStringTemplate: "{}"
+        GenerateStringKey: value
+        PasswordLength: 40
+        ExcludePunctuation: true
+
+  RevenueCatApiKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub nianza/revenuecat/api-key-${Environment}
+      Description: RevenueCat REST API key (Secret API key, not Public). Needed for nianza-billing-reconcile and Phase 3 admin actions. CloudFormation cannot know RevenueCat's real key -- replace this placeholder in Secrets Manager console after connecting a live RevenueCat project.
+      SecretString: "REPLACE_ME_MANUALLY_IN_CONSOLE"
+
+  BillingRawBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub nianza-billing-raw-${Environment}-${AWS::AccountId}
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+
+  BillingEventsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-billing-events-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: eventTimestampEventId
+          AttributeType: S
+        - AttributeName: eventType
+          AttributeType: S
+        - AttributeName: eventTimestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: eventTimestampEventId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: eventType-eventTimestamp-index
+          KeySchema:
+            - AttributeName: eventType
+              KeyType: HASH
+            - AttributeName: eventTimestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  BillingWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-billing-webhook-${Environment}
+      CodeUri: ../
+      Handler: billing/webhook/handler.handler
+      Timeout: 15
+      Environment:
+        Variables:
+          BILLING_EVENTS_TABLE: !Ref BillingEventsTable
+          USERS_TABLE: !Ref MobileUsersTable
+          BILLING_RAW_BUCKET: !Ref BillingRawBucket
+          WEBHOOK_SECRET_ARN: !Ref RevenueCatWebhookSecret
+          BILLING_CACHE_PARAM: !Sub /nianza/admin/billing-summary-cache-${Environment}
+          # Confirmed against the live NIanza RevenueCat project (Test Store,
+          # July 28 2026): the real product identifiers are literally
+          # "monthly" and "yearly" (not "annual") -- verified via
+          # app.revenuecat.com/projects/86547d89/product-catalog/products.
+          # Update these if the products are ever recreated with different ids.
+          REVENUECAT_MONTHLY_PRODUCT_ID: monthly
+          REVENUECAT_ANNUAL_PRODUCT_ID: yearly
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BillingEventsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileUsersTable
+        - S3CrudPolicy:
+            BucketName: !Ref BillingRawBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Ref RevenueCatWebhookSecret
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:PutParameter
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/nianza/admin/billing-summary-cache-${Environment}
+      Events:
+        RevenueCatWebhook:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /v1/webhooks/revenuecat
+            Method: POST
+            Auth:
+              Authorizer: NONE
+
+  BillingReconcileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-billing-reconcile-${Environment}
+      CodeUri: ../
+      Handler: billing/reconcile/handler.handler
+      Timeout: 120
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MobileUsersTable
+          BILLING_EVENTS_TABLE: !Ref BillingEventsTable
+          REVENUECAT_API_KEY_SECRET_ARN: !Ref RevenueCatApiKeySecret
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileUsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BillingEventsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Ref RevenueCatApiKeySecret
+      Events:
+        NightlyReconcile:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 8 * * ? *)" # ~03:00-04:00 ET depending on DST
+            Description: Nightly RevenueCat subscriber-API reconciliation against our billing snapshot
+            Enabled: true
+
+  AdminBillingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-admin-billing-${Environment}
+      CodeUri: ../
+      Handler: admin/billing/handler.handler
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MobileUsersTable
+          BILLING_EVENTS_TABLE: !Ref BillingEventsTable
+          BILLING_CACHE_PARAM: !Sub /nianza/admin/billing-summary-cache-${Environment}
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileUsersTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref BillingEventsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/nianza/admin/billing-summary-cache-${Environment}
+      Events:
+        BillingSummary:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/billing/summary
+            Method: GET
+        BillingEvents:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/billing/events
+            Method: GET
+        BillingFailedPayments:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AdminApi
+            Path: /admin/v1/billing/failed-payments
+            Method: GET
 
 Outputs:
   AdminApiUrl:
@@ -955,3 +2000,13 @@ Outputs:
     Value: !Ref MobileConversationsTable
   MobileReportsTableName:
     Value: !Ref MobileReportsTable
+  BillingEventsTableName:
+    Value: !Ref BillingEventsTable
+  BillingRawBucketName:
+    Value: !Ref BillingRawBucket
+  RevenueCatWebhookSecretArn:
+    Value: !Ref RevenueCatWebhookSecret
+  RevenueCatApiKeySecretArn:
+    Value: !Ref RevenueCatApiKeySecret
+  RevenueCatWebhookUrl:
+    Value: !Sub https://${AdminApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/v1/webhooks/revenuecat

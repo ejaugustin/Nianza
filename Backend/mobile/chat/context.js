@@ -13,7 +13,8 @@ const ALLOWED_SEED_TYPES = new Set([
   "sick-encounter-active",
   "visit-upcoming",
   "capsule-invite",
-  "custom-first"
+  "custom-first",
+  "generational-shift"
 ]);
 const BANNED_PHRASES = [
   /\bI see you (?:were|are)\b/i,
@@ -85,7 +86,9 @@ function generatePatriciaReply(message, bundle) {
   }
 
   if (bundle.contextSeed?.eventType === "sick-encounter-active") {
-    return "Keep this simple. What changed first, what has stayed the same, and what would you want the doctor to know if you called? I will help you put it in order.";
+    const recentEntries = bundle.recentEvents?.encounter?.recentEntries || [];
+    const soFar = recentEntries.length ? ` I can see you've logged ${recentEntries.slice(0, 3).join("; ")} so far.` : "";
+    return `Keep this simple.${soFar} What changed first, what has stayed the same, and what would you want the doctor to know if you called? I will help you put it in order.`;
   }
 
   if (bundle.contextSeed?.eventType === "visit-upcoming") {
@@ -141,12 +144,35 @@ function isVaccineHesitancyText(value) {
     && /\b(safe|dangerous|risk|side effect|autism|refuse|skip|delay|hesitant|worried|scared)\b/.test(text);
 }
 
+// Covers common emoji blocks plus variation selectors and the zero-width
+// joiner used to combine them. Patricia's persona says she never uses emoji
+// (TTS has no way to "say" one gracefully -- it spells out the character
+// name, e.g. a heart becomes the spoken words "yellow heart"), so this is a
+// hard backend guarantee that survives even if the model drifts from that
+// instruction.
+const EMOJI_PATTERN = /[\u{1F1E6}-\u{1F1FF}\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu;
+
+function stripEmoji(text) {
+  return text.replace(EMOJI_PATTERN, "").replace(/[ \t]{2,}/g, " ").replace(/ +([.,!?;:])/g, "$1").trim();
+}
+
 function enforcePatriciaStyle(value) {
   let text = String(value || "").trim();
   for (const phrase of BANNED_PHRASES) text = text.replace(phrase, "").trim();
   text = text.replace(/!/g, ".");
+  text = stripEmoji(text);
+
+  const MAX_WORDS = 140;
   const words = text.split(/\s+/).filter(Boolean);
-  if (words.length > 140) text = `${words.slice(0, 140).join(" ")}.`;
+  if (words.length > MAX_WORDS) {
+    // Trim to the last complete sentence within the word budget instead of
+    // chopping mid-word and forcing a period onto a sentence that never
+    // finished (e.g. "...that's worth mentioning at.").
+    const budget = words.slice(0, MAX_WORDS).join(" ");
+    const lastSentenceEnd = Math.max(budget.lastIndexOf("."), budget.lastIndexOf("?"));
+    text = lastSentenceEnd > 40 ? budget.slice(0, lastSentenceEnd + 1) : `${budget}...`;
+  }
+
   return text || "I am here with you. Say the messy version first, and we will sort it into something useful.";
 }
 
@@ -169,7 +195,17 @@ function promptSafeBundle(bundle) {
       recentEvents: {
         milestones: bundle.recentEvents?.milestones || [],
         watchForNames: bundle.recentEvents?.watchForNames || [],
-        encounter: bundle.recentEvents?.encounter || null,
+        encounter: bundle.recentEvents?.encounter
+          ? {
+              name: bundle.recentEvents.encounter.name || null,
+              startDate: bundle.recentEvents.encounter.startDate || null,
+              entryTypeCounts: bundle.recentEvents.encounter.entryTypeCounts || {},
+              // Actual logged readings/symptoms/medications, most recent
+              // first -- so Patricia can speak to what's really going on
+              // instead of just acknowledging that notes exist.
+              recentEntries: bundle.recentEvents.encounter.recentEntries || []
+            }
+          : null,
         vaccines: bundle.recentEvents?.vaccines || null,
         daysUntilVisit: bundle.recentEvents?.daysUntilVisit ?? null
       },

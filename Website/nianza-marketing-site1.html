@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nianza — The parenthood companion built around Patricia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#34ABC4;
+    --deep-blue:#1D7A91;
+    --deep-blue-ink:#155B6C;
+    --cream:#F4F0E8;
+    --paper:#FBF8F2;
+    --white:#FFFFFF;
+    --terracotta:#C4714A;
+    --ink:#2C2C2C;
+    --ink-soft:#5B5651;
+    --night:#1A2332;
+    --night-card:#232F44;
+    --line:#E4DED2;
+    --radius:14px;
+    --radius-lg:22px;
+    --shadow-soft:0 10px 30px rgba(44,40,32,0.07);
+    --shadow-card:0 4px 18px rgba(29,122,145,0.08);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:'DM Sans', sans-serif;
+    color:var(--ink);
+    background:var(--cream);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .voice{
+    font-family:'Lora', serif;
+    font-style:italic;
+    font-weight:400;
+  }
+  a{color:inherit;text-decoration:none;}
+  img,svg{display:block;max-width:100%;}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 28px;}
+  .wrap-narrow{max-width:760px;margin:0 auto;padding:0 28px;}
+
+  /* ---------- NAV ---------- */
+  header.nav{
+    position:sticky;top:0;z-index:100;
+    background:rgba(244,240,232,0.86);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:1120px;margin:0 auto;padding:16px 28px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;letter-spacing:-0.01em;color:var(--deep-blue-ink);}
+  .brand-mark{
+    width:30px;height:30px;border-radius:9px;
+    background:linear-gradient(155deg,var(--blue),var(--deep-blue));
+    display:flex;align-items:center;justify-content:center;
+    color:white;font-family:'Lora',serif;font-style:italic;font-weight:500;font-size:16px;
+    box-shadow:0 3px 10px rgba(29,122,145,0.35);
+  }
+  .nav-links{display:flex;align-items:center;gap:30px;}
+  .nav-links a{font-size:14.5px;font-weight:500;color:var(--ink-soft);}
+  .nav-links a:hover{color:var(--deep-blue-ink);}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:12px 22px;border-radius:100px;font-weight:600;font-size:14.5px;
+    cursor:pointer;border:none;transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+    white-space:nowrap;
+  }
+  .btn-primary{background:var(--deep-blue);color:white;box-shadow:0 6px 18px rgba(29,122,145,0.32);}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(29,122,145,0.4);background:var(--deep-blue-ink);}
+  .btn-ghost{background:transparent;color:var(--deep-blue-ink);border:1.5px solid var(--deep-blue-ink);}
+  .btn-ghost:hover{background:rgba(29,122,145,0.07);}
+  .btn-light{background:white;color:var(--deep-blue-ink);}
+  .btn-light:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,0,0.12);}
+  .nav-cta{display:none;}
+  @media(min-width:720px){.nav-cta{display:inline-flex;}}
+  .nav-links{display:none;}
+  @media(min-width:900px){.nav-links{display:flex;}}
+
+  /* ---------- HERO ---------- */
+  .hero{padding:64px 0 40px;position:relative;}
+  .hero-grid{display:grid;grid-template-columns:1fr;gap:52px;align-items:center;}
+  @media(min-width:960px){.hero-grid{grid-template-columns:1.05fr 0.95fr;gap:40px;}}
+  .eyebrow{
+    font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--terracotta);margin-bottom:18px;display:flex;align-items:center;gap:8px;
+  }
+  .eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--terracotta);display:inline-block;}
+  h1{
+    font-family:'DM Sans',sans-serif;font-weight:700;font-size:clamp(34px,5vw,54px);
+    line-height:1.08;letter-spacing:-0.02em;color:var(--deep-blue-ink);margin:0 0 22px;
+  }
+  h1 em{font-family:'Lora',serif;font-style:italic;font-weight:500;color:var(--blue);}
+  .hero-sub{font-size:18px;line-height:1.6;color:var(--ink-soft);max-width:480px;margin:0 0 32px;}
+  .hero-ctas{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px;}
+  .hero-note-tiny{font-size:13px;color:var(--ink-soft);opacity:.8;}
+
+  /* Patricia note card — the living signature element */
+  .note-card{
+    background:var(--paper);
+    border-left:4px solid var(--blue);
+    border-radius:4px var(--radius-lg) var(--radius-lg) var(--radius-lg);
+    padding:34px 30px 26px;
+    box-shadow:var(--shadow-soft);
+    position:relative;
+    max-width:440px;
+  }
+  .note-p-mark{
+    position:absolute;top:-16px;right:26px;
+    width:44px;height:44px;border-radius:50%;
+    background:var(--blue);color:white;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:500;
+    box-shadow:0 6px 16px rgba(52,171,196,0.45);
+  }
+  .note-text{
+    font-family:'Lora',serif;font-style:italic;font-size:19px;line-height:1.55;
+    color:#3a352d;min-height:96px;transition:opacity .35s ease;
+  }
+  .note-foot{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:20px;padding-top:14px;border-top:1px solid var(--line);
+  }
+  .note-sig{font-family:'DM Sans';font-size:12.5px;font-weight:600;color:var(--deep-blue-ink);letter-spacing:.02em;}
+  .note-play{
+    width:34px;height:34px;border-radius:50%;background:var(--blue);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+    box-shadow:0 4px 10px rgba(52,171,196,.35);
+  }
+  .note-play svg{width:12px;height:12px;fill:white;margin-left:2px;}
+  .hero-note-caption{font-size:12.5px;color:var(--ink-soft);margin-top:14px;text-align:center;opacity:.75;}
+
+  /* ---------- SECTION GENERIC ---------- */
+  section{padding:88px 0;}
+  .section-head{max-width:640px;margin:0 auto 52px;text-align:center;}
+  .kicker{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:14px;}
+  h2{font-family:'DM Sans';font-weight:700;font-size:clamp(26px,3.4vw,38px);line-height:1.18;letter-spacing:-0.015em;color:var(--deep-blue-ink);margin:0 0 16px;}
+  .section-lede{font-size:17px;line-height:1.65;color:var(--ink-soft);}
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease, transform .7s ease;}
+  .reveal.in{opacity:1;transform:translateY(0);}
+
+  /* ---------- COMPARISON ---------- */
+  .compare-grid{display:grid;grid-template-columns:1fr;gap:20px;}
+  @media(min-width:820px){.compare-grid{grid-template-columns:repeat(3,1fr);}}
+  .compare-card{background:var(--white);border-radius:var(--radius-lg);padding:30px 26px;border:1px solid var(--line);}
+  .compare-card.is-nianza{background:linear-gradient(165deg,#EAF7FA,#F4F0E8);border:1.5px solid var(--blue);box-shadow:var(--shadow-card);}
+  .compare-label{font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:10px;}
+  .compare-card.is-nianza .compare-label{color:var(--deep-blue-ink);}
+  .compare-title{font-size:20px;font-weight:700;color:var(--ink);margin-bottom:10px;}
+  .compare-card.is-nianza .compare-title{color:var(--deep-blue-ink);}
+  .compare-desc{font-size:15px;line-height:1.6;color:var(--ink-soft);}
+
+  /* ---------- MEET PATRICIA ---------- */
+  .meet{background:var(--white);border-radius:32px;margin:0 20px;}
+  @media(min-width:720px){.meet{margin:0 40px;}}
+  .meet-inner{padding:80px 28px;}
+  .meet-grid{display:grid;grid-template-columns:1fr;gap:48px;align-items:center;max-width:1040px;margin:0 auto;}
+  @media(min-width:900px){.meet-grid{grid-template-columns:0.85fr 1.15fr;}}
+  .meet-visual{
+    aspect-ratio:1/1;border-radius:28px;
+    background:radial-gradient(circle at 30% 25%, #4CC0D9, var(--deep-blue) 72%);
+    display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
+  }
+  .meet-visual::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 70% 80%, rgba(196,113,74,0.35), transparent 55%);}
+  .meet-p{font-family:'Lora',serif;font-style:italic;font-weight:500;color:white;font-size:120px;opacity:.95;z-index:1;}
+  .meet-copy h2{margin-bottom:20px;}
+  .meet-copy p{font-size:16.5px;line-height:1.75;color:var(--ink-soft);margin-bottom:18px;}
+  .meet-copy p:last-of-type{margin-bottom:0;}
+  .meet-copy strong{color:var(--deep-blue-ink);font-weight:600;}
+
+  /* ---------- TOGGLE DEMO ---------- */
+  .demo-shell{
+    background:var(--night);border-radius:var(--radius-lg);padding:8px;
+    max-width:700px;margin:0 auto;box-shadow:0 20px 50px rgba(26,35,50,0.35);
+  }
+  .demo-tabs{display:flex;gap:6px;padding:8px 8px 0;}
+  .demo-tab{
+    flex:1;padding:13px 10px;border-radius:10px;border:none;cursor:pointer;
+    font-family:'DM Sans';font-weight:600;font-size:13.5px;
+    background:transparent;color:rgba(255,255,255,0.55);transition:all .2s ease;
+  }
+  .demo-tab.active{background:var(--night-card);color:white;}
+  .demo-body{padding:30px 26px 28px;min-height:220px;}
+  .demo-q{font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:16px;font-weight:600;letter-spacing:.02em;}
+  .demo-answer{font-size:16.5px;line-height:1.7;color:rgba(255,255,255,0.92);display:none;}
+  .demo-answer.active{display:block;animation:fadeIn .4s ease;}
+  .demo-answer.patricia{font-family:'Lora',serif;font-style:italic;color:#DCF3F8;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .demo-caption{text-align:center;margin-top:22px;font-size:13.5px;color:var(--ink-soft);}
+
+  /* ---------- FEATURES ---------- */
+  .feat-grid{display:grid;grid-template-columns:1fr;gap:20px;}
+  @media(min-width:680px){.feat-grid{grid-template-columns:1fr 1fr;}}
+  @media(min-width:1020px){.feat-grid{grid-template-columns:1fr 1fr 1fr;}}
+  .feat-card{
+    background:var(--white);border-radius:var(--radius-lg);padding:28px 24px;
+    border:1px solid var(--line);transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .feat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-card);}
+  .feat-icon{
+    width:44px;height:44px;border-radius:12px;background:var(--cream);
+    display:flex;align-items:center;justify-content:center;margin-bottom:18px;
+  }
+  .feat-icon svg{width:22px;height:22px;stroke:var(--deep-blue-ink);fill:none;stroke-width:1.7;}
+  .feat-title{font-size:16.5px;font-weight:700;color:var(--ink);margin-bottom:8px;}
+  .feat-desc{font-size:14.5px;line-height:1.6;color:var(--ink-soft);}
+
+  /* ---------- TRUST (dark) ---------- */
+  .trust{background:var(--night);color:white;border-radius:32px;margin:0 20px;}
+  @media(min-width:720px){.trust{margin:0 40px;}}
+  .trust-inner{padding:88px 28px;max-width:760px;margin:0 auto;text-align:center;}
+  .trust .kicker{color:#6FD4E8;}
+  .trust h2{color:white;}
+  .trust-lede{font-size:17.5px;line-height:1.7;color:rgba(255,255,255,0.72);margin-bottom:36px;}
+  .trust-line{
+    font-family:'Lora',serif;font-style:italic;font-size:22px;line-height:1.6;
+    color:#EAF7FA;max-width:600px;margin:0 auto;
+  }
+  .trust-badges{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:40px;}
+  .trust-badge{
+    padding:9px 18px;border-radius:100px;border:1px solid rgba(255,255,255,0.2);
+    font-size:13px;font-weight:500;color:rgba(255,255,255,0.75);
+  }
+
+  /* ---------- GRADUATION ---------- */
+  .grad{padding:100px 0;}
+  .grad-inner{max-width:680px;margin:0 auto;text-align:center;}
+  .grad-quote{
+    font-family:'Lora',serif;font-style:italic;font-size:clamp(22px,3vw,30px);
+    line-height:1.55;color:var(--deep-blue-ink);margin-bottom:26px;
+  }
+  .grad-sub{font-size:15.5px;color:var(--ink-soft);line-height:1.7;max-width:480px;margin:0 auto;}
+
+  /* ---------- MOMENTS ---------- */
+  .moments-grid{display:grid;grid-template-columns:1fr;gap:18px;}
+  @media(min-width:760px){.moments-grid{grid-template-columns:repeat(2,1fr);}}
+  .moment-card{
+    background:var(--paper);border-radius:var(--radius);padding:26px 24px;
+    border-left:3px solid var(--terracotta);
+  }
+  .moment-time{font-size:12px;font-weight:700;color:var(--terracotta);letter-spacing:.04em;margin-bottom:10px;text-transform:uppercase;}
+  .moment-text{font-family:'Lora',serif;font-style:italic;font-size:16px;line-height:1.6;color:#403a30;}
+
+  /* ---------- FINAL CTA ---------- */
+  .final{padding:100px 0 60px;text-align:center;}
+  .final-note{
+    max-width:420px;margin:0 auto 40px;background:var(--paper);
+    border-left:4px solid var(--terracotta);border-radius:4px 18px 18px 18px;
+    padding:26px 26px 22px;box-shadow:var(--shadow-soft);
+  }
+  .final-note p{font-family:'Lora',serif;font-style:italic;font-size:17px;line-height:1.55;color:#3a352d;margin:0 0 12px;}
+  .final-note .note-sig{color:var(--deep-blue-ink);}
+  .store-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:8px;}
+  .store-btn{
+    display:flex;align-items:center;gap:10px;background:var(--night);color:white;
+    padding:12px 22px;border-radius:12px;font-size:14px;transition:transform .18s ease;
+  }
+  .store-btn:hover{transform:translateY(-2px);}
+  .store-btn svg{width:22px;height:22px;fill:white;}
+  .store-btn .store-label{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;}
+  .store-label small{font-size:10px;opacity:.7;}
+  .store-label span{font-size:14.5px;font-weight:600;}
+
+  /* ---------- FOOTER ---------- */
+  footer{padding:50px 0 40px;border-top:1px solid var(--line);}
+  .footer-inner{display:flex;flex-direction:column;gap:24px;align-items:center;text-align:center;}
+  @media(min-width:720px){.footer-inner{flex-direction:row;justify-content:space-between;text-align:left;}}
+  .footer-links{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;}
+  .footer-links a{font-size:13.5px;color:var(--ink-soft);}
+  .footer-links a:hover{color:var(--deep-blue-ink);}
+  .footer-fine{font-size:12.5px;color:var(--ink-soft);opacity:.7;max-width:560px;margin-top:6px;}
+
+  ::selection{background:var(--blue);color:white;}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="brand"><span class="brand-mark">P</span>nianza</div>
+    <nav class="nav-links">
+      <a href="#patricia">Patricia</a>
+      <a href="#demo">Hear her</a>
+      <a href="#features">What she does</a>
+      <a href="#trust">How we're different</a>
+    </nav>
+    <a href="#final" class="btn btn-primary nav-cta">Download the app</a>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow" id="eyebrow">Good afternoon</div>
+      <h1>The parenthood companion built around <em>one voice.</em></h1>
+      <p class="hero-sub">A refuge for new parents. In the mix of long nights and new-parent worry, you have questions — Patricia has answers. The sage grandmother who has seen it all, judges none of it, and is always the same person when you need her.</p>
+      <div class="hero-ctas">
+        <a href="#final" class="btn btn-primary">Download the app</a>
+        <a href="#demo" class="btn btn-ghost">Hear how she talks</a>
+      </div>
+      <div class="hero-note-tiny">Free to try · No credit card judgement, ever</div>
+    </div>
+    <div>
+      <div class="note-card">
+        <div class="note-p-mark">P</div>
+        <div class="note-text voice" id="hero-note">Loading...</div>
+        <div class="note-foot">
+          <span class="note-sig">Patricia's note, today</span>
+          <div class="note-play" aria-label="play">
+            <svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="hero-note-caption">This note changes with the time of day — the same way it does in the app.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THE NAME ============ -->
+<section style="padding:54px 0;">
+  <div class="wrap-narrow" style="text-align:center;">
+    <p style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--terracotta);margin:0 0 14px;">Why "Nianza"</p>
+    <p style="font-family:'Lora',serif;font-size:clamp(20px,2.6vw,26px);line-height:1.55;color:var(--deep-blue-ink);margin:0 0 14px;">From <em>crianza</em> — the Spanish word for the raising of a child.</p>
+    <p style="font-size:15.5px;line-height:1.7;color:var(--ink-soft);max-width:560px;margin:0 auto;">Parenthood doesn't come with a manual. We built the closest thing to one — and made sure it feels like a person, not a product. Patricia speaks English and Spanish, each in her own voice, never a translation.</p>
+  </div>
+</section>
+
+<!-- ============ THE PROBLEM / COMPARISON ============ -->
+<section>
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">The problem with the other apps</div>
+      <h2>Most apps hand you either a task list or a dashboard.</h2>
+      <p class="section-lede">Neither one is what you actually need at 2am. You don't need another thing to complete or another chart to interpret. You need someone who's done this before to talk to.</p>
+    </div>
+    <div class="compare-grid reveal">
+      <div class="compare-card">
+        <div class="compare-label">The activity app</div>
+        <div class="compare-title">Gives you a checklist</div>
+        <div class="compare-desc">Today's tasks, today's activities, a progress bar. Useful for the first year. Runs thin the moment your child gets more interesting than a checklist can capture.</div>
+      </div>
+      <div class="compare-card">
+        <div class="compare-label">The tracking app</div>
+        <div class="compare-title">Gives you a dashboard</div>
+        <div class="compare-desc">Every feed, every nap, every ounce — logged, charted, predicted. It tells you what your data means. It never once asks how you're doing.</div>
+      </div>
+      <div class="compare-card is-nianza">
+        <div class="compare-label">Nianza</div>
+        <div class="compare-title">Gives you Patricia</div>
+        <div class="compare-desc">Somewhere to log what matters, yes — but built around a person you talk to, who remembers your child, and who never once makes you feel behind.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MEET PATRICIA ============ -->
+<section id="patricia">
+  <div class="meet reveal">
+    <div class="meet-inner">
+      <div class="meet-grid">
+        <div class="meet-visual"><span class="meet-p">P</span></div>
+        <div class="meet-copy">
+          <div class="kicker">Who she is</div>
+          <h2>She's not an assistant. She's a grandmother.</h2>
+          <p>Patricia has sat with new mothers at 3am, and with fathers who didn't know what they were doing, and with parents who were certain they were getting it all wrong. She has seen enough to know that most of what terrifies new parents is completely normal.</p>
+          <p>She doesn't cite studies. She doesn't say <strong>"research indicates."</strong> She speaks the way someone speaks after decades of actually being there — plain, warm, a little dry sometimes, never performed.</p>
+          <p>And the rare thing that really does need a doctor's attention? She'll tell you clearly, once, without turning your evening into a crisis.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HEAR THE DIFFERENCE ============ -->
+<section id="demo">
+  <div class="wrap-narrow">
+    <div class="section-head reveal">
+      <div class="kicker">Hear the difference</div>
+      <h2>Same 3am worry. Two different apps.</h2>
+      <p class="section-lede">Your baby has been fighting sleep for a week and you're wondering if something's wrong. Here's how two different kinds of apps answer that.</p>
+    </div>
+  </div>
+  <div class="demo-shell reveal">
+    <div class="demo-tabs">
+      <button class="demo-tab active" data-tab="typical">A typical app</button>
+      <button class="demo-tab" data-tab="patricia">Patricia</button>
+    </div>
+    <div class="demo-body">
+      <div class="demo-q">You typed: "she's been fighting sleep for a week, is something wrong?"</div>
+      <div class="demo-answer active" data-answer="typical">Great question! Sleep regressions are very common at this developmental stage. Research indicates that approximately 60% of infants experience disruptions due to neurological development. Here are some evidence-based strategies you can implement: 1) Establish a consistent bedtime routine, 2) Consider adjusting nap timing, 3) Review our sleep guide for age-appropriate wake windows.</div>
+      <div class="demo-answer patricia" data-answer="patricia">Most babies go through a stretch around now where they fight sleep like it's the enemy. It doesn't mean you're doing something wrong. It means her brain is working faster than her body can handle, and the only way she knows to say so is to cry about it.<br><br>It gets better. Usually faster than it feels like it will.</div>
+    </div>
+  </div>
+  <div class="demo-caption">Real tone, real rules: no exclamation points, no citations, no pretending to be a doctor.</div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section id="features">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">What she actually does</div>
+      <h2>A few things Patricia does every day</h2>
+      <p class="section-lede">Not a feature list. A handful of things that make the early years feel a little less like you're doing it alone.</p>
+    </div>
+    <div class="feat-grid reveal">
+
+      <div class="feat-card">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M4 4v16l4-3h12V4z"/><path d="M8 9h8M8 13h5"/></svg></div>
+        <div class="feat-title">A daily note, in her voice</div>
+        <div class="feat-desc">Every day, a short note from Patricia — written for your child's exact age, and read aloud in her voice if you'd rather listen than read. Less scrolling, more company.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg></div>
+        <div class="feat-title">Milestones as celebration</div>
+        <div class="feat-desc">First smile, first steps, first word — marked as moments worth remembering, never as a scoreboard you can fall behind on.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="5"/></svg></div>
+        <div class="feat-title">Vaccines without the alarm</div>
+        <div class="feat-desc">The standard schedule, plainly shown. No red banners, no "overdue" language, no shame. Just what's next, and what's already done.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 8-8"/><path d="M3 21h18"/></svg></div>
+        <div class="feat-title">Growth, as a place on a map</div>
+        <div class="feat-desc">Percentiles shown the way your pediatrician actually reads them — a position, not a grade. Half of all healthy children sit below the 50th.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 20s-8-4.5-8-10.5A4.5 4.5 0 0112 5.5 4.5 4.5 0 0120 9.5C20 15.5 12 20 12 20z"/></svg></div>
+        <div class="feat-title">A record you'll want later</div>
+        <div class="feat-desc">Record your own voice, and your child's. On graduation day, Patricia gives every one of them back to you — the newborn weeks, the first birthday, all of it.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></div>
+        <div class="feat-title">Ready before the visit</div>
+        <div class="feat-desc">A calm, one-page prep before every doctor's appointment — your questions on page one, the record behind them, nothing you'll forget in the parking lot.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRUST / ZERO INTERPRETATION ============ -->
+<section id="trust">
+  <div class="trust reveal">
+    <div class="trust-inner">
+      <div class="kicker">How we're different, plainly stated</div>
+      <h2>We will never tell you what a number means.</h2>
+      <p class="trust-lede">Nianza will help you record a temperature, a weight, a symptom. It will never tell you what that number means for your child. That's not caution dressed up as a feature — it's the whole point.</p>
+      <p class="trust-line voice">"That's not mine to decide. That's your doctor's job. I'm here for everything in between."</p>
+      <div class="trust-badges">
+        <span class="trust-badge">No diagnosis, ever</span>
+        <span class="trust-badge">No dosing advice, ever</span>
+        <span class="trust-badge">No outbreak alerts, ever</span>
+        <span class="trust-badge">No scores. No streaks.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GRADUATION ============ -->
+<section class="grad">
+  <div class="wrap grad-inner reveal">
+    <div class="kicker">The part most apps won't tell you</div>
+    <p class="grad-quote voice">"This season has an end. Somewhere around five, my work here is finished — and I'd rather tell you that now than pretend otherwise."</p>
+    <p class="grad-sub">Nianza isn't built to keep you forever. It's built to be exactly what these first years need, and then to say goodbye well — handing back everything you recorded along the way.</p>
+  </div>
+</section>
+
+<!-- ============ MOMENTS ============ -->
+<section>
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="kicker">What it's actually like</div>
+      <h2>A few ordinary moments</h2>
+    </div>
+    <div class="moments-grid reveal">
+      <div class="moment-card">
+        <div class="moment-time">2:14 AM · First cold</div>
+        <div class="moment-text voice">"Third question tonight. She answers the same as the first time — no sigh, no 'as I mentioned earlier.' Just Patricia, again."</div>
+      </div>
+      <div class="moment-card">
+        <div class="moment-time">4-month checkup, waiting room</div>
+        <div class="moment-text voice">"Every question I wanted to ask was already on the page. I hadn't written a single one down myself."</div>
+      </div>
+      <div class="moment-card">
+        <div class="moment-time">The day she rolled over</div>
+        <div class="moment-text voice">"I told Patricia before I told my own mother. She already knew it mattered."</div>
+      </div>
+      <div class="moment-card">
+        <div class="moment-time">Somewhere around year five</div>
+        <div class="moment-text voice">"She gave me back my own voice from the newborn weeks. I'd forgotten I ever sounded that tired."</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section id="final" class="final">
+  <div class="wrap">
+    <div class="final-note reveal">
+      <p>"You don't have to have this figured out before you download an app. Come as you are — half-awake is fine. I'll be here."</p>
+      <div class="note-sig">— Patricia</div>
+    </div>
+    <h2>Nianza is free to try. No pressure, ever.</h2>
+    <div class="store-row reveal">
+      <a href="#" class="store-btn">
+        <svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 00-5 5c0 2 1 3.3 2 4.3-3 .5-5 3-5 6.2C4 21 7 22 12 22s8-1 8-4.5c0-3.2-2-5.7-5-6.2 1-1 2-2.3 2-4.3a5 5 0 00-5-5z"/></svg>
+        <span class="store-label"><small>Download on the</small><span>App Store</span></span>
+      </a>
+      <a href="#" class="store-btn">
+        <svg viewBox="0 0 24 24"><path d="M4 3l16 9-16 9V3z"/></svg>
+        <span class="store-label"><small>Get it on</small><span>Google Play</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-inner">
+    <div class="brand"><span class="brand-mark">P</span>nianza</div>
+    <div class="footer-links">
+      <a href="features.html">Features</a>
+      <a href="support.html">Support</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="footer-fine">Nianza provides parent-recorded information and companionship. It is not a medical device and does not diagnose, treat, or offer clinical guidance. For any medical concern, always consult your child's doctor.</p>
+    <p class="footer-fine">Nianza is a product of <a href="https://mobiventa.com" style="color:var(--deep-blue-ink);">mobiventa llc</a> · © <span id="yr"></span> mobiventa</p>
+  </div>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</footer>
+
+<script>
+  // ---- Time-of-day-aware hero note (mirrors the real app's behavior) ----
+  const notes = {
+    morning: {
+      eyebrow: "Good morning",
+      text: "Mornings with a small one rarely start the way you planned. That's alright. You're both still figuring out the same thing, together."
+    },
+    afternoon: {
+      eyebrow: "Good afternoon",
+      text: "Most babies go through a stretch around now where they fight sleep like it's the enemy. It doesn't mean you're doing something wrong."
+    },
+    witching: {
+      eyebrow: "The evening stretch",
+      text: "If it's loud in your house right now, you're not doing anything wrong. This hour asks more of both of you than any other. It passes."
+    },
+    night: {
+      eyebrow: "Still up",
+      text: "Long night? They happen. You don't need to have anything figured out right now — just get through this feeding, and the next one."
+    }
+  };
+  function getSlot(){
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) return 'morning';
+    if (h >= 12 && h < 16) return 'afternoon';
+    if (h >= 16 && h < 19) return 'witching';
+    return 'night';
+  }
+  const slot = notes[getSlot()];
+  document.getElementById('eyebrow').textContent = slot.eyebrow;
+  document.getElementById('hero-note').textContent = slot.text;
+
+  // ---- Hear the difference toggle ----
+  document.querySelectorAll('.demo-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.demo-tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.demo-answer').forEach(a=>a.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelector(`.demo-answer[data-answer="${tab.dataset.tab}"]`).classList.add('active');
+    });
+  });
+
+  // ---- Scroll reveal ----
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+
+</body>
+</html>

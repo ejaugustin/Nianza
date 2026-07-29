@@ -41,9 +41,14 @@ function allScheduledDoses() {
       vaccineId: series.vaccineId,
       name: series.name,
       fullName: series.fullName,
+      description: series.description || null,
       dosePosition: `${dose.doseNum} of ${series.doses.length}`
     }))
   );
+}
+
+function descriptionFor(vaccineId) {
+  return vaccineLibrary.series.find((series) => series.vaccineId === vaccineId)?.description || null;
 }
 
 function informationalRows() {
@@ -85,6 +90,7 @@ function currentFluDose(now = new Date()) {
     windowEndMonths: 72,
     displayGroup: "Every year",
     note: "One dose each season starting at 6 months; two doses the first season for some children - your doctor will say",
+    description: descriptionFor("FLU"),
     seasonal: true,
     seasonYear,
     seasonStart,
@@ -122,6 +128,7 @@ function serializeDose(dose, status, record) {
     windowStartMonths: dose.windowStartMonths,
     windowEndMonths: dose.windowEndMonths,
     note: dose.note || null,
+    description: dose.description || null,
     status,
     givenOn: record?.givenOn || null,
     backfilled: Boolean(record?.backfilled),
@@ -166,7 +173,10 @@ function buildVaccineProgress({ child, records = [], now = new Date() }) {
     dueCount: trackedDueCount,
     shouldOfferBackfill,
     groups,
-    informationalRows: informationalRows()
+    informationalRows: informationalRows(),
+    safetyNote: vaccineLibrary.safetyNote
+      ? { title: vaccineLibrary.safetyNote.title || null, text: vaccineLibrary.safetyNote.text }
+      : null
   };
 }
 

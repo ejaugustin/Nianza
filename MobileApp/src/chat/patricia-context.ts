@@ -8,7 +8,8 @@ export type PatriciaContextEvent =
   | "sick-encounter-active"
   | "vaccines"
   | "reports"
-  | "weekly-letter";
+  | "weekly-letter"
+  | "generational-shift";
 
 export type LocalTimeLabel = "morning" | "afternoon" | "witching-hour" | "night";
 
@@ -25,7 +26,7 @@ export type BackendContextSeed = {
   occurredAt: string;
 };
 
-type BackendContextSeedEvent = "milestone-checked" | "watch-for-noticed" | "sick-encounter-active" | "visit-upcoming" | "capsule-invite" | "custom-first";
+type BackendContextSeedEvent = "milestone-checked" | "watch-for-noticed" | "sick-encounter-active" | "visit-upcoming" | "capsule-invite" | "custom-first" | "generational-shift";
 
 export type ChatContextSeed = {
   source: string;
@@ -104,6 +105,7 @@ function backendSourceScreen(seed: ChatContextSeed): BackendContextSeed["sourceS
   if (seed.eventType === "milestone-checked") return "D2";
   if (seed.eventType === "sick-encounter-active") return "F2";
   if (seed.eventType === "visit-upcoming") return "C1-visit";
+  if (seed.eventType === "generational-shift") return "D1";
   return null;
 }
 
@@ -112,6 +114,7 @@ function backendEventType(seed: ChatContextSeed): BackendContextSeedEvent | null
   if (seed.eventType === "milestone-checked") return "milestone-checked";
   if (seed.eventType === "sick-encounter-active") return "sick-encounter-active";
   if (seed.eventType === "visit-upcoming") return "visit-upcoming";
+  if (seed.eventType === "generational-shift") return "generational-shift";
   return null;
 }
 
@@ -163,6 +166,12 @@ export function patriciaOpening(seed: ChatContextSeed) {
     return `I have this week's letter open with you. ${seed.title ? `It's about ${seed.title.toLowerCase()}. ` : ""}What part do you want to sit with for a minute?`;
   }
 
+  if (seed.eventType === "generational-shift") {
+    // N4 (Village Translator): Patricia coaches the CONVERSATION with the
+    // relative, not just states the fact the parent already read on-screen.
+    return `${seed.detail ? `${seed.detail} ` : ""}I know -- it's not always what your own parents did. Want help finding the words for how to bring it up with them, without it turning into a whole thing?`;
+  }
+
   if (seed.eventType === "home-note" || (seed.eventType === "home" && seed.detail)) {
     return `I saw the note you were reading about ${childName}. What part do you want to talk through?`;
   }
@@ -195,6 +204,10 @@ export function mockTranscriptFromSeed(seed: ChatContextSeed) {
 
   if (seed.eventType === "home-note") {
     return `I want to talk about Patricia's note for ${childName} today.`;
+  }
+
+  if (seed.eventType === "generational-shift") {
+    return `I need help talking to my family about how things are different now with ${childName}.`;
   }
 
   return `I want to talk through something I noticed with ${childName} today.`;

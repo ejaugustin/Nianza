@@ -22,7 +22,7 @@ function BackButton() {
       accessibilityRole="button"
       accessibilityLabel="Back to Vitals"
       onPress={() => (router.canGoBack() ? router.back() : router.replace("/vitals"))}
-      style={{ minWidth: 44, minHeight: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" }}
+      style={{ minWidth: 44, minHeight: 44, borderRadius: 22, alignItems: "flex-start", justifyContent: "center" }}
     >
       <SfIcon name="chevron.left" color={theme.colors.text} size={24} />
     </Pressable>
@@ -52,13 +52,14 @@ function GrowthEntryRow({ entry }: { entry: VitalsEntry }) {
 }
 
 export default function GrowthScreen() {
-  const { profile } = useAuth();
+  const { profile, activeChildId } = useAuth();
   const insets = useSafeAreaInsets();
   const childName = profile?.childName || "your child";
   const [activeKind, setActiveKind] = useState<GrowthKind>("weight");
   const vitalsQuery = useQuery({
-    queryKey: ["vitals", "primary-child"],
-    queryFn: () => listVitals("primary-child"),
+    queryKey: ["vitals", activeChildId],
+    queryFn: () => listVitals(activeChildId || undefined),
+    enabled: Boolean(activeChildId),
     retry: 1
   });
 

@@ -1,12 +1,14 @@
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus, useAudioRecorder, useAudioRecorderState } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Keyboard, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { sendChatMessage } from "@/api/chat";
 import { transcribeVoiceNote } from "@/api/voice";
-import { configurePatriciaPlayback, fetchPatriciaSpeechAudio, pausePatriciaPlayer } from "@/audio/patricia-voice";
+import { configurePatriciaPlayback, fetchPatriciaSpeechChunkAudio, pausePatriciaPlayer, splitIntoSpeechChunks } from "@/audio/patricia-voice";
 import { RequireAuth, useAuth } from "@/auth/auth-context";
 import { ambientContextFromSeed, backendContextSeedFromSeed, mockTranscriptFromSeed, one, patriciaOpening, seedFromParams } from "@/chat/patricia-context";
 import { saveLastPatriciaMemory } from "@/chat/patricia-memory";
@@ -18,7 +20,7 @@ type ChatMessage = {
   id: string;
   sender: "patricia" | "parent";
   text: string;
-  audioUri?: string;
+  imageUri?: string;
   audioLoading?: boolean;
 };
 
@@ -72,11 +74,12 @@ function vaccineReply(childName: string) {
   return `For ${childName}, it is reasonable to want plain words. Ask the pediatrician what the vaccine protects against, what reactions are normal that day, and what would make them want a call. I can help you turn your questions into a short list before the visit.`;
 }
 
-function makeMessage(sender: ChatMessage["sender"], text: string): ChatMessage {
+function makeMessage(sender: ChatMessage["sender"], text: string, imageUri?: string): ChatMessage {
   return {
     id: `${sender}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     sender,
-    text: sender === "patricia" ? normalizePatriciaDisplayText(text) : text
+    text: sender === "patricia" ? normalizePatriciaDisplayText(text) : text,
+    imageUri
   };
 }
 
@@ -95,7 +98,7 @@ function contentTypeFromUri(uri?: string | null) {
 
 export default function ChatScreen() {
   const params = useLocalSearchParams();
-  const { profile } = useAuth();
+  const { profile, activeChildId } = useAuth();
   const insets = useSafeAreaInsets();
   const parentFirstName = profile?.parentFirstName || profile?.parentName?.split(" ")[0];
   const seed = useMemo(
@@ -111,7 +114,6 @@ export default function ChatScreen() {
   const patriciaPlayer = useAudioPlayer();
   const patriciaPlayerStatus = useAudioPlayerStatus(patriciaPlayer);
   const [draft, setDraft] = useState("");
-  const [mode, setMode] = useState<"idle" | "camera">("idle");
   const [voiceMode, setVoiceMode] = useState<"idle" | "recording" | "paused" | "transcribing">("idle");
   const opening = useMemo(() => patriciaOpening(seed), [seed]);
   const [messages, setMessages] = useState<ChatMessage[]>(() => [makeMessage("patricia", opening)]);
@@ -122,10 +124,22 @@ export default function ChatScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const autoPlayedMessageIds = useRef<Set<string>>(new Set());
   const seedKeyRef = useRef(seedKey);
+  // Chunk audio-file promises per message, keyed by message id, so a manual
+  // "Replay" tap reuses whatever was already synthesized rather than
+  // re-fetching from Deepgram.
+  const chunkCacheRef = useRef<Map<string, Promise<string>[]>>(new Map());
+  // The queue currently driving playback -- lets the "chunk finished" effect
+  // below know whether to advance to the next chunk of the same reply.
+  const activeQueueRef = useRef<{ messageId: string; chunkPromises: Promise<string>[]; nextIndex: number } | null>(null);
+  // Guards against a chunk transition being kicked off twice in a row (see
+  // advanceChunkQueue) so playback never silently stalls partway through a
+  // multi-chunk reply.
+  const isAdvancingChunkRef = useRef(false);
   const isVoiceActive = voiceMode !== "idle";
   const composerBottom = Math.max(insets.bottom, 12) + 10 + keyboardHeight;
 
   function stopPatriciaPlayback() {
+    activeQueueRef.current = null;
     pausePatriciaPlayer(patriciaPlayer);
     setSpeakingMessageId(null);
   }
@@ -139,33 +153,72 @@ export default function ChatScreen() {
     seedKeyRef.current = seedKey;
     stopPatriciaPlayback();
     autoPlayedMessageIds.current.clear();
+    chunkCacheRef.current.clear();
     setMessages([makeMessage("patricia", opening)]);
   }, [seedKey, opening]);
 
   async function playAudioUri(uri: string, messageId: string) {
     await configurePatriciaPlayback();
     patriciaPlayer.replace({ uri });
-    patriciaPlayer.seekTo(0);
+    await patriciaPlayer.seekTo(0);
     patriciaPlayer.play();
     setSpeakingMessageId(messageId);
+  }
+
+  // Splits a reply into short, sentence-bounded pieces and kicks off a TTS
+  // fetch for each one in parallel, caching the promises per message so
+  // replay/auto-advance never re-synthesizes the same chunk twice.
+  function getOrCreateChunkPromises(messageId: string, text: string) {
+    let cached = chunkCacheRef.current.get(messageId);
+    if (!cached) {
+      const chunks = splitIntoSpeechChunks(text);
+      cached = chunks.map((chunkText, index) => fetchPatriciaSpeechChunkAudio(chunkText, `chat-${messageId}-${index}`));
+      chunkCacheRef.current.set(messageId, cached);
+    }
+    return cached;
+  }
+
+  // Plays the next not-yet-played chunk in the active queue, then relies on
+  // the playback-status effect below to call this again once that chunk
+  // finishes -- so a long reply plays as a continuous stream of short clips
+  // instead of one long wait for a single giant audio file.
+  async function advanceChunkQueue() {
+    if (isAdvancingChunkRef.current) return;
+    const queue = activeQueueRef.current;
+    if (!queue) return;
+    if (queue.nextIndex >= queue.chunkPromises.length) {
+      activeQueueRef.current = null;
+      setSpeakingMessageId(null);
+      return;
+    }
+    isAdvancingChunkRef.current = true;
+    const index = queue.nextIndex;
+    queue.nextIndex += 1;
+    let shouldRetry = false;
+    try {
+      const uri = await queue.chunkPromises[index];
+      if (activeQueueRef.current !== queue) return; // superseded by a newer play/replay
+      await playAudioUri(uri, queue.messageId);
+    } catch {
+      shouldRetry = activeQueueRef.current === queue;
+    } finally {
+      isAdvancingChunkRef.current = false;
+    }
+    if (shouldRetry) advanceChunkQueue();
+  }
+
+  async function playChunkQueue(messageId: string, chunkPromises: Promise<string>[]) {
+    activeQueueRef.current = { messageId, chunkPromises, nextIndex: 0 };
+    await advanceChunkQueue();
   }
 
   async function speakPatriciaMessage(message: ChatMessage) {
     if (message.sender !== "patricia" || message.audioLoading) return;
     setNotice(null);
-
-    if (message.audioUri) {
-      await playAudioUri(message.audioUri, message.id);
-      return;
-    }
-
-    setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioLoading: true } : item)));
     try {
-      const audioUri = await fetchPatriciaSpeechAudio(message.text, `chat-${message.id}`);
-      setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioUri, audioLoading: false } : item)));
-      await playAudioUri(audioUri, message.id);
+      const chunkPromises = getOrCreateChunkPromises(message.id, message.text);
+      await playChunkQueue(message.id, chunkPromises);
     } catch {
-      setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioLoading: false } : item)));
       setNotice("Patricia could not play audio just now. You can tap replay to try again.");
     }
   }
@@ -211,16 +264,20 @@ export default function ChatScreen() {
   }, [insets.bottom]);
 
   useEffect(() => {
-    if (speakingMessageId && !patriciaPlayerStatus.playing && patriciaPlayerStatus.currentTime > 0) {
-      setSpeakingMessageId(null);
+    // expo-audio's status carries a real "just finished" edge signal --
+    // far more reliable than inferring completion from `!playing &&
+    // currentTime > 0`, which can misfire during the brief window a new
+    // chunk's source is still loading and silently stall a multi-chunk reply.
+    if (patriciaPlayerStatus.didJustFinish && activeQueueRef.current?.messageId === speakingMessageId) {
+      advanceChunkQueue();
     }
-  }, [patriciaPlayerStatus.currentTime, patriciaPlayerStatus.playing, speakingMessageId]);
+  }, [patriciaPlayerStatus.didJustFinish, speakingMessageId]);
 
   async function getPatriciaReply(parentMessage: string) {
     const response = await sendChatMessage({
       sessionId,
       message: parentMessage,
-      childId: seed.childId || "primary-child",
+      childId: seed.childId || activeChildId || "primary-child",
       language: profile?.language || "en",
       ambientContext: ambientContextFromSeed(seed),
       contextSeed: backendContextSeedFromSeed(seed)
@@ -241,26 +298,40 @@ export default function ChatScreen() {
 
   async function appendPatriciaReply(reply: string) {
     const message = makeMessage("patricia", reply);
-    const audioPromise = fetchPatriciaSpeechAudio(message.text, `chat-${message.id}`);
+    // Kick off TTS for every chunk in parallel immediately. Only the first
+    // chunk -- usually one short sentence -- gates how soon voice can start,
+    // instead of the whole reply having to finish synthesizing first.
+    const chunkPromises = getOrCreateChunkPromises(message.id, message.text);
+    const firstChunkReady = chunkPromises[0];
 
-    const prepared = await Promise.race([
-      audioPromise.then((audioUri) => ({ audioUri })),
-      wait(1800).then(() => null)
-    ]);
+    // Race a short window so that on the common case (fast first chunk), text
+    // and voice land on screen in the same render instead of text appearing
+    // first and audio trickling in seconds later. "Patricia is thinking..."
+    // stays up for this whole race, so there is never a gap where nothing is
+    // visible.
+    const prepared = firstChunkReady
+      ? await Promise.race([firstChunkReady.then(() => true), wait(1800).then(() => false)])
+      : true;
 
-    if (prepared?.audioUri) {
+    if (prepared) {
       autoPlayedMessageIds.current.add(message.id);
-      setMessages((current) => [...current, { ...message, audioUri: prepared.audioUri }]);
-      await playAudioUri(prepared.audioUri, message.id);
+      // Clear "thinking" and reveal the message + voice together in one update.
+      setPatriciaThinking(false);
+      setMessages((current) => [...current, message]);
+      await playChunkQueue(message.id, chunkPromises);
       return;
     }
 
+    // First chunk is taking longer than the window — reveal text now (still
+    // exactly when "thinking" clears, so there's no blank gap) and let voice
+    // catch up as soon as it's ready.
+    setPatriciaThinking(false);
     setMessages((current) => [...current, { ...message, audioLoading: true }]);
-    audioPromise
-      .then(async (audioUri) => {
-        setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioUri, audioLoading: false } : item)));
+    firstChunkReady
+      .then(async () => {
+        setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioLoading: false } : item)));
         autoPlayedMessageIds.current.add(message.id);
-        await playAudioUri(audioUri, message.id);
+        await playChunkQueue(message.id, chunkPromises);
       })
       .catch(() => {
         setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, audioLoading: false } : item)));
@@ -276,11 +347,43 @@ export default function ChatScreen() {
     setPatriciaThinking(true);
     try {
       const reply = await getPatriciaReply(message);
-      setPatriciaThinking(false);
+      // Do not clear "thinking" here — appendPatriciaReply clears it at the exact
+      // moment the reply (text + voice, or text with voice catching up) is ready
+      // to show, so the indicator never disappears before there's something to see.
       await appendPatriciaReply(reply);
     } catch {
-      setPatriciaThinking(false);
       await appendPatriciaReply("I hear you. Start with the part that feels heaviest, and we can make it smaller together.");
+    }
+  }
+
+  async function attachPhoto() {
+    setNotice(null);
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setNotice("Photo access is needed to share a picture with Patricia.");
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        quality: 0.8
+      });
+      if (result.canceled || !result.assets[0]?.uri) return;
+
+      const uri = result.assets[0].uri;
+      setMessages((current) => [...current, makeMessage("parent", "Shared a photo", uri)]);
+      setPatriciaThinking(true);
+      try {
+        const reply = await getPatriciaReply("I just shared a photo with you.");
+        await appendPatriciaReply(reply);
+      } catch {
+        await appendPatriciaReply(
+          `Thank you for showing me. I cannot see photos yet, but tell me what you want me to know about it, and I will help you think it through.`
+        );
+      }
+    } catch {
+      setNotice("I could not open photos just now. Try again in a moment.");
     }
   }
 
@@ -301,7 +404,6 @@ export default function ChatScreen() {
       await recorder.prepareToRecordAsync();
       recorder.record();
       setVoiceMode("recording");
-      setMode("idle");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Patricia could not start listening. Please try again.");
       setVoiceMode("idle");
@@ -375,10 +477,9 @@ export default function ChatScreen() {
       setPatriciaThinking(true);
       try {
         const reply = await getPatriciaReply(transcript);
-        setPatriciaThinking(false);
+        // appendPatriciaReply clears "thinking" once the reply is actually ready to show.
         await appendPatriciaReply(reply);
       } catch {
-        setPatriciaThinking(false);
         await appendPatriciaReply(patriciaReply());
       }
       setVoiceMode("idle");
@@ -420,7 +521,10 @@ export default function ChatScreen() {
                   <Text style={{ color: "white", fontSize: 13, fontWeight: "700" }}>P</Text>
                 </View>
               ) : null}
-              <View style={{ maxWidth: 248, borderRadius: 16, backgroundColor: fromParent ? theme.colors.bluePrimary : theme.colors.card, paddingHorizontal: 14, paddingVertical: 15, gap: fromParent ? 0 : 10 }}>
+              <View style={{ maxWidth: 248, borderRadius: 16, backgroundColor: fromParent ? theme.colors.bluePrimary : theme.colors.card, paddingHorizontal: 14, paddingVertical: 15, gap: message.imageUri ? 8 : fromParent ? 0 : 10 }}>
+                {message.imageUri ? (
+                  <Image source={{ uri: message.imageUri }} style={{ width: 200, height: 200, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.2)" }} contentFit="cover" />
+                ) : null}
                 <Text selectable style={{ color: fromParent ? "white" : theme.colors.text, fontSize: 14, lineHeight: 20 }}>{message.text}</Text>
                 {!fromParent ? (
                   <Pressable onPress={() => speakPatriciaMessage(message)} style={{ alignSelf: "flex-start", minHeight: 32, borderRadius: 16, flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 10, backgroundColor: isSpeaking ? theme.colors.blueLight : "white" }}>
@@ -446,11 +550,6 @@ export default function ChatScreen() {
               <Text selectable style={{ color: theme.colors.muted, fontSize: 14, lineHeight: 20, fontStyle: "italic" }}>Patricia is thinking...</Text>
             </View>
           </View>
-        ) : null}
-        {mode !== "idle" ? (
-          <Text selectable style={{ color: theme.colors.muted, fontSize: 12, textAlign: "center" }}>
-            Camera placeholder is ready for photo context.
-          </Text>
         ) : null}
       </ScrollView>
 
@@ -501,7 +600,7 @@ export default function ChatScreen() {
           </View>
         ) : (
           <View style={{ minHeight: 58, borderRadius: 29, backgroundColor: "white", borderWidth: 1, borderColor: theme.colors.border, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12 }}>
-            <Pressable onPress={() => setMode(mode === "camera" ? "idle" : "camera")} style={{ width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: mode === "camera" ? theme.colors.blueLight : "transparent" }}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Share a photo with Patricia" onPress={attachPhoto} style={{ width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" }}>
               <SfIcon name="camera" color={theme.colors.bluePrimary} size={22} />
             </Pressable>
             <TextInput

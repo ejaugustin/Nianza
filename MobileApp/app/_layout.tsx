@@ -1,42 +1,30 @@
-import { useEffect } from "react";
-import { Stack } from "expo-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import * as SplashScreen from "expo-splash-screen";
-import { AuthProvider } from "@/auth/auth-context";
-import { theme } from "@/theme/theme";
-import { CrashScreen } from "@/debug/CrashScreen";
+import { Text, View } from "react-native";
 
-const queryClient = new QueryClient();
-
-// Explicit splash-screen control (July 2026): TestFlight builds were
-// showing what looked like a persistent white/blank screen after a brief
-// "logo flash" -- app.json's splash background (#F7F9FA) is a near-white
-// off-white, easy to mistake for a blank crash. Nothing in this codebase
-// ever called SplashScreen.hideAsync(), relying entirely on
-// expo-splash-screen's implicit auto-hide behavior, which is not reliable
-// across every SDK/release-build combination. preventAutoHideAsync() here
-// takes explicit control, and the useEffect below guarantees hideAsync()
-// actually fires once the root layout has mounted, regardless of what the
-// implicit auto-hide would have done.
-SplashScreen.preventAutoHideAsync().catch(() => undefined);
-
+// BISECTION TEST BUILD -- do not skip testing this one before moving on.
+// Every fix so far (API URL, Cognito env vars, error boundary, loading
+// spinner, hard timeout, explicit splash-screen hide) has made zero visible
+// difference across three separate TestFlight builds, which is the real
+// signal here: none of those layers are even being reached. This build
+// strips the root layout to nothing but a plain, hardcoded View/Text -- no
+// providers, no navigation, no splash-screen calls, no auth, no network.
+//
+// If THIS build still shows white/blank: the bug is not in app code at
+// all. It's something lower -- native bundle failing to load, a linked
+// native module crashing on init before any JS runs, or a provisioning/
+// entitlement issue with this exact TestFlight build. That changes the
+// whole investigation (means: pull the crash log from App Store Connect ->
+// TestFlight -> Crashes, since native-level failures show up there even
+// without a Mac).
+//
+// If THIS build shows the text below: the bundle and Hermes runtime are
+// fine, and the bug is somewhere in the providers/routing we stripped out
+// -- add them back one at a time from here.
 export default function RootLayout() {
-  useEffect(() => {
-    SplashScreen.hideAsync().catch(() => undefined);
-  }, []);
-
   return (
-    <CrashScreen>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <StatusBar style="dark" />
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background } }} />
-          </AuthProvider>
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </CrashScreen>
+    <View style={{ flex: 1, backgroundColor: "#2244AA", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <Text style={{ fontSize: 22, fontWeight: "700", color: "#FFFFFF", textAlign: "center" }}>
+        BISECTION TEST{"\n"}If you see this blue screen, JS is running fine.
+      </Text>
+    </View>
   );
 }

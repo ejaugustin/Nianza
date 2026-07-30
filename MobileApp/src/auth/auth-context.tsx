@@ -352,12 +352,30 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
       }
     }
 
-    restore().catch(() => {
+    // Belt-and-suspenders against a stuck launch screen: restore() awaits a
+    // chain of SecureStore reads, a possible Cognito refresh, and a
+    // possible backend call, none of which currently have their own
+    // timeouts. A single one of those hanging (e.g. a stale Keychain
+    // session from an earlier build/dev session triggering a refresh call
+    // that never settles) would leave `status` at "loading" forever, and
+    // app/index.tsx has nothing else to fall back to. This race guarantees
+    // forward progress either way.
+    const fallbackTimer = setTimeout(() => {
+      if (!mounted) return;
       setAuthToken(null);
       setChildrenState([]);
       setActiveChildId(null);
-      setStatus("unauthenticated");
-    });
+      setStatus((current) => (current === "loading" ? "unauthenticated" : current));
+    }, 8000);
+
+    restore()
+      .catch(() => {
+        setAuthToken(null);
+        setChildrenState([]);
+        setActiveChildId(null);
+        setStatus("unauthenticated");
+      })
+      .finally(() => clearTimeout(fallbackTimer));
 
     return () => {
       mounted = false;

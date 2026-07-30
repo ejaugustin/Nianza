@@ -1,29 +1,43 @@
-import { Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, Text, View } from "react-native";
 
-// BISECTION TEST BUILD -- do not skip testing this one before moving on.
-// Every fix so far (API URL, Cognito env vars, error boundary, loading
-// spinner, hard timeout, explicit splash-screen hide) has made zero visible
-// difference across three separate TestFlight builds, which is the real
-// signal here: none of those layers are even being reached. This build
-// strips the root layout to nothing but a plain, hardcoded View/Text -- no
-// providers, no navigation, no splash-screen calls, no auth, no network.
-//
-// If THIS build still shows white/blank: the bug is not in app code at
-// all. It's something lower -- native bundle failing to load, a linked
-// native module crashing on init before any JS runs, or a provisioning/
-// entitlement issue with this exact TestFlight build. That changes the
-// whole investigation (means: pull the crash log from App Store Connect ->
-// TestFlight -> Crashes, since native-level failures show up there even
-// without a Mac).
-//
-// If THIS build shows the text below: the bundle and Hermes runtime are
-// fine, and the bug is somewhere in the providers/routing we stripped out
-// -- add them back one at a time from here.
+// BISECTION TEST BUILD, ROUND 2: the previous bare-screen build (no
+// providers, no routing logic) still showed white with New Arch on, and
+// crashed with New Arch off. The crash log's faulting thread is
+// "com.facebook.react.ExceptionsManagerQueue" -- React Native's own path
+// for escalating an uncaught JS exception to a native abort -- meaning JS
+// starts fine and something throws early, before this file's own code runs
+// any logic. Root cause: expo-router eagerly evaluates every file under
+// app/ (including (auth)/_layout.tsx and (tabs)/_layout.tsx and everything
+// they import) to build its route table, regardless of what THIS file
+// renders. This build installs a global JS error handler that captures and
+// displays the real error message via Alert instead of letting it abort
+// silently, so we can finally read what's actually throwing.
 export default function RootLayout() {
+  const [caught, setCaught] = useState<string | null>(null);
+
+  useEffect(() => {
+    // @ts-expect-error - ErrorUtils is a React Native global
+    const original = global.ErrorUtils?.getGlobalHandler?.();
+    // @ts-expect-error - see above
+    global.ErrorUtils?.setGlobalHandler?.((error: Error, isFatal?: boolean) => {
+      const message = `${error.name}: ${error.message}\n\n${error.stack}`;
+      setCaught(message);
+      Alert.alert("Caught JS error", message.slice(0, 500));
+      // Deliberately NOT calling original(error, isFatal) -- that's what
+      // triggers the native abort. Swallowing it here keeps the app alive
+      // long enough to read the message.
+    });
+    return () => {
+      // @ts-expect-error - see above
+      if (original) global.ErrorUtils?.setGlobalHandler?.(original);
+    };
+  }, []);
+
   return (
     <View style={{ flex: 1, backgroundColor: "#2244AA", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <Text style={{ fontSize: 22, fontWeight: "700", color: "#FFFFFF", textAlign: "center" }}>
-        BISECTION TEST{"\n"}If you see this blue screen, JS is running fine.
+      <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF", textAlign: "center" }}>
+        {caught ? caught : "BISECTION TEST ROUND 2\nWaiting for error (or none)..."}
       </Text>
     </View>
   );

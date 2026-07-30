@@ -7,7 +7,7 @@
     "userInterfaceStyle": "light",
     "scheme": "nianza",
     "icon": "./assets/brand/app-icon-1024.png",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/brand/splash-tagline.png",
       "resizeMode": "contain",
@@ -50,7 +50,8 @@
           "photosPermission": "Nianza uses your photo library when you choose to add a child photo or share a photo with Patricia.",
           "cameraPermission": "Nianza uses your camera when you choose to take a photo to add or share."
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "extra": {
       "apiUrl": "https://gr8d5s0yl9.execute-api.us-east-2.amazonaws.com/prod/mobile/v1",

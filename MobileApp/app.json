@@ -7,7 +7,7 @@
     "userInterfaceStyle": "light",
     "scheme": "nianza",
     "icon": "./assets/brand/app-icon-1024.png",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/brand/splash-tagline.png",
       "resizeMode": "contain",

@@ -1,42 +1,20 @@
-import { useCallback } from "react";
-import { View } from "react-native";
-import { Stack } from "expo-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import * as SplashScreen from "expo-splash-screen";
-import { AuthProvider } from "@/auth/auth-context";
-import { theme } from "@/theme/theme";
-import { CrashScreen } from "@/debug/CrashScreen";
+import { Text, View } from "react-native";
 
-const queryClient = new QueryClient();
-
-SplashScreen.preventAutoHideAsync().catch(() => undefined);
-
+// BISECTION TEST, ROUND 3: dependency versions have changed completely
+// since the last time we ran this test (expo install --fix rewrote nearly
+// a dozen packages from wildly wrong "latest" versions to SDK-54-correct
+// ones, and that fixed a real native-module crash). The old bisection
+// result is no longer valid. This re-checks the same thing: bare view, no
+// providers, no splash-screen calls at all -- just to see whether the
+// splash-stuck symptom is coming from something in our app code/splash
+// handling, or from app.json/config-plugin level, independent of anything
+// in this file.
 export default function RootLayout() {
-  // A useEffect(() => hideAsync(), []) fires on first render, which can
-  // race ahead of the native view actually completing its layout pass --
-  // the splash then gets told to hide before there's anything painted to
-  // reveal, and on some SDK/device combinations it just stays put. Wiring
-  // hideAsync() to the root view's own onLayout (the pattern Expo's docs
-  // recommend) guarantees it only fires once real content has actually
-  // laid out underneath it.
-  const onLayoutRootView = useCallback(() => {
-    SplashScreen.hideAsync().catch(() => undefined);
-  }, []);
-
   return (
-    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      <CrashScreen>
-        <SafeAreaProvider>
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <StatusBar style="dark" />
-              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background } }} />
-            </AuthProvider>
-          </QueryClientProvider>
-        </SafeAreaProvider>
-      </CrashScreen>
+    <View style={{ flex: 1, backgroundColor: "#2244AA", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <Text style={{ fontSize: 22, fontWeight: "700", color: "#FFFFFF", textAlign: "center" }}>
+        BISECTION ROUND 3{"\n"}If you see this, JS mounted fine.
+      </Text>
     </View>
   );
 }

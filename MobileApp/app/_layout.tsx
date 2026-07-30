@@ -1,23 +1,42 @@
-import { Text, View } from "react-native";
+import { useEffect } from "react";
+import { Stack } from "expo-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import * as SplashScreen from "expo-splash-screen";
+import { AuthProvider } from "@/auth/auth-context";
+import { theme } from "@/theme/theme";
+import { CrashScreen } from "@/debug/CrashScreen";
 
-// TEMPORARY DIAGNOSTIC BUILD (July 2026): TestFlight has been showing a
-// blank white screen with no visible error, even with an on-screen crash
-// boundary wired up (src/debug/CrashScreen.tsx) and every known env var
-// fixed. This strips the root layout down to the bare minimum -- no
-// providers, no navigation, no expo-router Stack, just a static View/Text --
-// to determine whether the failure is inside app logic (providers, auth,
-// routing) or at a level below that (native bundle, Hermes, expo-router
-// itself). If THIS still shows white, the bug isn't in our code at all.
-//
-// Revert this file to the real RootLayout (git: `git checkout HEAD~1 --
-// app/_layout.tsx` before this commit, or ask Claude) once the bisection
-// build has been tested.
+const queryClient = new QueryClient();
+
+// Explicit splash-screen control (July 2026): TestFlight builds were
+// showing what looked like a persistent white/blank screen after a brief
+// "logo flash" -- app.json's splash background (#F7F9FA) is a near-white
+// off-white, easy to mistake for a blank crash. Nothing in this codebase
+// ever called SplashScreen.hideAsync(), relying entirely on
+// expo-splash-screen's implicit auto-hide behavior, which is not reliable
+// across every SDK/release-build combination. preventAutoHideAsync() here
+// takes explicit control, and the useEffect below guarantees hideAsync()
+// actually fires once the root layout has mounted, regardless of what the
+// implicit auto-hide would have done.
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
 export default function RootLayout() {
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => undefined);
+  }, []);
+
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <Text style={{ fontSize: 20, fontWeight: "700", color: "#111111", textAlign: "center" }}>
-        Nianza diagnostic build{"\n"}If you can read this, the bundle loaded fine.
-      </Text>
-    </View>
+    <CrashScreen>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <StatusBar style="dark" />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background } }} />
+          </AuthProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </CrashScreen>
   );
 }

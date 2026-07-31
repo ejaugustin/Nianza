@@ -1,3 +1,4 @@
+import { Image } from "expo-image";
 import { Link, router } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -21,6 +22,26 @@ const weeklyCards = [
 
 function normalizeChildNameInNote(note: string, childName: string) {
   return note.replace(/\bSofia\b/g, childName).replace(/\bSophia\b/g, childName);
+}
+
+// Live-computed from childBirthDate, matching Settings' "Your Children" row
+// exactly -- profile.ageWindowMonths is a stored-at-onboarding snapshot that
+// never updates, which is why this header was stuck reading "0 months"
+// while Settings (computed live) correctly showed "2 months".
+function monthsSince(dateValue?: string) {
+  if (!dateValue) return null;
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+  const now = new Date();
+  return Math.max(0, (now.getFullYear() - date.getFullYear()) * 12 + now.getMonth() - date.getMonth());
+}
+
+function childAgeLabel(dateValue?: string) {
+  const months = monthsSince(dateValue);
+  if (months === null) return "";
+  if (months < 1) return "Newborn";
+  if (months === 1) return "1 month";
+  return `${months} months`;
 }
 
 export default function HomeScreen() {
@@ -121,7 +142,7 @@ export default function HomeScreen() {
   const parentFirstName = profile.parentFirstName || profile.parentName?.split(" ")[0];
   const parentName = parentFirstName || profile.parentName;
   const childName = profile.childName;
-  const childAge = `${profile.ageWindowMonths} months`;
+  const childAge = childAgeLabel(profile.childBirthDate);
   const personalizedDailyNote = useMemo(() => {
     const anniversaryText = anniversaryNoteQuery.data?.bodyText;
     if (anniversaryText) return anniversaryText;
@@ -147,9 +168,20 @@ export default function HomeScreen() {
 
       <View style={{ gap: 4 }}>
         <Text selectable style={{ color: theme.colors.muted, fontSize: 14 }}>Good morning, {parentName}.</Text>
-        <Text selectable numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={{ color: theme.colors.text, fontSize: 22, fontWeight: "700" }}>
-          {childName} - {childAge}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            {profile.childPhotoUri ? (
+              <Image source={{ uri: profile.childPhotoUri }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
+            ) : (
+              <Text selectable={false} style={{ color: "white", fontSize: 14, fontWeight: "800" }}>
+                {(childName || "?").slice(0, 1).toUpperCase()}
+              </Text>
+            )}
+          </View>
+          <Text selectable numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={{ flex: 1, color: theme.colors.text, fontSize: 22, fontWeight: "700" }}>
+            {childName} - {childAge}
+          </Text>
+        </View>
       </View>
 
       <PatriciaNote

@@ -43,7 +43,8 @@
           "cameraPermission": "Nianza uses your camera when you choose to take a photo to add or share."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-asset"
     ],
     "extra": {
       "apiUrl": "https://gr8d5s0yl9.execute-api.us-east-2.amazonaws.com/prod/mobile/v1",

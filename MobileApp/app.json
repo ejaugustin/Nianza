@@ -35,14 +35,6 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/brand/splash-tagline.png",
-          "resizeMode": "contain",
-          "backgroundColor": "#F7F9FA"
-        }
-      ],
       "expo-secure-store",
       [
         "expo-image-picker",

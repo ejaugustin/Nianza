@@ -1,20 +1,32 @@
-import { Text, View } from "react-native";
+import { Stack } from "expo-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AuthProvider } from "@/auth/auth-context";
+import { theme } from "@/theme/theme";
+import { CrashScreen } from "@/debug/CrashScreen";
 
-// BISECTION TEST, ROUND 3: dependency versions have changed completely
-// since the last time we ran this test (expo install --fix rewrote nearly
-// a dozen packages from wildly wrong "latest" versions to SDK-54-correct
-// ones, and that fixed a real native-module crash). The old bisection
-// result is no longer valid. This re-checks the same thing: bare view, no
-// providers, no splash-screen calls at all -- just to see whether the
-// splash-stuck symptom is coming from something in our app code/splash
-// handling, or from app.json/config-plugin level, independent of anything
-// in this file.
+// The expo-splash-screen config plugin/JS API was removed entirely (July
+// 2026) after multiple TestFlight builds got stuck showing the launch
+// image indefinitely, even in a build with zero SplashScreen calls
+// anywhere in the JS. Without that plugin, Expo falls back to the plain
+// OS-level launch image generated from app.json's "splash" key -- a
+// static storyboard that UIKit dismisses itself the instant this app's
+// first frame renders, with no JS control and therefore no way to get
+// stuck on it.
+const queryClient = new QueryClient();
+
 export default function RootLayout() {
   return (
-    <View style={{ flex: 1, backgroundColor: "#2244AA", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <Text style={{ fontSize: 22, fontWeight: "700", color: "#FFFFFF", textAlign: "center" }}>
-        BISECTION ROUND 3{"\n"}If you see this, JS mounted fine.
-      </Text>
-    </View>
+    <CrashScreen>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <StatusBar style="dark" />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background } }} />
+          </AuthProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </CrashScreen>
   );
 }

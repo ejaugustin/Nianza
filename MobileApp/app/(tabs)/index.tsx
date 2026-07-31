@@ -44,6 +44,18 @@ function childAgeLabel(dateValue?: string) {
   return `${months} months`;
 }
 
+// Was hardcoded to "Good morning" regardless of when the screen was
+// actually opened. Also handles the no-parent-name-on-file case (this
+// screen was rendering "Good morning, ." with a bare trailing comma when
+// parentName is empty -- same underlying data gap Settings falls back to
+// "Your name" for) by dropping the name clause entirely instead of leaving
+// a dangling punctuation mark.
+function greeting(name: string | undefined, now: Date) {
+  const hour = now.getHours();
+  const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  return name ? `Good ${timeOfDay}, ${name}.` : `Good ${timeOfDay}!`;
+}
+
 export default function HomeScreen() {
   const auth = useAuth();
   const profile = auth.profile!;
@@ -167,7 +179,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={{ gap: 4 }}>
-        <Text selectable style={{ color: theme.colors.muted, fontSize: 14 }}>Good morning, {parentName}.</Text>
+        <Text selectable style={{ color: theme.colors.muted, fontSize: 14 }}>{greeting(parentName, new Date())}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {profile.childPhotoUri ? (

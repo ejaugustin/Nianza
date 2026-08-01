@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "c3c3d832-e93d-4ba5-8df9-2fc422b51b73"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.ejaugust2.nianzabackend",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}

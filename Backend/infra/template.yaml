@@ -1542,6 +1542,9 @@ Resources:
           MILESTONES_TABLE: !Ref MilestoneProgressTable
           VOICE_MEMORIES_TABLE: !Ref VoiceMemoriesTable
           VOICE_MEMORIES_BUCKET: !Ref VoiceMemoriesBucket
+          # NZA-SUB-v1.0 Section 5: gates the birthday letter (Memory & Human
+          # Moments) and the anniversary note (daily note personalization).
+          USERS_TABLE: !Ref MobileUsersTable
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref MobileChildrenTable
@@ -1551,6 +1554,8 @@ Resources:
             TableName: !Ref VoiceMemoriesTable
         - S3CrudPolicy:
             BucketName: !Ref VoiceMemoriesBucket
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileUsersTable
       Events:
         BirthdayLetter:
           Type: Api
@@ -1645,7 +1650,11 @@ Resources:
           PATRICIA_TEMPERATURE: !Ref PatriciaTemperature
           PATRICIA_MAX_TOKENS: !Ref PatriciaMaxTokens
       Policies:
-        - DynamoDBReadPolicy:
+        # NZA-SUB-v1.0 Section 8.1: shared/entitlements.js's
+        # recordPatriciaMessage() writes the daily message counter onto the
+        # user's own row (patriciaMessageDate/patriciaMessageCount) --
+        # upgraded from DynamoDBReadPolicy to DynamoDBCrudPolicy for that.
+        - DynamoDBCrudPolicy:
             TableName: !Ref MobileUsersTable
         - DynamoDBReadPolicy:
             TableName: !Ref MobileChildrenTable
@@ -1681,6 +1690,46 @@ Resources:
             Auth:
               Authorizer: MobileCognitoAuthorizer
 
+  # NZA-SUB-v1.0 Section 8.1: read-side of the capability service for the
+  # mobile client (shared/entitlements.js is the actual source of truth,
+  # imported directly by every backend handler that needs to gate
+  # something -- this Lambda just exposes a read view of it over HTTP so
+  # screens can decide what to show without duplicating the tier logic).
+  MobileEntitlementsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-entitlements-${Environment}
+      CodeUri: ../
+      Handler: mobile/entitlements/handler.handler
+      Timeout: 10
+      MemorySize: 256
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MobileUsersTable
+      Policies:
+        # NZA-SUB-v1.0 Section 6/8.3 step 4: trial-notice/ack writes the
+        # shown-at timestamp that keeps Day 10 / Day 14 to exactly one
+        # showing each -- upgraded from read-only for that.
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileUsersTable
+      Events:
+        GetEntitlements:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/entitlements
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        AckTrialNotice:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/entitlements/trial-notice/ack
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+
   MobileReportsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1698,6 +1747,9 @@ Resources:
           SICK_ENCOUNTERS_TABLE: !Ref SickEncountersTable
           VACCINES_TABLE: !Ref ImmunizationStatusTable
           VISIT_DEBRIEFS_TABLE: !Ref VisitDebriefsTable
+          # NZA-SUB-v1.0 Section 5: shared/entitlements.js's getEntitlements()
+          # gates Doctor Visit Pack / Progress Reports here -- read-only.
+          USERS_TABLE: !Ref MobileUsersTable
           ANTHROPIC_API_KEY_PARAMETER: !Ref AnthropicApiKeyParameterName
           ANTHROPIC_MODEL_PARAMETER: !Ref AnthropicModelParameterName
       Policies:
@@ -1715,6 +1767,8 @@ Resources:
             TableName: !Ref ImmunizationStatusTable
         - DynamoDBReadPolicy:
             TableName: !Ref VisitDebriefsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileUsersTable
         - Version: "2012-10-17"
           Statement:
             - Effect: Allow

@@ -5,6 +5,7 @@ const gateway = require("./gateway");
 const { safetyGate } = require("./safety");
 const vaccineLibrary = require("../vaccines/library");
 const { json, noContent, error } = require("../../shared/response");
+const { recordPatriciaMessage, getEntitlements } = require("../../shared/entitlements");
 
 const rawClient = new DynamoDBClient({});
 const documentClient = DynamoDBDocumentClient.from(rawClient, {
@@ -314,6 +315,26 @@ async function enrichContext({ sessionId, userId, childId, language, ambientCont
   return { ...bundle, cachedAt: now };
 }
 
+// NZA-SUB-v1.0 Section 5: "pattern-synthesis / ambient personalization" is
+// this file's enrichContext() pipeline -- ambientContext from the client,
+// plus everything it looks up server-side (recent milestones, watch-for
+// items, active sick-day encounter, vaccine position, cross-session recent
+// topics). Free tier still gets its 3 chats/day (gated separately, above),
+// just answered from the raw message alone rather than that synthesis
+// layer, consistent with Section 5's table (Locked on free, "Full (Tier 1)"
+// on trial/subscribed).
+function minimalContextBundle() {
+  return {
+    ambientContext: null,
+    contextSeed: null,
+    childSnapshot: null,
+    parentContext: null,
+    todaysNote: null,
+    recentEvents: { milestones: [], watchForNames: [], encounter: null, vaccines: null, daysUntilVisit: null },
+    recentTopics: []
+  };
+}
+
 async function rememberConversation(sessionId, userId, childId, message, reply) {
   if (!CONVERSATIONS_TABLE) return;
   await tryRead("rememberConversation", () => documentClient.send(new PutCommand({
@@ -346,19 +367,66 @@ function extractTopicTags(message, reply) {
   return tags.slice(0, 5);
 }
 
+// NZA-SUB-v1.0 Section 6.3 "Patricia conversation cap reached" copy,
+// implemented verbatim per Section 8.4 ("all Patricia-voiced copy in this
+// doc is implemented verbatim, not paraphrased by engineering"). {Name}
+// drops cleanly (matching the same no-dangling-punctuation approach used
+// for the home screen greeting fix) when the client doesn't have a parent
+// first name on hand to send.
+function messageCapReachedText(parentFirstName) {
+  const name = truncate(parentFirstName, 60);
+  const address = name ? `, ${name}` : "";
+  return `I want to keep talking${address} — I've just used up my daily chats for now. I'll have more to say tomorrow, or we can talk without limits whenever you're ready.`;
+}
+
 async function handleChat(event) {
   const body = parseBody(event);
   const sessionId = truncate(body.sessionId, 120);
   const message = truncate(body.message, 4000);
   const language = truncate(body.language, 8) || "en";
   const childId = truncate(body.childId, 120);
+  const parentFirstName = truncate(body.parentFirstName, 60);
   if (!sessionId) return error(400, "INVALID_FIELD", "sessionId is required.");
   if (!message) return error(400, "INVALID_FIELD", "message is required.");
 
   const { userId } = claimsFromEvent(event);
-  const ambientContext = chatContext.sanitizeAmbientContext(body.ambientContext);
-  const contextSeed = chatContext.sanitizeContextSeed(body.contextSeed);
-  const bundle = await enrichContext({ sessionId, userId, childId, language, ambientContext, contextSeed });
+
+  // NZA-SUB-v1.0 Section 5/8.1: free-tier accounts are hard-capped at 3
+  // Patricia exchanges per rolling local day, enforced server-side (never
+  // client-only -- see shared/entitlements.js). Checked before any model
+  // call so a capped account never incurs Anthropic API cost. Trial and
+  // subscribed accounts are unlimited and this is a no-op for them.
+  const capacity = await recordPatriciaMessage(userId);
+  if (!capacity.allowed) {
+    return json(200, {
+      sessionId,
+      message: {
+        sender: "patricia",
+        text: messageCapReachedText(parentFirstName),
+        eventType: "patricia-message-cap-reached",
+        safetyType: null
+      },
+      context: {
+        usedAmbientContext: false,
+        usedContextSeed: false,
+        enrichment: {},
+        source: "entitlements-cap"
+      },
+      entitlements: { patriciaMessagesRemainingToday: 0 }
+    });
+  }
+
+  const entitlements = await getEntitlements(userId);
+  const bundle = entitlements.capabilities.canAccessPatternSynthesis
+    ? await enrichContext({
+        sessionId,
+        userId,
+        childId,
+        language,
+        ambientContext: chatContext.sanitizeAmbientContext(body.ambientContext),
+        contextSeed: chatContext.sanitizeContextSeed(body.contextSeed)
+      })
+    : minimalContextBundle();
   const safety = await safetyGate({
     message,
     bundle,
@@ -385,8 +453,8 @@ async function handleChat(event) {
       safetyType: modelResult.type || null
     },
     context: {
-      usedAmbientContext: Boolean(ambientContext),
-      usedContextSeed: Boolean(contextSeed),
+      usedAmbientContext: Boolean(bundle.ambientContext),
+      usedContextSeed: Boolean(bundle.contextSeed),
       enrichment: {
         childSnapshot: Boolean(bundle.childSnapshot),
         parentContext: Boolean(bundle.parentContext),
@@ -397,7 +465,8 @@ async function handleChat(event) {
         vaccinePosition: Boolean(bundle.recentEvents?.vaccines)
       },
       source: modelResult.source || "template"
-    }
+    },
+    entitlements: { patriciaMessagesRemainingToday: capacity.remainingToday }
   });
 }
 

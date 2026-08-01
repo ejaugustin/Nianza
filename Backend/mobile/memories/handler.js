@@ -6,6 +6,7 @@ const { assembleBirthdayLetter } = require("./assemble-birthday-letter");
 const { selectAnniversaryNote } = require("./assemble-anniversary-note");
 const milestonesLibrary = require("../milestones/library");
 const voiceStorage = require("./voice-storage");
+const { getEntitlements } = require("../../shared/entitlements");
 
 const rawClient = new DynamoDBClient({});
 const documentClient = DynamoDBDocumentClient.from(rawClient, {
@@ -113,6 +114,20 @@ async function handleGetBirthdayLetter(event) {
   const childId = childIdFromPath(event);
   if (!childId) return error(400, "INVALID_FIELD", "childId is required.");
 
+  // NZA-SUB-v1.0 Section 5: "Memory & Human Moments" is fully locked on the
+  // free tier -- the birthday letter is Patricia's assembled synthesis over
+  // the year's milestones/firsts/voice memories, not raw logged data, so
+  // locking it doesn't touch the Section 2 guiding principle (never gate
+  // data the parent already put in; the underlying milestones/voice memories
+  // themselves stay fully accessible elsewhere).
+  const entitlements = await getEntitlements(userId);
+  if (!entitlements.capabilities.canAccessMemoryHumanMoments) {
+    // Section 6.3 "Locked feature opened" copy, verbatim per Section 8.4.
+    const parentFirstName = (event.queryStringParameters || {}).parentFirstName;
+    const address = parentFirstName ? `, ${parentFirstName}` : "";
+    return error(403, "SUBSCRIPTION_REQUIRED", `This one needs the full plan${address}. I can put it together the moment you're ready.`);
+  }
+
   const child = await getChild(userId, childId);
   if (!child) return error(404, "CHILD_NOT_FOUND", "That child was not found on this account.");
 
@@ -180,6 +195,18 @@ async function handleGetAnniversaryNote(event) {
   const { userId } = claimsFromEvent(event);
   const childId = childIdFromPath(event);
   if (!childId) return error(400, "INVALID_FIELD", "childId is required.");
+
+  // NZA-SUB-v1.0 Section 5: anniversary tiers are explicitly called out
+  // under the Daily note row ("no ... anniversary tiers ... " on free
+  // tier), not the Memory & Human Moments row -- gated by
+  // dailyNotePersonalization, not canAccessMemoryHumanMoments. Returning
+  // { note: null } rather than a 403 keeps this endpoint's existing
+  // "nothing to say today" contract; the free-tier home screen simply falls
+  // back to the plain daily note, same as any other ordinary day.
+  const entitlements = await getEntitlements(userId);
+  if (!entitlements.capabilities.dailyNotePersonalization) {
+    return json(200, { note: null });
+  }
 
   const child = await getChild(userId, childId);
   if (!child) return error(404, "CHILD_NOT_FOUND", "That child was not found on this account.");

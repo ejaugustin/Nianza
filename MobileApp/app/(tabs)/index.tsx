@@ -1,11 +1,12 @@
 import { Image } from "expo-image";
 import { Link, router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/auth-context";
 import { getDailyNote } from "@/api/content";
 import { getAnniversaryNote } from "@/api/memories";
+import { acknowledgeTrialNotice, getEntitlements } from "@/api/entitlements";
 import { confirmVisit } from "@/api/visits";
 import { BrandLogo } from "@/components/brand-logo";
 import { PatriciaNote } from "@/components/patricia-note";
@@ -139,6 +140,43 @@ export default function HomeScreen() {
     staleTime: 1000 * 60 * 60 * 12,
     retry: 1
   });
+
+  // NZA-SUB-v1.0 Section 5: the daily note downgrades to "plain/templated
+  // only -- no pronoun slots, milestone variants, anniversary tiers, or
+  // weather/AQI" on the free tier. The backend already enforces this for the
+  // anniversary note itself (returns { note: null } when
+  // dailyNotePersonalization is off), but the fetch is still skipped
+  // client-side too so a lapsed account isn't making a network call for
+  // content it can't use.
+  const entitlementsQuery = useQuery({
+    queryKey: ["entitlements", profile.parentFirstName, profile.parentName, profile.childName],
+    queryFn: () =>
+      getEntitlements({
+        parentFirstName: profile.parentFirstName || profile.parentName?.split(" ")[0],
+        childName: profile.childName
+      }),
+    staleTime: 1000 * 60 * 5,
+    retry: 1
+  });
+  const personalizationEnabled = entitlementsQuery.data?.capabilities.dailyNotePersonalization !== false;
+
+  // NZA-SUB-v1.0 Section 3/6: the Day 10 / Day 14 in-app card. The backend
+  // only tells us a notice is "due" -- it's marked shown (so it never fires
+  // twice, Section 8.4) once this screen actually renders it, not on the
+  // background entitlements fetch itself.
+  const [dismissedNoticeType, setDismissedNoticeType] = useState<string | null>(null);
+  const trialNotice = entitlementsQuery.data?.trialNotice?.type ? entitlementsQuery.data.trialNotice : null;
+  const showTrialNotice = Boolean(trialNotice && trialNotice.type !== dismissedNoticeType);
+
+  useEffect(() => {
+    if (!trialNotice?.type || dismissedNoticeType === trialNotice.type) return;
+    acknowledgeTrialNotice(trialNotice.type).catch(() => {
+      // Best-effort -- worst case the same notice shows once more on a
+      // later open, which is far better than crashing the home screen over
+      // a non-critical write.
+    });
+  }, [trialNotice?.type, dismissedNoticeType]);
+
   // N1 (Milestone anniversaries): folds into this same daily-note slot --
   // fetched alongside the regular daily note and, on the rare day it exists,
   // takes priority over it (see personalizedDailyNote below). No streak or
@@ -146,6 +184,7 @@ export default function HomeScreen() {
   const anniversaryNoteQuery = useQuery({
     queryKey: ["anniversary-note", childId],
     queryFn: () => getAnniversaryNote(childId),
+    enabled: personalizationEnabled,
     staleTime: 1000 * 60 * 30,
     retry: 1
   });
@@ -156,6 +195,17 @@ export default function HomeScreen() {
   const childName = profile.childName;
   const childAge = childAgeLabel(profile.childBirthDate);
   const personalizedDailyNote = useMemo(() => {
+    // Free tier: plain/templated only -- neutral pronouns, no anniversary
+    // note, no milestone-variant swap. Child name is still substituted for
+    // the placeholder ("Sofia") since an unfilled placeholder name would
+    // read as broken content, not as a deliberate downgrade.
+    if (!personalizationEnabled) {
+      return normalizeChildNameInNote(dailyNote, childName)
+        .replaceAll("{childName}", childName)
+        .replaceAll("{she}", "they")
+        .replaceAll("{her}", "their")
+        .replaceAll("{hers}", "theirs");
+    }
     const anniversaryText = anniversaryNoteQuery.data?.bodyText;
     if (anniversaryText) return anniversaryText;
     const pronouns = profile.sexAtBirth === "boy" ? { she: "he", her: "his", hers: "his" } : { she: "she", her: "her", hers: "hers" };
@@ -164,7 +214,7 @@ export default function HomeScreen() {
       .replaceAll("{she}", pronouns.she)
       .replaceAll("{her}", pronouns.her)
       .replaceAll("{hers}", pronouns.hers);
-  }, [anniversaryNoteQuery.data?.bodyText, childName, dailyNote, profile.sexAtBirth]);
+  }, [anniversaryNoteQuery.data?.bodyText, childName, dailyNote, personalizationEnabled, profile.sexAtBirth]);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -195,6 +245,41 @@ export default function HomeScreen() {
           </Text>
         </View>
       </View>
+
+      {showTrialNotice && trialNotice ? (
+        <SpecCard style={{ gap: 12, borderWidth: 1, borderColor: theme.colors.bluePrimary }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center" }}>
+              <Text selectable={false} style={{ color: "white", fontSize: 12, fontWeight: "800" }}>P</Text>
+            </View>
+            <Text selectable style={{ color: theme.colors.blueDeep, fontSize: 11, fontWeight: "800", letterSpacing: 0.5 }}>
+              {trialNotice.title?.toUpperCase()}
+            </Text>
+          </View>
+          <Text selectable style={{ color: theme.colors.text, fontSize: 15, lineHeight: 22, fontStyle: "italic" }}>
+            {trialNotice.body}
+          </Text>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <Pressable
+              onPress={() => {
+                setDismissedNoticeType(trialNotice.type);
+                router.push("/plan-picker");
+              }}
+              style={{ flex: 1, minHeight: 46, borderRadius: 23, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center" }}
+            >
+              <Text selectable={false} style={{ color: "white", fontSize: 14, fontWeight: "800" }}>{trialNotice.ctaLabel}</Text>
+            </Pressable>
+            {trialNotice.secondaryLabel ? (
+              <Pressable
+                onPress={() => setDismissedNoticeType(trialNotice.type)}
+                style={{ minHeight: 46, paddingHorizontal: 16, alignItems: "center", justifyContent: "center" }}
+              >
+                <Text selectable={false} style={{ color: theme.colors.muted, fontSize: 14, fontWeight: "700" }}>{trialNotice.secondaryLabel}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </SpecCard>
+      ) : null}
 
       <PatriciaNote
         actionLabel="Discuss with Patricia"

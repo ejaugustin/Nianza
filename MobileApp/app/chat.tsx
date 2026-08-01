@@ -22,7 +22,14 @@ type ChatMessage = {
   text: string;
   imageUri?: string;
   audioLoading?: boolean;
+  eventType?: string;
 };
+
+// NZA-SUB-v1.0 Section 6.3: the message cap card gets a "Choose a plan" CTA
+// under the bubble rather than just plain text -- this is the natural,
+// non-punitive upgrade moment the spec calls out ("at the 4th message, in
+// context, rather than via push").
+const MESSAGE_CAP_EVENT_TYPE = "patricia-message-cap-reached";
 
 function formatDuration(durationMillis: number) {
   const totalSeconds = Math.max(0, Math.floor(durationMillis / 1000));
@@ -74,12 +81,13 @@ function vaccineReply(childName: string) {
   return `For ${childName}, it is reasonable to want plain words. Ask the pediatrician what the vaccine protects against, what reactions are normal that day, and what would make them want a call. I can help you turn your questions into a short list before the visit.`;
 }
 
-function makeMessage(sender: ChatMessage["sender"], text: string, imageUri?: string): ChatMessage {
+function makeMessage(sender: ChatMessage["sender"], text: string, imageUri?: string, eventType?: string): ChatMessage {
   return {
     id: `${sender}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     sender,
     text: sender === "patricia" ? normalizePatriciaDisplayText(text) : text,
-    imageUri
+    imageUri,
+    eventType
   };
 }
 
@@ -283,21 +291,22 @@ export default function ChatScreen() {
       contextSeed: backendContextSeedFromSeed(seed)
     });
     const reply = response.message.text;
+    const eventType = response.message.eventType;
     if (isCrisisTemplate(reply) && !isExplicitEmergencyOrDistress(parentMessage)) {
       const normalized = parentMessage.toLowerCase();
       if (/\b(developing|development|milestone|right way|normal|on track|look for)\b/.test(normalized)) {
-        return developmentReply(childName);
+        return { text: developmentReply(childName), eventType: undefined };
       }
       if (/\b(vaccine|shot|immunization|dtap|hepatitis|hib|pcv|polio|rotavirus)\b/.test(normalized)) {
-        return vaccineReply(childName);
+        return { text: vaccineReply(childName), eventType: undefined };
       }
-      return "I hear the question. Let's stay with what you are actually asking. Tell me what you noticed, when it happened, and what feels most unclear right now.";
+      return { text: "I hear the question. Let's stay with what you are actually asking. Tell me what you noticed, when it happened, and what feels most unclear right now.", eventType: undefined };
     }
-    return reply;
+    return { text: reply, eventType };
   }
 
-  async function appendPatriciaReply(reply: string) {
-    const message = makeMessage("patricia", reply);
+  async function appendPatriciaReply(reply: string, eventType?: string) {
+    const message = makeMessage("patricia", reply, undefined, eventType);
     // Kick off TTS for every chunk in parallel immediately. Only the first
     // chunk -- usually one short sentence -- gates how soon voice can start,
     // instead of the whole reply having to finish synthesizing first.
@@ -350,7 +359,7 @@ export default function ChatScreen() {
       // Do not clear "thinking" here — appendPatriciaReply clears it at the exact
       // moment the reply (text + voice, or text with voice catching up) is ready
       // to show, so the indicator never disappears before there's something to see.
-      await appendPatriciaReply(reply);
+      await appendPatriciaReply(reply.text, reply.eventType);
     } catch {
       await appendPatriciaReply("I hear you. Start with the part that feels heaviest, and we can make it smaller together.");
     }
@@ -376,7 +385,7 @@ export default function ChatScreen() {
       setPatriciaThinking(true);
       try {
         const reply = await getPatriciaReply("I just shared a photo with you.");
-        await appendPatriciaReply(reply);
+        await appendPatriciaReply(reply.text, reply.eventType);
       } catch {
         await appendPatriciaReply(
           `Thank you for showing me. I cannot see photos yet, but tell me what you want me to know about it, and I will help you think it through.`
@@ -478,7 +487,7 @@ export default function ChatScreen() {
       try {
         const reply = await getPatriciaReply(transcript);
         // appendPatriciaReply clears "thinking" once the reply is actually ready to show.
-        await appendPatriciaReply(reply);
+        await appendPatriciaReply(reply.text, reply.eventType);
       } catch {
         await appendPatriciaReply(patriciaReply());
       }
@@ -530,6 +539,14 @@ export default function ChatScreen() {
                   <Pressable onPress={() => speakPatriciaMessage(message)} style={{ alignSelf: "flex-start", minHeight: 32, borderRadius: 16, flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 10, backgroundColor: isSpeaking ? theme.colors.blueLight : "white" }}>
                     <SfIcon name="speaker.wave.2.fill" color={theme.colors.bluePrimary} size={17} />
                     <Text selectable style={{ color: theme.colors.blueDeep, fontSize: 12, fontWeight: "700" }}>{message.audioLoading ? "Loading" : isSpeaking ? "Playing" : "Replay"}</Text>
+                  </Pressable>
+                ) : null}
+                {message.eventType === MESSAGE_CAP_EVENT_TYPE ? (
+                  <Pressable
+                    onPress={() => router.push("/plan-picker")}
+                    style={{ alignSelf: "flex-start", minHeight: 34, borderRadius: 17, backgroundColor: theme.colors.bluePrimary, paddingHorizontal: 14, alignItems: "center", justifyContent: "center" }}
+                  >
+                    <Text selectable={false} style={{ color: "white", fontSize: 12, fontWeight: "800" }}>Choose a plan</Text>
                   </Pressable>
                 ) : null}
               </View>

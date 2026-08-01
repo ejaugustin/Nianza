@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, router } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { ApiError } from "@/api/client";
 import { createMobileReport, listMobileReports, periodTagLabel, type MobileReport, type ReportPeriod } from "@/api/reports";
 import { listWeeklyLetters } from "@/api/weekly-letters";
 import { useAuth } from "@/auth/auth-context";
@@ -84,6 +85,7 @@ export default function ReportsScreen() {
   const [visitPackOpen, setVisitPackOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<ReportPeriod>("month");
   const [reportNotice, setReportNotice] = useState<string | null>(null);
+  const [reportNoticeLocked, setReportNoticeLocked] = useState(false);
   const [weeklyLettersOpen, setWeeklyLettersOpen] = useState(false);
   const childName = profile?.childName || "your child";
   const parentFirstName = profile?.parentFirstName || profile?.parentName?.split(/\s+/)[0] || "there";
@@ -113,23 +115,27 @@ export default function ReportsScreen() {
   }
 
   const progressMutation = useMutation({
-    mutationFn: (period: ReportPeriod) => createMobileReport(childId, "monthly", { period }),
+    mutationFn: (period: ReportPeriod) => createMobileReport(childId, "monthly", { period }, profile?.parentFirstName || profile?.parentName?.split(/\s+/)[0]),
     onSuccess: (report) => {
+      setReportNoticeLocked(false);
       setReportNotice(`${report.title} is ready. Tap View to see it or Share to send it.`);
       queryClient.invalidateQueries({ queryKey: ["mobile-reports", childId] });
     },
     onError: (err) => {
+      setReportNoticeLocked(err instanceof ApiError && err.code === "SUBSCRIPTION_REQUIRED");
       setReportNotice(err instanceof Error ? err.message : "I could not create that report yet.");
     }
   });
 
   const visitPackMutation = useMutation({
-    mutationFn: () => createMobileReport(childId, "visit-pack", {}),
+    mutationFn: () => createMobileReport(childId, "visit-pack", {}, profile?.parentFirstName || profile?.parentName?.split(/\s+/)[0]),
     onSuccess: (report) => {
+      setReportNoticeLocked(false);
       setReportNotice(`${report.title} is ready. Tap View to see it or Share to send it.`);
       queryClient.invalidateQueries({ queryKey: ["mobile-reports", childId] });
     },
     onError: (err) => {
+      setReportNoticeLocked(err instanceof ApiError && err.code === "SUBSCRIPTION_REQUIRED");
       setReportNotice(err instanceof Error ? err.message : "I could not create that report yet.");
     }
   });
@@ -157,10 +163,18 @@ export default function ReportsScreen() {
     >
       <ScreenTitle title="Reports" subtitle={`Generated for ${childName}`} />
       {reportNotice ? (
-        <View style={{ borderWidth: 1, borderColor: theme.colors.bluePrimary, backgroundColor: theme.colors.blueLight, borderRadius: 18, padding: 14 }}>
+        <View style={{ borderWidth: 1, borderColor: theme.colors.bluePrimary, backgroundColor: theme.colors.blueLight, borderRadius: 18, padding: 14, gap: 10 }}>
           <Text selectable style={{ color: theme.colors.blueDeep, fontSize: 13, fontWeight: "700", lineHeight: 18 }}>
             {reportNotice}
           </Text>
+          {reportNoticeLocked ? (
+            <Pressable
+              onPress={() => router.push("/plan-picker")}
+              style={{ alignSelf: "flex-start", minHeight: 36, borderRadius: 18, backgroundColor: theme.colors.bluePrimary, paddingHorizontal: 16, alignItems: "center", justifyContent: "center" }}
+            >
+              <Text selectable={false} style={{ color: "white", fontSize: 13, fontWeight: "800" }}>See plans</Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
 

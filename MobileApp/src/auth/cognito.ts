@@ -76,6 +76,19 @@ export function getEmailFromIdToken(idToken: string) {
   return String(payload.email || payload["cognito:username"] || "");
 }
 
+// The Cognito `sub` claim is the same value the backend uses as `userId`
+// everywhere (see Backend/mobile/*/handler.js's `claims.sub || "local-
+// acceptance-user"` pattern, and the billing webhook's `evt.app_user_id`
+// lookup against nianza-users). RevenueCat's SDK must be configured/logged
+// in with this exact value as the appUserID -- not the email, not an
+// auto-generated anonymous id -- or RENEWAL/INITIAL_PURCHASE webhook events
+// won't resolve to the right user row and entitlements will silently never
+// unlock. See src/api/purchases.ts.
+export function getUserIdFromIdToken(idToken: string) {
+  const payload = decodeJwtPayload(idToken);
+  return String(payload.sub || "");
+}
+
 export function isSessionFresh(session: AuthSession | null) {
   return Boolean(session && session.expiresAt > Date.now() + 60_000);
 }

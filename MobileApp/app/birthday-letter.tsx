@@ -6,6 +6,7 @@ import { captureRef } from "react-native-view-shot";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { getBirthdayLetter } from "@/api/memories";
+import { ApiError } from "@/api/client";
 import { RequireAuth, useAuth } from "@/auth/auth-context";
 import { SfIcon } from "@/components/screen-spec";
 import { theme } from "@/theme/theme";
@@ -19,16 +20,18 @@ function formatDate(value: string) {
 // brief calls for a printable/saveable keepsake, not a PDF.
 export default function BirthdayLetterScreen() {
   const insets = useSafeAreaInsets();
-  const { activeChildId } = useAuth();
+  const { activeChildId, profile } = useAuth();
   const childId = activeChildId || "primary-child";
+  const parentFirstName = profile?.parentFirstName || profile?.parentName?.split(" ")[0];
   const [sharing, setSharing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const captureTargetRef = useRef<View>(null);
 
   const letterQuery = useQuery({
-    queryKey: ["birthday-letter", childId],
-    queryFn: () => getBirthdayLetter(childId)
+    queryKey: ["birthday-letter", childId, parentFirstName],
+    queryFn: () => getBirthdayLetter(childId, parentFirstName)
   });
+  const letterLocked = letterQuery.error instanceof ApiError && letterQuery.error.code === "SUBSCRIPTION_REQUIRED";
   const letter = letterQuery.data;
 
   function goBack() {
@@ -88,10 +91,31 @@ export default function BirthdayLetterScreen() {
           {letterQuery.isLoading ? <Text selectable style={{ color: theme.colors.muted, fontSize: 14 }}>Writing this year's letter...</Text> : null}
 
           {letterQuery.isError ? (
-            <View style={{ borderRadius: 18, borderWidth: 1, borderColor: theme.colors.error, backgroundColor: "#FDEBEC", padding: 16 }}>
-              <Text selectable style={{ color: theme.colors.error, fontSize: 14, fontWeight: "700" }}>
-                This letter couldn't be opened yet -- it starts at the first birthday.
+            <View
+              style={{
+                borderRadius: 18,
+                borderWidth: 1,
+                borderColor: letterLocked ? theme.colors.bluePrimary : theme.colors.error,
+                backgroundColor: letterLocked ? theme.colors.blueLight : "#FDEBEC",
+                padding: 16,
+                gap: 12
+              }}
+            >
+              <Text selectable style={{ color: letterLocked ? theme.colors.blueDeep : theme.colors.error, fontSize: 14, fontWeight: "700" }}>
+                {letterLocked
+                  ? letterQuery.error instanceof ApiError && letterQuery.error.message
+                    ? letterQuery.error.message
+                    : "This one needs the full plan. I can put it together the moment you're ready."
+                  : "This letter couldn't be opened yet -- it starts at the first birthday."}
               </Text>
+              {letterLocked ? (
+                <Pressable
+                  onPress={() => router.push("/plan-picker")}
+                  style={{ alignSelf: "flex-start", minHeight: 40, borderRadius: 20, backgroundColor: theme.colors.bluePrimary, paddingHorizontal: 18, alignItems: "center", justifyContent: "center" }}
+                >
+                  <Text selectable={false} style={{ color: "white", fontSize: 13, fontWeight: "800" }}>See plans</Text>
+                </Pressable>
+              ) : null}
             </View>
           ) : null}
 

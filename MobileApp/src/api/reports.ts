@@ -124,17 +124,22 @@ export async function listMobileReports(childId: string) {
   return response.reports;
 }
 
-export async function createMobileReport(childId: string, reportType: ReportType, options: CreateReportOptions = {}) {
+// parentFirstName is optional and only used to fill the Section 6.3
+// "locked feature" copy's {Name} slot server-side if this account turns out
+// to be free-tier for this report type -- see reports/handler.js's
+// lockedFeatureText().
+export async function createMobileReport(childId: string, reportType: ReportType, options: CreateReportOptions = {}, parentFirstName?: string) {
   const response = await apiPost<{ reportId: string; status: MobileReport["status"]; report: MobileReport }>(
     `/reports/${encodeURIComponent(childId)}`,
-    { reportType, options }
+    { reportType, options, parentFirstName }
   );
   return response.report;
 }
 
-export async function getMobileReport(childId: string, reportId: string) {
+export async function getMobileReport(childId: string, reportId: string, parentFirstName?: string) {
   const response = await apiGet<{ report: MobileReport }>(
-    `/reports/${encodeURIComponent(childId)}/${encodeURIComponent(reportId)}`
+    `/reports/${encodeURIComponent(childId)}/${encodeURIComponent(reportId)}`,
+    { parentFirstName }
   );
   return response.report;
 }

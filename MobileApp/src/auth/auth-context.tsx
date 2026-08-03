@@ -3,6 +3,7 @@ import { Redirect } from "expo-router";
 import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { PRIMARY_CHILD_ID, createChild, deleteChild, listChildren, upsertChild } from "@/api/children";
 import { setAuthToken, setUnauthorizedHandler } from "@/api/client";
+import { resetPurchasesUser } from "@/api/purchases";
 import {
   AuthSession,
   confirmParent,
@@ -352,12 +353,30 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
       }
     }
 
-    restore().catch(() => {
+    // Belt-and-suspenders against a stuck launch screen: restore() awaits a
+    // chain of SecureStore reads, a possible Cognito refresh, and a
+    // possible backend call, none of which currently have their own
+    // timeouts. A single one of those hanging (e.g. a stale Keychain
+    // session from an earlier build/dev session triggering a refresh call
+    // that never settles) would leave `status` at "loading" forever, and
+    // app/index.tsx has nothing else to fall back to. This race guarantees
+    // forward progress either way.
+    const fallbackTimer = setTimeout(() => {
+      if (!mounted) return;
       setAuthToken(null);
       setChildrenState([]);
       setActiveChildId(null);
-      setStatus("unauthenticated");
-    });
+      setStatus((current) => (current === "loading" ? "unauthenticated" : current));
+    }, 8000);
+
+    restore()
+      .catch(() => {
+        setAuthToken(null);
+        setChildrenState([]);
+        setActiveChildId(null);
+        setStatus("unauthenticated");
+      })
+      .finally(() => clearTimeout(fallbackTimer));
 
     return () => {
       mounted = false;
@@ -519,6 +538,10 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
         setAuthToken(null);
         setStatus("unauthenticated");
         await SecureStore.deleteItemAsync(SESSION_KEY);
+        // Best-effort: never block sign-out on RevenueCat's logOut() call.
+        // See src/api/purchases.ts -- this prevents the next account signed
+        // into this device from inheriting a stale entitlement identity.
+        resetPurchasesUser().catch(() => undefined);
       },
       deleteLocalAccountData: async () => {
         if (session?.email) {
@@ -534,6 +557,7 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
         setActiveChildId(null);
         setAuthToken(null);
         setStatus("unauthenticated");
+        resetPurchasesUser().catch(() => undefined);
       }
     }),
     [persistSession, profile, childrenState, activeChildId, session, status]

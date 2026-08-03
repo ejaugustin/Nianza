@@ -9,6 +9,7 @@ const { DynamoDBDocumentClient, ScanCommand, GetCommand, UpdateCommand } = requi
 const { actorFromEvent, hasRole, ROLE_SUPER_ADMIN, ROLE_OPERATIONS } = require("../../shared/auth");
 const { writeAuditLog } = require("../../shared/audit");
 const { json, noContent, error } = require("../../shared/response");
+const { GRACE_PERIOD_DAYS } = require("../../shared/entitlements");
 
 const rawClient = new DynamoDBClient({});
 const documentClient = DynamoDBDocumentClient.from(rawClient, { marshallOptions: { removeUndefinedValues: true } });
@@ -32,17 +33,34 @@ function userIdFromEvent(event) {
   }
 }
 
+// NZA-SUB-v1.0 Section 7: a billing-issue account keeps full functionality
+// for GRACE_PERIOD_DAYS (via shared/entitlements.js, the same rule used to
+// gate the mobile app) before it's actually treated as free-tier -- ops
+// couldn't previously tell "billing issue, still in grace" apart from any
+// other active subscriber, or see who's about to drop. Mirrors
+// shared/entitlements.js's resolveTier() grace-window math exactly rather
+// than re-deriving it, so this can't quietly drift out of sync with what
+// the app itself is enforcing.
+function graceInfo(item, now) {
+  if (!item.billingIssueSince) return { inGracePeriod: false, graceEndsAt: null };
+  const graceEndsAt = new Date(new Date(item.billingIssueSince).getTime() + GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000);
+  return { inGracePeriod: graceEndsAt.getTime() > now, graceEndsAt: graceEndsAt.toISOString() };
+}
+
 // GET /admin/v1/subscriptions -- cohort counts + optional filtered list.
 async function handleList(event) {
   const query = event.queryStringParameters || {};
   const result = await documentClient.send(new ScanCommand({ TableName: USERS_TABLE, Limit: 500 }));
   const items = result.Items || [];
+  const now = Date.now();
 
-  const totals = { trialing: 0, active: 0, expired: 0, cancelled: 0 };
+  const totals = { trialing: 0, active: 0, expired: 0, cancelled: 0, paused: 0, inGracePeriod: 0 };
   const subscriptions = [];
   for (const item of items) {
     const status = item.subscriptionStatus;
     if (status && totals[status] != null) totals[status] += 1;
+    const grace = graceInfo(item, now);
+    if (grace.inGracePeriod) totals.inGracePeriod += 1;
     if (query.status && status !== query.status) continue;
     if (query.language && item.language !== query.language) continue;
     subscriptions.push({
@@ -51,7 +69,10 @@ async function handleList(event) {
       language: item.language ?? null,
       subscriptionStatus: status ?? null,
       trialStartedAt: item.trialStartedAt ?? null,
-      trialEndsAt: item.trialEndsAt ?? null
+      trialEndsAt: item.trialEndsAt ?? null,
+      billingIssueSince: item.billingIssueSince ?? null,
+      inGracePeriod: grace.inGracePeriod,
+      graceEndsAt: grace.graceEndsAt
     });
   }
 

@@ -231,6 +231,16 @@ function SafetyNoteCard({
     }
   }
 
+  // Previously autoplay had no way to be interrupted once started -- this
+  // toggle lets a parent stop mid-sentence instead of waiting it out.
+  function handlePress() {
+    if (isSpeaking || isLoading) {
+      patriciaSpeech.stop();
+    } else {
+      speak();
+    }
+  }
+
   useEffect(() => {
     if (autoPlayedRef.current) return;
     autoPlayedRef.current = true;
@@ -254,7 +264,7 @@ function SafetyNoteCard({
         {resolvedText}
       </Text>
       <Pressable
-        onPress={speak}
+        onPress={handlePress}
         style={{
           alignSelf: "flex-start",
           minHeight: 32,
@@ -266,9 +276,9 @@ function SafetyNoteCard({
           backgroundColor: isSpeaking ? theme.colors.blueLight : "white"
         }}
       >
-        <SfIcon name="speaker.wave.2.fill" color={theme.colors.bluePrimary} size={17} />
+        <SfIcon name={isSpeaking ? "stop.fill" : "speaker.wave.2.fill"} color={theme.colors.bluePrimary} size={17} />
         <Text selectable style={{ color: theme.colors.blueDeep, fontSize: 12, fontWeight: "700" }}>
-          {isLoading ? "Loading" : isSpeaking ? "Playing" : "Replay"}
+          {isLoading ? "Loading" : isSpeaking ? "Stop" : "Replay"}
         </Text>
       </Pressable>
       {notice ? (

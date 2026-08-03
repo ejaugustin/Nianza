@@ -1,3 +1,5 @@
+import type { ReactElement } from "react";
+
 // NZA-POSTCARDS-v1.0 Section 3: each template is a layout with named slots
 // (photoUrl, childName, headline, messageText, dateLine) that real data gets
 // dropped into per send -- deterministic assembly, never per-send generation.
@@ -15,7 +17,7 @@ export type PostcardSlotProps = {
   dateLine: string;
 };
 
-export type PostcardTemplateComponent = (props: PostcardSlotProps) => JSX.Element;
+export type PostcardTemplateComponent = (props: PostcardSlotProps) => ReactElement;
 
 // Shared "designed once, not app UI chrome" palette additions -- the spec
 // explicitly calls out avoiding the app's own rounded-pill/card-shadow

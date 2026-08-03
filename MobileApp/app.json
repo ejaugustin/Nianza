@@ -19,37 +19,40 @@
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Nianza uses the microphone so you can speak to Patricia hands-free.",
         "NSPhotoLibraryUsageDescription": "Nianza uses your photo library when you choose to add a child photo or share a photo with Patricia.",
-        "NSCameraUsageDescription": "Nianza uses your camera when you choose to take a photo to add or share."
+        "NSCameraUsageDescription": "Nianza uses your camera when you choose to take a photo to add or share.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.nianza.app",
       "permissions": [
-        "RECORD_AUDIO",
-        "CAMERA",
-        "READ_MEDIA_IMAGES",
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
       ]
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
       [
-        "expo-splash-screen",
+        "expo-image-picker",
         {
-          "image": "./assets/brand/splash-tagline.png",
-          "resizeMode": "contain",
-          "backgroundColor": "#F7F9FA"
+          "photosPermission": "Nianza uses your photo library when you choose to add a child photo or share a photo with Patricia.",
+          "cameraPermission": "Nianza uses your camera when you choose to take a photo to add or share."
         }
       ],
-      "expo-secure-store",
-      ["expo-image-picker", {
-        "photosPermission": "Nianza uses your photo library when you choose to add a child photo or share a photo with Patricia.",
-        "cameraPermission": "Nianza uses your camera when you choose to take a photo to add or share."
-      }]
+      "expo-localization",
+      "expo-asset"
     ],
     "extra": {
-      "apiUrl": "https://api-dev.nianza.com/mobile/v1"
-    }
+      "apiUrl": "https://gr8d5s0yl9.execute-api.us-east-2.amazonaws.com/prod/mobile/v1",
+      "router": {},
+      "eas": {
+        "projectId": "10dafae0-d29b-4af0-a469-ce54a0eceb81"
+      }
+    },
+    "owner": "ejaugust2"
   }
 }

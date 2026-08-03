@@ -10,13 +10,16 @@
 //   5. recompute + cache MRR/ARR/at-risk metrics
 //   6. return 200
 //
-// PRODUCT IDS: confirmed live against the NIanza RevenueCat project (July 28
-// 2026, app.revenuecat.com/projects/86547d89/product-catalog/products) --
-// the real product identifiers are "monthly" and "yearly" (Test Store only
-// so far, no real App Store/Play Store app connected yet). If the products
-// are ever recreated with different ids, update REVENUECAT_MONTHLY_PRODUCT_ID
-// / REVENUECAT_ANNUAL_PRODUCT_ID in infra/template.yaml to match. An
-// unrecognized product id contributes $0 to MRR rather than guessing.
+// PRODUCT IDS: as of Aug 3 2026 the real App Store Connect subscriptions
+// exist ("nianza_premium_monthly" / "nianza_premium_yearly", app not yet
+// submitted for review) and are wired up in RevenueCat -- both attached to
+// the "NIanza Pro" entitlement and both present in the "default" offering's
+// packages alongside the older Test Store "monthly"/"yearly" products (see
+// app.revenuecat.com/projects/86547d89/product-catalog/products). Live
+// REVENUECAT_MONTHLY_PRODUCT_ID / REVENUECAT_ANNUAL_PRODUCT_ID values are
+// nianza_premium_monthly / nianza_premium_yearly (infra/template.yaml) --
+// update both places if the products are ever recreated with different ids.
+// An unrecognized product id contributes $0 to MRR rather than guessing.
 //
 // FIELD NAMES: app_user_id, product_id, id (event id), and event_timestamp_ms
 // are confirmed-present-on-every-event per RevenueCat's own docs

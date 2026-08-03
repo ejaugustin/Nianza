@@ -40,7 +40,7 @@ export default function WeeklyLetterScreen() {
 
   const letterQuery = useQuery({
     queryKey: ["weekly-letter", letterId],
-    queryFn: () => getWeeklyLetter(letterId, { childName, parentFirstName }),
+    queryFn: () => getWeeklyLetter(letterId, { parentFirstName }),
     enabled: Boolean(letterId)
   });
 

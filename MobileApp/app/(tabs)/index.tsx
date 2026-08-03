@@ -1,10 +1,13 @@
+import { Image } from "expo-image";
 import { Link, router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/auth-context";
 import { getDailyNote } from "@/api/content";
 import { getAnniversaryNote } from "@/api/memories";
+import { listCustomFirsts } from "@/api/milestones";
+import { acknowledgeTrialNotice, getEntitlements } from "@/api/entitlements";
 import { confirmVisit } from "@/api/visits";
 import { BrandLogo } from "@/components/brand-logo";
 import { PatriciaNote } from "@/components/patricia-note";
@@ -21,6 +24,38 @@ const weeklyCards = [
 
 function normalizeChildNameInNote(note: string, childName: string) {
   return note.replace(/\bSofia\b/g, childName).replace(/\bSophia\b/g, childName);
+}
+
+// Live-computed from childBirthDate, matching Settings' "Your Children" row
+// exactly -- profile.ageWindowMonths is a stored-at-onboarding snapshot that
+// never updates, which is why this header was stuck reading "0 months"
+// while Settings (computed live) correctly showed "2 months".
+function monthsSince(dateValue?: string) {
+  if (!dateValue) return null;
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+  const now = new Date();
+  return Math.max(0, (now.getFullYear() - date.getFullYear()) * 12 + now.getMonth() - date.getMonth());
+}
+
+function childAgeLabel(dateValue?: string) {
+  const months = monthsSince(dateValue);
+  if (months === null) return "";
+  if (months < 1) return "Newborn";
+  if (months === 1) return "1 month";
+  return `${months} months`;
+}
+
+// Was hardcoded to "Good morning" regardless of when the screen was
+// actually opened. Also handles the no-parent-name-on-file case (this
+// screen was rendering "Good morning, ." with a bare trailing comma when
+// parentName is empty -- same underlying data gap Settings falls back to
+// "Your name" for) by dropping the name clause entirely instead of leaving
+// a dangling punctuation mark.
+function greeting(name: string | undefined, now: Date) {
+  const hour = now.getHours();
+  const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  return name ? `Good ${timeOfDay}, ${name}.` : `Good ${timeOfDay}!`;
 }
 
 export default function HomeScreen() {
@@ -106,6 +141,43 @@ export default function HomeScreen() {
     staleTime: 1000 * 60 * 60 * 12,
     retry: 1
   });
+
+  // NZA-SUB-v1.0 Section 5: the daily note downgrades to "plain/templated
+  // only -- no pronoun slots, milestone variants, anniversary tiers, or
+  // weather/AQI" on the free tier. The backend already enforces this for the
+  // anniversary note itself (returns { note: null } when
+  // dailyNotePersonalization is off), but the fetch is still skipped
+  // client-side too so a lapsed account isn't making a network call for
+  // content it can't use.
+  const entitlementsQuery = useQuery({
+    queryKey: ["entitlements", profile.parentFirstName, profile.parentName, profile.childName],
+    queryFn: () =>
+      getEntitlements({
+        parentFirstName: profile.parentFirstName || profile.parentName?.split(" ")[0],
+        childName: profile.childName
+      }),
+    staleTime: 1000 * 60 * 5,
+    retry: 1
+  });
+  const personalizationEnabled = entitlementsQuery.data?.capabilities.dailyNotePersonalization !== false;
+
+  // NZA-SUB-v1.0 Section 3/6: the Day 10 / Day 14 in-app card. The backend
+  // only tells us a notice is "due" -- it's marked shown (so it never fires
+  // twice, Section 8.4) once this screen actually renders it, not on the
+  // background entitlements fetch itself.
+  const [dismissedNoticeType, setDismissedNoticeType] = useState<string | null>(null);
+  const trialNotice = entitlementsQuery.data?.trialNotice?.type ? entitlementsQuery.data.trialNotice : null;
+  const showTrialNotice = Boolean(trialNotice && trialNotice.type !== dismissedNoticeType);
+
+  useEffect(() => {
+    if (!trialNotice?.type || dismissedNoticeType === trialNotice.type) return;
+    acknowledgeTrialNotice(trialNotice.type).catch(() => {
+      // Best-effort -- worst case the same notice shows once more on a
+      // later open, which is far better than crashing the home screen over
+      // a non-critical write.
+    });
+  }, [trialNotice?.type, dismissedNoticeType]);
+
   // N1 (Milestone anniversaries): folds into this same daily-note slot --
   // fetched alongside the regular daily note and, on the rare day it exists,
   // takes priority over it (see personalizedDailyNote below). No streak or
@@ -113,16 +185,40 @@ export default function HomeScreen() {
   const anniversaryNoteQuery = useQuery({
     queryKey: ["anniversary-note", childId],
     queryFn: () => getAnniversaryNote(childId),
+    enabled: personalizationEnabled,
     staleTime: 1000 * 60 * 30,
     retry: 1
   });
+
+  // D7 (Custom "firsts"): previously only visible by scrolling into the
+  // Milestones tab's FIRSTS section -- easy to never find. A standing Home
+  // entry point, same treatment as the memory-book card just below it.
+  const customFirstsQuery = useQuery({
+    queryKey: ["custom-firsts", "home", childId],
+    queryFn: () => listCustomFirsts(childId),
+    staleTime: 1000 * 60 * 5,
+    retry: 1
+  });
+  const customFirsts = customFirstsQuery.data || [];
+  const latestFirst = customFirsts[0];
 
   const dailyNote = dailyNoteQuery.data?.bodyText || mockHome.dailyNote;
   const parentFirstName = profile.parentFirstName || profile.parentName?.split(" ")[0];
   const parentName = parentFirstName || profile.parentName;
   const childName = profile.childName;
-  const childAge = `${profile.ageWindowMonths} months`;
+  const childAge = childAgeLabel(profile.childBirthDate);
   const personalizedDailyNote = useMemo(() => {
+    // Free tier: plain/templated only -- neutral pronouns, no anniversary
+    // note, no milestone-variant swap. Child name is still substituted for
+    // the placeholder ("Sofia") since an unfilled placeholder name would
+    // read as broken content, not as a deliberate downgrade.
+    if (!personalizationEnabled) {
+      return normalizeChildNameInNote(dailyNote, childName)
+        .replaceAll("{childName}", childName)
+        .replaceAll("{she}", "they")
+        .replaceAll("{her}", "their")
+        .replaceAll("{hers}", "theirs");
+    }
     const anniversaryText = anniversaryNoteQuery.data?.bodyText;
     if (anniversaryText) return anniversaryText;
     const pronouns = profile.sexAtBirth === "boy" ? { she: "he", her: "his", hers: "his" } : { she: "she", her: "her", hers: "hers" };
@@ -131,7 +227,7 @@ export default function HomeScreen() {
       .replaceAll("{she}", pronouns.she)
       .replaceAll("{her}", pronouns.her)
       .replaceAll("{hers}", pronouns.hers);
-  }, [anniversaryNoteQuery.data?.bodyText, childName, dailyNote, profile.sexAtBirth]);
+  }, [anniversaryNoteQuery.data?.bodyText, childName, dailyNote, personalizationEnabled, profile.sexAtBirth]);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -146,11 +242,57 @@ export default function HomeScreen() {
       </View>
 
       <View style={{ gap: 4 }}>
-        <Text selectable style={{ color: theme.colors.muted, fontSize: 14 }}>Good morning, {parentName}.</Text>
-        <Text selectable numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={{ color: theme.colors.text, fontSize: 22, fontWeight: "700" }}>
-          {childName} - {childAge}
-        </Text>
+        <Text selectable style={{ color: theme.colors.muted, fontSize: 14 }}>{greeting(parentName, new Date())}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            {profile.childPhotoUri ? (
+              <Image source={{ uri: profile.childPhotoUri }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
+            ) : (
+              <Text selectable={false} style={{ color: "white", fontSize: 14, fontWeight: "800" }}>
+                {(childName || "?").slice(0, 1).toUpperCase()}
+              </Text>
+            )}
+          </View>
+          <Text selectable numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82} style={{ flex: 1, color: theme.colors.text, fontSize: 22, fontWeight: "700" }}>
+            {childName} - {childAge}
+          </Text>
+        </View>
       </View>
+
+      {showTrialNotice && trialNotice ? (
+        <SpecCard style={{ gap: 12, borderWidth: 1, borderColor: theme.colors.bluePrimary }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center" }}>
+              <Text selectable={false} style={{ color: "white", fontSize: 12, fontWeight: "800" }}>P</Text>
+            </View>
+            <Text selectable style={{ color: theme.colors.blueDeep, fontSize: 11, fontWeight: "800", letterSpacing: 0.5 }}>
+              {trialNotice.title?.toUpperCase()}
+            </Text>
+          </View>
+          <Text selectable style={{ color: theme.colors.text, fontSize: 15, lineHeight: 22, fontStyle: "italic" }}>
+            {trialNotice.body}
+          </Text>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <Pressable
+              onPress={() => {
+                setDismissedNoticeType(trialNotice.type);
+                router.push("/plan-picker");
+              }}
+              style={{ flex: 1, minHeight: 46, borderRadius: 23, backgroundColor: theme.colors.bluePrimary, alignItems: "center", justifyContent: "center" }}
+            >
+              <Text selectable={false} style={{ color: "white", fontSize: 14, fontWeight: "800" }}>{trialNotice.ctaLabel}</Text>
+            </Pressable>
+            {trialNotice.secondaryLabel ? (
+              <Pressable
+                onPress={() => setDismissedNoticeType(trialNotice.type)}
+                style={{ minHeight: 46, paddingHorizontal: 16, alignItems: "center", justifyContent: "center" }}
+              >
+                <Text selectable={false} style={{ color: theme.colors.muted, fontSize: 14, fontWeight: "700" }}>{trialNotice.secondaryLabel}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </SpecCard>
+      ) : null}
 
       <PatriciaNote
         actionLabel="Discuss with Patricia"
@@ -226,6 +368,38 @@ export default function HomeScreen() {
           </Link>
         ))}
       </View>
+
+      {/* Baby's Firsts (D7 custom firsts): previously only visible by
+          scrolling into the Milestones tab's FIRSTS section -- easy to never
+          find. A standing Home entry point, same treatment as the memory
+          book card just below it, terracotta-branded to match the FIRSTS
+          section since this is pure memory, not a clinical milestone. When
+          nothing's logged yet, deep-links straight into the "Add a first"
+          sheet (openAddFirst, mirrors the existing openMemoryBook pattern);
+          otherwise just lands on Milestones, where FIRSTS is already visible
+          in the normal scroll. */}
+      <Pressable
+        onPress={() =>
+          router.push({
+            pathname: "/(tabs)/milestones",
+            params: latestFirst ? {} : { openAddFirst: "1" }
+          })
+        }
+      >
+        <SpecCard style={{ padding: 16, gap: 6, borderColor: theme.colors.terracottaLight }}>
+          <Text selectable style={{ color: theme.colors.terracotta, fontSize: 13, fontWeight: "800", letterSpacing: 0.4 }}>
+            BABY'S FIRSTS
+          </Text>
+          <Text selectable style={{ color: theme.colors.text, fontSize: 14, fontWeight: "700", lineHeight: 20 }}>
+            {latestFirst
+              ? `Latest: ${latestFirst.customName} -- ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(latestFirst.observedAt))}`
+              : `First beach day, first laugh -- the ones that aren't on any clinical list. Log ${childName}'s first one here.`}
+          </Text>
+          <Text selectable style={{ color: theme.colors.terracotta, fontSize: 13, fontWeight: "700" }}>
+            {latestFirst ? "See all firsts" : "Add a first"}
+          </Text>
+        </SpecCard>
+      </Pressable>
 
       {/* Memory book: previously buried under a camera icon on the
           Milestones tab header, which meant a lot of parents never found it.

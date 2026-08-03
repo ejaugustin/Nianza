@@ -15,6 +15,10 @@ export type ChatResponse = {
   message: {
     sender: "patricia";
     text: string;
+    eventType?: string;
+  };
+  entitlements?: {
+    patriciaMessagesRemainingToday: number | null;
   };
   context: {
     usedAmbientContext: boolean;

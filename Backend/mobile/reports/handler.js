@@ -10,6 +10,7 @@ const vaccinesLibrary = require("../vaccines/library");
 const periods = require("./periods");
 const reportData = require("./data");
 const assemble = require("./assemble");
+const { getEntitlements } = require("../../shared/entitlements");
 
 const rawClient = new DynamoDBClient({});
 const documentClient = DynamoDBDocumentClient.from(rawClient, {
@@ -63,6 +64,38 @@ async function getChild(userId, childId) {
   return result.Item || null;
 }
 
+// NZA-SUB-v1.0 Section 5: Doctor Visit Pack and Progress Reports (Monthly /
+// 6-Month / Yearly) are both fully locked on the free tier -- distinct
+// capabilities even though they share this one handler/table, since a
+// future plan could plausibly unbundle them. "Locked" per Section 5's table
+// means locked outright (not "can generate but not view"), consistent with
+// Section 7's edge case that a lapsed account's old reports become viewable
+// again only on resubscribe -- so this gates GET as well as POST, not just
+// generation.
+function capabilityForReportType(reportType) {
+  return reportType === "visit-pack" ? "canAccessDoctorVisitPack" : "canAccessProgressReports";
+}
+
+async function requireReportAccess(userId, reportType) {
+  const entitlements = await getEntitlements(userId);
+  const capability = capabilityForReportType(reportType);
+  return { allowed: Boolean(entitlements.capabilities[capability]), entitlements };
+}
+
+// Section 6.3 "Locked feature opened" copy, implemented verbatim per
+// Section 8.4: "This one needs the full plan, [Name]. I can put it together
+// the moment you're ready." {Name} drops cleanly (no dangling comma) when
+// the client doesn't have a parent first name on hand, same pattern as the
+// home screen greeting fix and messageCapReachedText in chat/handler.js.
+function lockedFeatureText(parentFirstName) {
+  const address = parentFirstName ? `, ${parentFirstName}` : "";
+  return `This one needs the full plan${address}. I can put it together the moment you're ready.`;
+}
+
+function lockedReportError(reportType, parentFirstName) {
+  return error(403, "SUBSCRIPTION_REQUIRED", lockedFeatureText(parentFirstName));
+}
+
 async function handleListReports(event) {
   const { userId } = claimsFromEvent(event);
   const childId = pathPart(event, "childId");
@@ -71,14 +104,23 @@ async function handleListReports(event) {
   const child = await getChild(userId, childId);
   if (!child) return error(404, "CHILD_NOT_FOUND", "Create the child profile before requesting reports.");
 
-  const result = await documentClient.send(new QueryCommand({
-    TableName: REPORTS_TABLE,
-    KeyConditionExpression: "childId = :childId",
-    ExpressionAttributeValues: { ":childId": childId },
-    ScanIndexForward: false
-  }));
+  const [result, entitlements] = await Promise.all([
+    documentClient.send(new QueryCommand({
+      TableName: REPORTS_TABLE,
+      KeyConditionExpression: "childId = :childId",
+      ExpressionAttributeValues: { ":childId": childId },
+      ScanIndexForward: false
+    })),
+    getEntitlements(userId)
+  ]);
 
-  return json(200, { reports: result.Items || [] });
+  // Filtered, not errored: a free-tier parent opening the reports list
+  // should see "nothing here yet" (locked), not a hard failure -- the
+  // upgrade prompt lives at the point of tapping a locked item (Section
+  // 6.3), not on the list screen itself.
+  const reports = (result.Items || []).filter((item) => entitlements.capabilities[capabilityForReportType(item.reportType)]);
+
+  return json(200, { reports });
 }
 
 async function handleCreateReport(event) {
@@ -91,6 +133,9 @@ async function handleCreateReport(event) {
 
   const body = parseBody(event);
   const reportType = body.reportType === "visit-pack" ? "visit-pack" : "monthly";
+
+  const access = await requireReportAccess(userId, reportType);
+  if (!access.allowed) return lockedReportError(reportType, body.parentFirstName);
   const options = body.options || {};
   const period = reportType === "visit-pack" ? "visit" : (PERIODS.has(options.period) && options.period !== "visit" ? options.period : "month");
   const now = new Date();
@@ -167,6 +212,9 @@ async function handleGetReport(event) {
     Key: { childId, reportId }
   }));
   if (!result.Item) return error(404, "REPORT_NOT_FOUND", "Report not found.");
+
+  const access = await requireReportAccess(userId, result.Item.reportType);
+  if (!access.allowed) return lockedReportError(result.Item.reportType, (event.queryStringParameters || {}).parentFirstName);
 
   return json(200, { report: result.Item });
 }

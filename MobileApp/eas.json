@@ -1,0 +1,27 @@
+{
+  "cli": {
+    "version": ">= 21.4.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://gr8d5s0yl9.execute-api.us-east-2.amazonaws.com/prod/mobile/v1",
+        "EXPO_PUBLIC_COGNITO_REGION": "us-east-2",
+        "EXPO_PUBLIC_COGNITO_USER_POOL_ID": "us-east-2_uLwkBJCzN",
+        "EXPO_PUBLIC_COGNITO_CLIENT_ID": "5pjgab3rcqsst552i98dabg10e"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

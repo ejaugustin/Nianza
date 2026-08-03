@@ -17,8 +17,8 @@ export type BirthdayLetter = {
  * Throws a recognizable error if the child hasn't had a first birthday yet
  * (backend returns 409 TOO_YOUNG) so the caller can hide the entry point
  * entirely rather than show a broken screen. */
-export async function getBirthdayLetter(childId: string) {
-  const response = await apiGet<{ letter: BirthdayLetter }>(`/memories/${encodeURIComponent(childId)}/birthday-letter`);
+export async function getBirthdayLetter(childId: string, parentFirstName?: string) {
+  const response = await apiGet<{ letter: BirthdayLetter }>(`/memories/${encodeURIComponent(childId)}/birthday-letter`, { parentFirstName });
   return response.letter;
 }
 

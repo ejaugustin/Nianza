@@ -776,6 +776,46 @@ Resources:
         - AttributeName: reportId
           KeyType: RANGE
 
+  # NZA-WEEKLY-LETTER-v1.0: letterId is the sole PK (deterministic --
+  # weekly-letter#{childId}#{weekStartDateKey} -- see mobile/weekly-letters/
+  # periods.js) rather than a childId+letterId composite, specifically so the
+  # existing mobile client (getWeeklyLetter(letterId) / markWeeklyLetterRead
+  # (letterId), no childId param) needs no route/UI changes for the detail
+  # and mark-read routes. The childId-index GSI serves the list route.
+  WeeklyLettersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub nianza-weekly-letters-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: App
+          Value: Nianza
+        - Key: Env
+          Value: !Ref Environment
+        - Key: Owner
+          Value: eja
+      AttributeDefinitions:
+        - AttributeName: letterId
+          AttributeType: S
+        - AttributeName: childId
+          AttributeType: S
+        - AttributeName: weekStartDate
+          AttributeType: S
+      KeySchema:
+        - AttributeName: letterId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: childId-index
+          KeySchema:
+            - AttributeName: childId
+              KeyType: HASH
+            - AttributeName: weekStartDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
   AdminContentFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1542,6 +1582,9 @@ Resources:
           MILESTONES_TABLE: !Ref MilestoneProgressTable
           VOICE_MEMORIES_TABLE: !Ref VoiceMemoriesTable
           VOICE_MEMORIES_BUCKET: !Ref VoiceMemoriesBucket
+          # NZA-SUB-v1.0 Section 5: gates the birthday letter (Memory & Human
+          # Moments) and the anniversary note (daily note personalization).
+          USERS_TABLE: !Ref MobileUsersTable
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref MobileChildrenTable
@@ -1551,6 +1594,8 @@ Resources:
             TableName: !Ref VoiceMemoriesTable
         - S3CrudPolicy:
             BucketName: !Ref VoiceMemoriesBucket
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileUsersTable
       Events:
         BirthdayLetter:
           Type: Api
@@ -1645,7 +1690,11 @@ Resources:
           PATRICIA_TEMPERATURE: !Ref PatriciaTemperature
           PATRICIA_MAX_TOKENS: !Ref PatriciaMaxTokens
       Policies:
-        - DynamoDBReadPolicy:
+        # NZA-SUB-v1.0 Section 8.1: shared/entitlements.js's
+        # recordPatriciaMessage() writes the daily message counter onto the
+        # user's own row (patriciaMessageDate/patriciaMessageCount) --
+        # upgraded from DynamoDBReadPolicy to DynamoDBCrudPolicy for that.
+        - DynamoDBCrudPolicy:
             TableName: !Ref MobileUsersTable
         - DynamoDBReadPolicy:
             TableName: !Ref MobileChildrenTable
@@ -1681,6 +1730,46 @@ Resources:
             Auth:
               Authorizer: MobileCognitoAuthorizer
 
+  # NZA-SUB-v1.0 Section 8.1: read-side of the capability service for the
+  # mobile client (shared/entitlements.js is the actual source of truth,
+  # imported directly by every backend handler that needs to gate
+  # something -- this Lambda just exposes a read view of it over HTTP so
+  # screens can decide what to show without duplicating the tier logic).
+  MobileEntitlementsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-entitlements-${Environment}
+      CodeUri: ../
+      Handler: mobile/entitlements/handler.handler
+      Timeout: 10
+      MemorySize: 256
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MobileUsersTable
+      Policies:
+        # NZA-SUB-v1.0 Section 6/8.3 step 4: trial-notice/ack writes the
+        # shown-at timestamp that keeps Day 10 / Day 14 to exactly one
+        # showing each -- upgraded from read-only for that.
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MobileUsersTable
+      Events:
+        GetEntitlements:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/entitlements
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        AckTrialNotice:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/entitlements/trial-notice/ack
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+
   MobileReportsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1698,6 +1787,9 @@ Resources:
           SICK_ENCOUNTERS_TABLE: !Ref SickEncountersTable
           VACCINES_TABLE: !Ref ImmunizationStatusTable
           VISIT_DEBRIEFS_TABLE: !Ref VisitDebriefsTable
+          # NZA-SUB-v1.0 Section 5: shared/entitlements.js's getEntitlements()
+          # gates Doctor Visit Pack / Progress Reports here -- read-only.
+          USERS_TABLE: !Ref MobileUsersTable
           ANTHROPIC_API_KEY_PARAMETER: !Ref AnthropicApiKeyParameterName
           ANTHROPIC_MODEL_PARAMETER: !Ref AnthropicModelParameterName
       Policies:
@@ -1715,6 +1807,8 @@ Resources:
             TableName: !Ref ImmunizationStatusTable
         - DynamoDBReadPolicy:
             TableName: !Ref VisitDebriefsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileUsersTable
         - Version: "2012-10-17"
           Statement:
             - Effect: Allow
@@ -1746,6 +1840,83 @@ Resources:
             Method: GET
             Auth:
               Authorizer: MobileCognitoAuthorizer
+
+  # NZA-WEEKLY-LETTER-v1.0 Phase 1: generation-only, no email send yet (see
+  # docs/NZA-WEEKLY-LETTER-v1.0-spec.md's Phase 2). Tier-gated the same as
+  # MobileReportsFunction above -- product decision 2026-08-01 overrode
+  # Addendum A's free-for-everyone recommendation.
+  MobileWeeklyLettersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub nianza-mobile-weekly-letters-${Environment}
+      CodeUri: ../
+      Handler: mobile/weekly-letters/handler.handler
+      Timeout: 60
+      MemorySize: 512
+      Environment:
+        Variables:
+          CHILDREN_TABLE: !Ref MobileChildrenTable
+          LETTERS_TABLE: !Ref WeeklyLettersTable
+          LETTERS_TABLE_CHILD_INDEX: childId-index
+          VITALS_TABLE: !Ref VitalsLogTable
+          MILESTONES_TABLE: !Ref MilestoneProgressTable
+          SICK_ENCOUNTERS_TABLE: !Ref SickEncountersTable
+          VACCINES_TABLE: !Ref ImmunizationStatusTable
+          USERS_TABLE: !Ref MobileUsersTable
+          ANTHROPIC_API_KEY_PARAMETER: !Ref AnthropicApiKeyParameterName
+          ANTHROPIC_MODEL_PARAMETER: !Ref AnthropicModelParameterName
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileChildrenTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WeeklyLettersTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref VitalsLogTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MilestoneProgressTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref SickEncountersTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref ImmunizationStatusTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref MobileUsersTable
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource: "*"
+      Events:
+        WeeklyLettersList:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/weekly-letters/by-child/{childId}
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        WeeklyLetterGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/weekly-letters/{letterId}
+            Method: GET
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        WeeklyLetterMarkRead:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MobileApi
+            Path: /mobile/v1/weekly-letters/{letterId}/read
+            Method: POST
+            Auth:
+              Authorizer: MobileCognitoAuthorizer
+        WeeklyLetterFanOut:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 22 ? * SUN *)" # 6pm US Eastern (22:00 UTC) Sunday -- EDT/EST drift is a known limitation, see spec
+            Description: Weekly Patricia letter generation, once per child per Sunday
+            Enabled: true
 
   # ─── NZA-ADMIN-v1.1 P0.1: Real Billing (RevenueCat) ──────────────────────
   # Secrets, storage, and three Lambdas: the public webhook receiver
@@ -1854,13 +2025,18 @@ Resources:
           BILLING_RAW_BUCKET: !Ref BillingRawBucket
           WEBHOOK_SECRET_ARN: !Ref RevenueCatWebhookSecret
           BILLING_CACHE_PARAM: !Sub /nianza/admin/billing-summary-cache-${Environment}
-          # Confirmed against the live NIanza RevenueCat project (Test Store,
-          # July 28 2026): the real product identifiers are literally
-          # "monthly" and "yearly" (not "annual") -- verified via
-          # app.revenuecat.com/projects/86547d89/product-catalog/products.
-          # Update these if the products are ever recreated with different ids.
-          REVENUECAT_MONTHLY_PRODUCT_ID: monthly
-          REVENUECAT_ANNUAL_PRODUCT_ID: yearly
+          # Updated Aug 3 2026: real App Store Connect subscriptions now exist
+          # for the "Nianza (App Store)" app in RevenueCat (App Store Connect
+          # created them; RevenueCat products/offering wired up the same day
+          # -- see app.revenuecat.com/projects/86547d89/product-catalog/products).
+          # Apple product ids are "nianza_premium_monthly" /
+          # "nianza_premium_yearly", not the old Test Store-only "monthly" /
+          # "yearly" ids. Both the App Store and Test Store products are
+          # attached to the same "NIanza Pro" entitlement and both are in the
+          # "default" offering's packages, so this only needs to change if the
+          # products are ever recreated with different ids.
+          REVENUECAT_MONTHLY_PRODUCT_ID: nianza_premium_monthly
+          REVENUECAT_ANNUAL_PRODUCT_ID: nianza_premium_yearly
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref BillingEventsTable
@@ -2000,6 +2176,8 @@ Outputs:
     Value: !Ref MobileConversationsTable
   MobileReportsTableName:
     Value: !Ref MobileReportsTable
+  WeeklyLettersTableName:
+    Value: !Ref WeeklyLettersTable
   BillingEventsTableName:
     Value: !Ref BillingEventsTable
   BillingRawBucketName:

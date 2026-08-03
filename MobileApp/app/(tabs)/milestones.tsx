@@ -106,6 +106,16 @@ function MilestonesIntroCard({
     }
   }
 
+  // Previously autoplay had no way to be interrupted once started -- this
+  // toggle lets a parent stop mid-sentence instead of waiting it out.
+  function handlePress() {
+    if (isSpeaking || isLoading) {
+      patriciaSpeech.stop();
+    } else {
+      speak();
+    }
+  }
+
   useEffect(() => {
     if (autoPlayedRef.current) return;
     autoPlayedRef.current = true;
@@ -129,7 +139,7 @@ function MilestonesIntroCard({
         {introText}
       </Text>
       <Pressable
-        onPress={speak}
+        onPress={handlePress}
         style={{
           alignSelf: "flex-start",
           minHeight: 32,
@@ -141,9 +151,9 @@ function MilestonesIntroCard({
           backgroundColor: isSpeaking ? theme.colors.blueLight : "white"
         }}
       >
-        <SfIcon name="speaker.wave.2.fill" color={theme.colors.bluePrimary} size={17} />
+        <SfIcon name={isSpeaking ? "stop.fill" : "speaker.wave.2.fill"} color={theme.colors.bluePrimary} size={17} />
         <Text selectable style={{ color: theme.colors.blueDeep, fontSize: 12, fontWeight: "700" }}>
-          {isLoading ? "Loading" : isSpeaking ? "Playing" : "Replay"}
+          {isLoading ? "Loading" : isSpeaking ? "Stop" : "Replay"}
         </Text>
       </Pressable>
       {notice ? (
@@ -205,7 +215,7 @@ function watchText(items: ActEarlyItem[], childName: string, parentFirstName: st
 
 export default function MilestonesScreen() {
   const { profile, activeChildId, updateProfile } = useAuth();
-  const { openMemoryBook: openMemoryBookParam } = useLocalSearchParams<{ openMemoryBook?: string }>();
+  const { openMemoryBook: openMemoryBookParam, openAddFirst: openAddFirstParam } = useLocalSearchParams<{ openMemoryBook?: string; openAddFirst?: string }>();
   const insets = useSafeAreaInsets();
   const childId = activeChildId || "primary-child";
   const childName = profile?.childName || "your child";
@@ -240,6 +250,16 @@ export default function MilestonesScreen() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openMemoryBookParam]);
+
+  // Home's "Baby's Firsts" card deep-links here when there's nothing logged
+  // yet, mirroring the openMemoryBook pattern above.
+  useEffect(() => {
+    if (openAddFirstParam) {
+      setAddFirstOpen(true);
+      router.setParams({ openAddFirst: undefined });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openAddFirstParam]);
 
   const milestoneTextById = useMemo(() => {
     const map: Record<string, string> = {};

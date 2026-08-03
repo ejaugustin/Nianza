@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/auth-context";
 import { getDailyNote } from "@/api/content";
 import { getAnniversaryNote } from "@/api/memories";
+import { listCustomFirsts } from "@/api/milestones";
 import { acknowledgeTrialNotice, getEntitlements } from "@/api/entitlements";
 import { confirmVisit } from "@/api/visits";
 import { BrandLogo } from "@/components/brand-logo";
@@ -189,6 +190,18 @@ export default function HomeScreen() {
     retry: 1
   });
 
+  // D7 (Custom "firsts"): previously only visible by scrolling into the
+  // Milestones tab's FIRSTS section -- easy to never find. A standing Home
+  // entry point, same treatment as the memory-book card just below it.
+  const customFirstsQuery = useQuery({
+    queryKey: ["custom-firsts", "home", childId],
+    queryFn: () => listCustomFirsts(childId),
+    staleTime: 1000 * 60 * 5,
+    retry: 1
+  });
+  const customFirsts = customFirstsQuery.data || [];
+  const latestFirst = customFirsts[0];
+
   const dailyNote = dailyNoteQuery.data?.bodyText || mockHome.dailyNote;
   const parentFirstName = profile.parentFirstName || profile.parentName?.split(" ")[0];
   const parentName = parentFirstName || profile.parentName;
@@ -355,6 +368,38 @@ export default function HomeScreen() {
           </Link>
         ))}
       </View>
+
+      {/* Baby's Firsts (D7 custom firsts): previously only visible by
+          scrolling into the Milestones tab's FIRSTS section -- easy to never
+          find. A standing Home entry point, same treatment as the memory
+          book card just below it, terracotta-branded to match the FIRSTS
+          section since this is pure memory, not a clinical milestone. When
+          nothing's logged yet, deep-links straight into the "Add a first"
+          sheet (openAddFirst, mirrors the existing openMemoryBook pattern);
+          otherwise just lands on Milestones, where FIRSTS is already visible
+          in the normal scroll. */}
+      <Pressable
+        onPress={() =>
+          router.push({
+            pathname: "/(tabs)/milestones",
+            params: latestFirst ? {} : { openAddFirst: "1" }
+          })
+        }
+      >
+        <SpecCard style={{ padding: 16, gap: 6, borderColor: theme.colors.terracottaLight }}>
+          <Text selectable style={{ color: theme.colors.terracotta, fontSize: 13, fontWeight: "800", letterSpacing: 0.4 }}>
+            BABY'S FIRSTS
+          </Text>
+          <Text selectable style={{ color: theme.colors.text, fontSize: 14, fontWeight: "700", lineHeight: 20 }}>
+            {latestFirst
+              ? `Latest: ${latestFirst.customName} -- ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(latestFirst.observedAt))}`
+              : `First beach day, first laugh -- the ones that aren't on any clinical list. Log ${childName}'s first one here.`}
+          </Text>
+          <Text selectable style={{ color: theme.colors.terracotta, fontSize: 13, fontWeight: "700" }}>
+            {latestFirst ? "See all firsts" : "Add a first"}
+          </Text>
+        </SpecCard>
+      </Pressable>
 
       {/* Memory book: previously buried under a camera icon on the
           Milestones tab header, which meant a lot of parents never found it.

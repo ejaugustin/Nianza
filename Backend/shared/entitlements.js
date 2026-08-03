@@ -53,7 +53,12 @@ const FREE_TIER_CAPABILITIES = {
   canAccessDoctorVisitPack: false,
   canAccessProgressReports: false,
   canAccessMemoryHumanMoments: false,
-  canAccessPatternSynthesis: false
+  canAccessPatternSynthesis: false,
+  // NZA-WEEKLY-LETTER-v1.0: Addendum A recommended free-for-everyone;
+  // overridden 2026-08-01 to gate like the rest of mobile/reports/ for
+  // paywall consistency. Kept as its own capability (not aliased to
+  // canAccessProgressReports) so the two can diverge later if needed.
+  canAccessWeeklyLetter: false
 };
 
 const FULL_CAPABILITIES = {
@@ -66,7 +71,8 @@ const FULL_CAPABILITIES = {
   canAccessDoctorVisitPack: true,
   canAccessProgressReports: true,
   canAccessMemoryHumanMoments: true,
-  canAccessPatternSynthesis: true
+  canAccessPatternSynthesis: true,
+  canAccessWeeklyLetter: true
 };
 
 function todayKey(now) {

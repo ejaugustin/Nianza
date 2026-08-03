@@ -91,8 +91,8 @@ export default function ReportsScreen() {
   const parentFirstName = profile?.parentFirstName || profile?.parentName?.split(/\s+/)[0] || "there";
   const childId = activeChildId || "primary-child";
   const lettersQuery = useQuery({
-    queryKey: ["weekly-letters", childId, childName, parentFirstName],
-    queryFn: () => listWeeklyLetters(childId, { childName, parentFirstName })
+    queryKey: ["weekly-letters", childId],
+    queryFn: () => listWeeklyLetters(childId)
   });
   const mobileReportsQuery = useQuery({
     queryKey: ["mobile-reports", childId],

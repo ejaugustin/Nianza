@@ -14,6 +14,7 @@ import { PatriciaNote } from "@/components/patricia-note";
 import { SectionLabel, SfIcon, SpecCard } from "@/components/screen-spec";
 import { TalkToPatriciaButton, openPatricia } from "@/components/talk-to-patricia-button";
 import { mockHome } from "@/content/mock-home";
+import { applyPronounSlots } from "@/text/pronoun-slots";
 import { theme } from "@/theme/theme";
 
 const weeklyCards = [
@@ -213,20 +214,11 @@ export default function HomeScreen() {
     // the placeholder ("Sofia") since an unfilled placeholder name would
     // read as broken content, not as a deliberate downgrade.
     if (!personalizationEnabled) {
-      return normalizeChildNameInNote(dailyNote, childName)
-        .replaceAll("{childName}", childName)
-        .replaceAll("{she}", "they")
-        .replaceAll("{her}", "their")
-        .replaceAll("{hers}", "theirs");
+      return applyPronounSlots(normalizeChildNameInNote(dailyNote, childName).replaceAll("{childName}", childName), profile.sexAtBirth, { neutral: true });
     }
     const anniversaryText = anniversaryNoteQuery.data?.bodyText;
     if (anniversaryText) return anniversaryText;
-    const pronouns = profile.sexAtBirth === "boy" ? { she: "he", her: "his", hers: "his" } : { she: "she", her: "her", hers: "hers" };
-    return normalizeChildNameInNote(dailyNote, childName)
-      .replaceAll("{childName}", childName)
-      .replaceAll("{she}", pronouns.she)
-      .replaceAll("{her}", pronouns.her)
-      .replaceAll("{hers}", pronouns.hers);
+    return applyPronounSlots(normalizeChildNameInNote(dailyNote, childName).replaceAll("{childName}", childName), profile.sexAtBirth);
   }, [anniversaryNoteQuery.data?.bodyText, childName, dailyNote, personalizationEnabled, profile.sexAtBirth]);
 
   return (
